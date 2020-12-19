@@ -11,6 +11,8 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\Core\Interfaces\DataTypes\DataTypeInterface;
 use exface\Core\DataTypes\HexadecimalNumberDataType;
+use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
@@ -42,14 +44,18 @@ class UI5FileList extends UI5AbstractElement
         
         $controller = $this->getController();
         
-        $controller->addOnEventScript($this, self::EVENT_NAME_AFTER_ITEM_ADDED, $this->buildJsEventHandlerUpload('oEvent'));
-        $controller->addOnEventScript($this, self::EVENT_NAME_BEFORE_ITEM_REMOVED, $this->buildJsEventHandlerDelete('oEvent'));
-        
         $controller->addOnInitScript($this->buildJsCustomizeUploaderButton());
         $controller->addOnInitScript("sap.ui.getCore().byId('{$this->getId()}').getList().setMode(sap.m.ListMode.SingleSelectMaster);");
         
         $toobarJs = $this->buildJsToolbar($oControllerJs);
         $controller->addOnInitScript("sap.ui.getCore().byId('{$this->getId()}').getList()" . $this->buildJsClickHandlers($oControllerJs));
+        
+        // Need to render button handlers AFTER all the other buttons in $toolbarJs
+        // to make sure the buttons are rendered in the same order as their widgets
+        // are created in FileList::getChildren(). Otherwise the buttons will have
+        // different ids depending on whether they were created by a facade call or not.
+        $controller->addOnEventScript($this, self::EVENT_NAME_AFTER_ITEM_ADDED, $this->buildJsEventHandlerUpload('oEvent'));
+        $controller->addOnEventScript($this, self::EVENT_NAME_BEFORE_ITEM_REMOVED, $this->buildJsEventHandlerDelete('oEvent'));
         
         $specialCols = [
             $widget->getFilenameColumn(),
@@ -78,20 +84,11 @@ class UI5FileList extends UI5AbstractElement
             $attributesConstructors .= $objectAttribute->buildJsConstructor($oControllerJs) . ',';
         }
         
-        $uploadEnabled = $widget->isUploadEnabled() ? 'true' : 'false';
-        $maxFilenameLength = $widget->getUploader()->getMaxFilenameLength() ?? 'null';
-        
         return <<<JS
 
         new sap.m.upload.UploadSet('{$this->getId()}', {
-            uploadEnabled: {$uploadEnabled},
-    		terminationEnabled: true,
-    		showIcons: true,
-            {$this->buildJsPropertyFileTypes()}
-            {$this->buildJsPropertyMediaTypes()}
-    		maxFileNameLength: {$maxFilenameLength},
-    		maxFileSize: {$widget->getUploader()->getMaxFileSizeMb()},
-            afterItemAdded: {$controller->buildJsEventHandler($this, self::EVENT_NAME_AFTER_ITEM_ADDED, true)},
+            showIcons: true,
+            {$this->buildJsPropertyUpload()}
             beforeItemRemoved: {$controller->buildJsEventHandler($this, self::EVENT_NAME_BEFORE_ITEM_REMOVED, true)},
             items: {
     			path: '/rows',
@@ -110,6 +107,35 @@ class UI5FileList extends UI5AbstractElement
         })
 
 JS;
+    }
+    
+    protected function buildJsPropertyUpload() : string
+    {
+        $widget = $this->getWidget();
+        
+        if ($widget->isUploadEnabled()) {
+            $uploader = $widget->getUploader();
+            $maxFilenameLength = $widget->getUploader()->getMaxFilenameLength() ?? 'null';
+            $instantUpload = $uploader->isInstantUpload() ? 'true' : 'false';
+            
+            if (! $uploader->isInstantUpload()) {
+                throw new FacadeRuntimeError('FileList widgets with instant_upload=false currently not supported in the UI5 facade!');
+            }
+            
+            return <<<JS
+
+            uploadEnabled: true,
+            instantUpload: $instantUpload,
+    		terminationEnabled: true,
+            maxFileNameLength: {$maxFilenameLength},
+    		maxFileSize: {$widget->getUploader()->getMaxFileSizeMb()},
+            afterItemAdded: {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_AFTER_ITEM_ADDED, true)},        
+            {$this->buildJsPropertyFileTypes()}
+            {$this->buildJsPropertyMediaTypes()}
+JS;
+        } else {
+            return "uploadEnabled: false,";
+        }
     }
     
     protected function buildJsPropertyFileTypes() : string
@@ -133,7 +159,7 @@ JS;
     protected function buildJsEventHandlerUpload(string $oEventJs) : string
     {
         $widget = $this->getWidget();
-        $uploadAction = $widget->getUploadAction();
+        $uploadAction = $widget->getInstantUploadAction();
         
         $fileModificationColumnJs = '';
         if ($widget->hasFileModificationTimeColumn()) {
@@ -236,7 +262,7 @@ JS;
                     var oUploadParams = {
                         action: "{$uploadAction->getAliasWithNamespace()}",
     					resource: "{$this->getPageId()}",
-    					element: "{$widget->getId()}",
+    					element: "{$uploadAction->getWidgetDefinedIn()->getId()}",
     					object: "{$widget->getMetaObject()->getId()}",
                         data: oResponseModel.getData()
                     };
@@ -250,19 +276,39 @@ JS;
     protected function buildJsEventHandlerDelete(string $oEventJs) : string
     {
         $widget = $this->getWidget();
-        
-        $deleteAction = ActionFactory::createFromString($this->getWorkbench(), DeleteObject::class, $widget);
+        $deleteButton = $widget->getDeleteButton();
+        $deleteAction = $deleteButton->getAction();
         
         // Need to destroy the deleted list item manually for some reason - otherwise
         // the next uploaded item will cause a duplicate-event error!
         $onSuccessJs = <<<JS
                 
+                oUploadSet.removeItem(oItem);
                 oItem.destroy();
                 {$this->buildJsBusyIconHide()}
                 {$this->buildJsRefresh()};
                 if (oResponseModel.getProperty('/success') !== undefined){
                		{$this->buildJsShowMessageSuccess("oResponseModel.getProperty('/success')")}
 				}
+
+JS;
+        // If an error occurs, it's even stranger: we still MUST manually delete the item,
+        // but additionally we need to manually remove the row in the data - otherwise the
+        // item will never get shown again - even if the refresh button is pressed.
+   		$onErrorJs = <<<JS
+
+                var oModel = oUploadSet.getModel();
+                var aRows = oModel.getProperty('/rows');
+                var iDelIndex = aRows.indexOf(oItem.getBindingContext().getProperty());
+                oItem.destroy(); 
+                if (iDelIndex > -1) {
+                    aRows.splice(iDelIndex, 1);
+                    oModel.setProperty('/rows', aRows);
+                } else {
+                    oModel.setData({});
+                }
+                {$this->buildJsBusyIconHide()}
+                {$this->buildJsRefresh()}
 
 JS;
         
@@ -294,7 +340,7 @@ JS;
                         var oParams = {
                             action: "{$deleteAction->getAliasWithNamespace()}",
         					resource: "{$this->getPageId()}",
-        					element: "{$widget->getId()}",
+        					element: "{$deleteButton->getId()}",
         					object: "{$widget->getMetaObject()->getId()}",
                             data: {
                                 oId: "{$widget->getMetaObject()->getId()}",
@@ -304,7 +350,7 @@ JS;
                             }
                         }
                         {$this->buildJsBusyIconShow()};
-                        {$this->getServerAdapter()->buildJsServerRequest($deleteAction, 'oResponseModel', 'oParams', $onSuccessJs)}
+                        {$this->getServerAdapter()->buildJsServerRequest($deleteAction, 'oResponseModel', 'oParams', $onSuccessJs, $onErrorJs)}
                     });
                 },0);
 JS;
