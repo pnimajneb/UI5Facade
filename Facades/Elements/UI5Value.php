@@ -395,7 +395,9 @@ JS;
     {
         $this->registerLiveReferenceAtLinkedElementViaTrait();
         // Also refresh the live reference each time the view is prefilled!
-        $this->getController()->addOnPrefillDataChangedScript($this->buildJsLiveReference());
+        // But use setTimeout() to make sure all widgets binding-events affected
+        // by the prefill really are done!
+        $this->getController()->addOnPrefillDataChangedScript('setTimeout(function(){ ' . $this->buildJsLiveReference() . '}, 0);');
     }
     
     /**
