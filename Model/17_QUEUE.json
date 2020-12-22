@@ -49,9 +49,9 @@
     "rows": [
         {
             "CREATED_ON": "2020-10-01 12:35:30",
-            "MODIFIED_ON": "2020-10-29 12:27:51",
+            "MODIFIED_ON": "2020-12-22 10:36:31",
             "CREATED_BY_USER": "0x11e8fe1c902c8ebea23ee4b318306b9a",
-            "MODIFIED_BY_USER": "0x11e8fe1c902c8ebea23ee4b318306b9a",
+            "MODIFIED_BY_USER": "0x31000000000000000000000000000000",
             "UID": "0x11ebb7d6d42b7550b7d68c04ba002958",
             "PROTOTYPE_CLASS": "\\exface\\Core\\CommonLogic\\Queue\\SyncTaskQueue",
             "APP": "0x11e837e87a640bfd91380205857feb80",
@@ -61,7 +61,7 @@
                 "topics": {
                     "all_of": [
                         "ui5",
-                        "offlineTask"
+                        "offline"
                     ]
                 }
             },
