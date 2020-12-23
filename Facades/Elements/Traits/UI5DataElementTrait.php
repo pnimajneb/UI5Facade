@@ -752,7 +752,11 @@ JS;
     }
     
     /**
-     * Returns the JS code to add values from static expressions and widget links to the given UI5 model.
+     * Returns the JS code to add values from widget links to the given UI5 model.
+     * 
+     * While formulas and other expressions are evaluated in the backend, current values
+     * of linked widgets are only known in the front-end, so they need to be added
+     * here via JS.
      * 
      * @param string $oModelJs
      * @return string
@@ -767,25 +771,19 @@ JS;
                 continue;
             }
             $valueExpr = $cellWidget->getValueExpression();
-            switch (true) {
-                case $valueExpr->isReference() === true:
-                    $linkedEl = $this->getFacade()->getElement($valueExpr->getWidgetLink($cellWidget)->getTargetWidget());
-                    $linkedEls[] = $linkedEl;
-                    $val = $linkedEl->buildJsValueGetter();
-                    break;
-                case $valueExpr->isConstant() === true:
-                    $val = json_encode($valueExpr->toString());
-                    break;
-            }
-            $addLocalValuesJs .= <<<JS
-            
-                                oRow["{$col->getDataColumnName()}"] = {$val};
+            if ($valueExpr->isReference() === true) {
+                $linkedEl = $this->getFacade()->getElement($valueExpr->getWidgetLink($cellWidget)->getTargetWidget());
+                $linkedEls[] = $linkedEl;
+                $addLocalValuesJs .= <<<JS
+                
+                                oRow["{$col->getDataColumnName()}"] = {$linkedEl->buildJsValueGetter()};
 JS;
+            }
         }
         if ($addLocalValuesJs) {
             $addLocalValuesJs = <<<JS
             
-                            // Add static values
+                            // Add widget link values
                             ($oModelJs.getData().rows || []).forEach(function(oRow){
                                 {$addLocalValuesJs}
                             });
