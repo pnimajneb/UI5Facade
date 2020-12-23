@@ -310,7 +310,7 @@ JS;
      */
     protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
     {
-        return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . 'console.log("asdf");' . $this->buildJsRedraw($oModelJs . '.getData().rows');
+        return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . $this->buildJsRedraw($oModelJs . '.getData().rows');
     }
     
     /**
