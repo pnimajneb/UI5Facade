@@ -3,15 +3,12 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataTableTrait;
-use exface\Core\Factories\ActionFactory;
 use exface\Core\DataTypes\BinaryDataType;
 use exface\Core\DataTypes\WidgetVisibilityDataType;
-use exface\Core\Actions\DeleteObject;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\Core\Interfaces\DataTypes\DataTypeInterface;
 use exface\Core\DataTypes\HexadecimalNumberDataType;
-use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**

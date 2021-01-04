@@ -367,22 +367,22 @@ JS;
     }
     
     /**
-     * 
-     * {@inheritdoc}
-     * @see UI5DataElementTrait::buildJsBusyCheck()
-     */
-    public function buildJsBusyCheck() : string
-    {
-        return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().getBusy()';
-    }
-    
-    /**
      * {@inheritdoc}
      * @see \exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait::buildJsShowMessageOverlay()
      */
     protected function buildJsShowMessageOverlay(string $message) : string
     {
         return $this->buildJsDataResetter() . ';' . $this->buildJsMessageOverlayShow($message);
+    }
+    
+    /**
+     *
+     * {@inheritdoc}
+     * @see UI5DataElementTrait::buildJsOfflineHint()
+     */
+    protected function buildJsOfflineHint(string $oTableJs = 'oTable') : string
+    {
+        return $this->buildJsShowMessageOverlay($this->translate('WIDGET.DATATABLE.OFFLINE_HINT'));
     }
     
     protected function isEditable()
