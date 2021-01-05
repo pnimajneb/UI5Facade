@@ -33,7 +33,7 @@ class UI5Controller implements UI5ControllerInterface
     
     private $onRouteMatchedScripts = [];
     
-    private $OnPrefillDataChangedScripts = [];
+    private $onPrefillDataChangedScripts = [];
     
     private $onPrefillBeforeLoadScripts = [];
     
@@ -378,13 +378,13 @@ sap.ui.define([
                 // Call prefill scripts only if a data-fetch started and pending is now off!
                 if (oViewModel.getProperty('/_prefill/pending') === false && oViewModel.getProperty('/_prefill/started') === true) {
                     oViewModel.setProperty('/_prefill/started', false);
-                    oController._OnPrefill();
+                    oController._onPrefill();
                 }
             });
             oPrefillStartedBinding.attachChange(function(oEvent){
                 // Call on-before-prefill scripts if the started-flag switches to TRUE
                 if (oViewModel.getProperty('/_prefill/started') === true) {
-                    oController._OnPrefillBeforeLoad();
+                    oController._onPrefillBeforeLoad();
                 }
             });
             
@@ -431,7 +431,7 @@ sap.ui.define([
 		 * 
 		 * @return void
 		 */
-        _OnPrefill : function () {
+        _onPrefill : function () {
             var oController = this;
             {$this->buildJsOnPrefillDataChangedScript()}
         },
@@ -443,7 +443,7 @@ sap.ui.define([
 		 * 
 		 * @return void
 		 */
-        _OnPrefillBeforeLoad : function () {
+        _onPrefillBeforeLoad : function () {
             var oController = this;
             {$this->buildJsOnPrefillBeforeLoadScript()}
         },
@@ -630,7 +630,7 @@ JS;
      */
     public function addOnPrefillDataChangedScript(string $js) : UI5ControllerInterface
     {
-        $this->OnPrefillDataChangedScripts[] = $js . ';';
+        $this->onPrefillDataChangedScripts[] = $js . ';';
         return $this;
     }
     
@@ -640,7 +640,7 @@ JS;
      */
     protected function buildJsOnPrefillDataChangedScript() : string
     {
-        return implode(array_unique($this->OnPrefillDataChangedScripts));
+        return implode(array_unique($this->onPrefillDataChangedScripts));
     }
     
     /**
