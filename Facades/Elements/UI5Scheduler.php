@@ -40,6 +40,7 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
 	showRowHeaders: {$showRowHeaders},
     showEmptyIntervalHeaders: false,
 	showWeekNumbers: true,
+    appointmentSelect: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
 	toolbarContent: [
 		{$this->buildJsToolbarContent($oControllerJs)}
 	],
@@ -210,42 +211,30 @@ JS;
         return $tpl->buildJsValueBinding();
     }
     
-    public function buildJsDataGetter(ActionInterface $action = null)
+    /**
+     * 
+     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     */
+    protected function buildJsGetSelectedRows(string $oCalJs) : string
     {
-        if ($action === null) {
-            $getRows = "var rows = sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows;";
-        } elseif ($action instanceof iReadData) {
-            // If we are reading, than we need the special data from the configurator
-            // widget: filters, sorters, etc.
-            return $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->buildJsDataGetter($action);
-        } else {
-            $getRows = <<<JS
-
-        var aApts = oCal.getSelectedAppointments(),
-            sUid,
-            rows = [],
-            data = sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows;
-
-        for (var i in aApts) {
-            var sUid = sap.ui.getCore().byId(aApts[i]).getKey();
-            for (var j in data) {
-                if (data[j]['{$this->getWidget()->getMetaObject()->getUidAttributeAlias()}'] == sUid) {
-                    rows.push(data[j]);
+        return <<<JS
+        function(){
+            var aApts = $oCalJs.getSelectedAppointments(),
+                sUid,
+                rows = [],
+                data = sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows;
+    
+            for (var i in aApts) {
+                var sUid = sap.ui.getCore().byId(aApts[i]).getKey();
+                for (var j in data) {
+                    if (data[j]['{$this->getWidget()->getMetaObject()->getUidAttributeAlias()}'] == sUid) {
+                        rows.push(data[j]);
+                    }
                 }
             }
-        }
+            return rows;
+        }()
 
-JS;
-        }
-        return <<<JS
-    function() {
-        var oCal = sap.ui.getCore().byId('{$this->getId()}');
-        {$getRows}
-        return {
-            oId: '{$this->getWidget()->getMetaObject()->getId()}',
-            rows: (rows === undefined ? [] : rows)
-        };
-    }()
 JS;
     }
     

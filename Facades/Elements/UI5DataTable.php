@@ -4,10 +4,7 @@ namespace exface\UI5Facade\Facades\Elements;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataTableTrait;
-use exface\Core\Widgets\Button;
-use exface\Core\Widgets\ButtonGroup;
 use exface\Core\Widgets\DataTableResponsive;
-use exface\Core\Widgets\MenuButton;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Widgets\DataColumn;
 use exface\Core\Widgets\DataButton;
@@ -94,6 +91,7 @@ class UI5DataTable extends UI5AbstractElement
             $toolbar = '';
         }
         
+        $controller = $this->getController();
         return <<<JS
         new sap.m.VBox({
             width: "{$this->getWidth()}",
@@ -104,8 +102,8 @@ class UI5DataTable extends UI5AbstractElement
                     sticky: [sap.m.Sticky.ColumnHeaders, sap.m.Sticky.HeaderToolbar],
                     alternateRowColors: {$striped},
                     noDataText: "{$this->getWidget()->getEmptyText()}",
-            		itemPress: {$this->buildJsOnChangeTrigger(true)},
-                    selectionChange: {$this->buildJsOnChangeTrigger(true)},
+            		itemPress: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
+                    selectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
                     mode: {$mode},
                     headerToolbar: [
                         {$toolbar}
@@ -138,6 +136,11 @@ class UI5DataTable extends UI5AbstractElement
 JS;
     }
     
+    /**
+     * 
+     * @param string $oControllerJs
+     * @return string
+     */
     protected function buildJsConstructorForMTableFooter(string $oControllerJs = 'oController') : string
     {
         $visible = $this->getWidget()->isPaged() === false || $this->getWidget()->getHideFooter() === true ? 'false' : 'true';
@@ -154,6 +157,10 @@ JS;
 JS;
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsBindingOptionsForGrouping()
     {
         $widget = $this->getWidget();
@@ -208,7 +215,7 @@ JS;
                 enableColumnFreeze: true,
         		filter: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
         		sort: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
-                rowSelectionChange: {$this->buildJsOnChangeTrigger(true)},
+                rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
                 firstVisibleRowChanged: {$controller->buildJsEventHandler($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, true)},
         		toolbar: [
         			{$toolbar}
@@ -482,56 +489,25 @@ JS;
     }
     
     /**
-     *
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueGetter()
+     * 
+     * @see UI5DataElementTrait::buildJsGetSelectedRows()
      */
-    public function buildJsValueGetter($dataColumnName = null, $rowNr = null)
-    {
-        $widget = $this->getWidget();
-        $rows = $this->buildJsGetSelectedRows('oTable');
-        if ($dataColumnName !== null) {
-            /* @var $col \exface\Core\Widgets\DataColumn */
-            if (! $col = $widget->getColumnByDataColumnName($dataColumnName)) {
-                if ($col = $widget->getColumnByAttributeAlias($dataColumnName)) {
-                    $dataColumnName = $col->getDataColumnName();
-                }
-            }
-            if (! $col && ! ($widget->getMetaObject()->getUidAttributeAlias() === $dataColumnName)) {
-                throw new WidgetConfigurationError($this->getWidget(), 'Cannot build live value getter for ' . $this->getWidget()->getWidgetType() . ': column "' . $dataColumnName . '" not found!');
-            }
-            $delim = $col && $col->isBoundToAttribute() ? $col->getAttribute()->getValueListDelimiter() : EXF_LIST_SEPARATOR;
-            $colMapper = '.map(function(value,index) { return value === undefined ? "" : value["' . $dataColumnName . '"];}).join("' . $delim . '")';
-        } else {
-            $colMapper = '';
-        }
-        
-        return <<<JS
-        
-(function(){
-    var oTable = sap.ui.getCore().byId('{$this->getId()}');
-    return {$rows}{$colMapper};
-}() || '')
-
-JS;
-    }
-        
     protected function buildJsGetSelectedRows(string $oTableJs) : string
     {
         if ($this->isUiTable()) {
             if($this->getWidget()->getMultiSelect() === false) {
-                $row = "($oTableJs.getSelectedIndex() !== -1 && $oTableJs.getModel().getData().rows !== undefined ? [$oTableJs.getModel().getData().rows[$oTableJs.getSelectedIndex()]] : [])";
+                $rows = "($oTableJs.getSelectedIndex() !== -1 && $oTableJs.getModel().getData().rows !== undefined ? [$oTableJs.getModel().getData().rows[$oTableJs.getSelectedIndex()]] : [])";
             } else {
-                $row = "function(){var selectedIdx = $oTableJs.getSelectedIndices(); var aRows = []; selectedIdx.forEach(index => aRows.push($oTableJs.getModel().getData().rows[index])); return aRows;}()";
+                $rows = "function(){var selectedIdx = $oTableJs.getSelectedIndices(); var aRows = []; selectedIdx.forEach(index => aRows.push($oTableJs.getModel().getData().rows[index])); return aRows;}()";
             }
         } else {
             if($this->getWidget()->getMultiSelect() === false) {
-                $row = "($oTableJs.getSelectedItem() ? [$oTableJs.getSelectedItem().getBindingContext().getObject()] : [])";
+                $rows = "($oTableJs.getSelectedItem() ? [$oTableJs.getSelectedItem().getBindingContext().getObject()] : [])";
             } else {
-                $row = "$oTableJs.getSelectedContexts().reduce(function(aRows, oCtxt) {aRows.push(oCtxt.getObject()); return aRows;},[])";
+                $rows = "$oTableJs.getSelectedContexts().reduce(function(aRows, oCtxt) {aRows.push(oCtxt.getObject()); return aRows;},[])";
             }
         }
-        return $row;
+        return $rows;
     }
         
     /**
@@ -700,7 +676,7 @@ JS;
 
             {$paginator->buildJsSetTotal($oModelJs . '.getProperty("/recordsFiltered")', 'oController')};
             {$paginator->buildJsRefresh('oController')};  
-            {$this->buildJsOnChangeTrigger(false)};
+            {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, false)};
             {$singleResultJs};
             {$sortOrderFix};
             {$heightFix};
@@ -757,13 +733,13 @@ JS;
     public function buildJsSelectRowByIndex(string $oTableJs = 'oTable', string $iRowIdxJs = 'iRowIdx', bool $deSelect = false) : string
     {
         if ($this->isMList() === true) {
-                $setSelectJs = ($deSelect === true) ? 'false' : 'true';
-                return <<<JS
+            $setSelectJs = ($deSelect === true) ? 'false' : 'true';
+            return <<<JS
 
-                    var oItem = {$oTableJs}.getItems()[{$iRowIdxJs}];
-                    {$oTableJs}.setSelectedItem(oItem, {$setSelectJs});
-                    {$oTableJs}.fireSelectionChange({listItem: oItem, selected: $setSelectJs});
-                    oItem.focus();
+                var oItem = {$oTableJs}.getItems()[{$iRowIdxJs}];
+                {$oTableJs}.setSelectedItem(oItem, {$setSelectJs});
+                {$oTableJs}.fireSelectionChange({listItem: oItem, selected: $setSelectJs});
+                oItem.focus();
 
 JS;
 
@@ -933,35 +909,6 @@ JS;
                         } 
 
 JS;
-        }
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsOnEventScript()
-     */
-    public function buildJsOnEventScript(string $eventName, string $scriptJs, string $oEventJs) : string
-    {
-        switch ($eventName) {
-            case self::EVENT_NAME_CHANGE:
-                return <<<JS
-                
-            // Check, if selection actually changed. Return here if not.
-            if ((function(){
-                var oTable = sap.ui.getCore().byId('{$this->getId()}');
-                var newSelection = {$this->buildJsGetSelectedRows('oTable')};
-                var oldSelection = oTable.data('exfPreviousSelection') || [];
-                oTable.data('exfPreviousSelection', newSelection);
-                return {$this->buildJsRowCompare('oldSelection', 'newSelection', false)};
-            })()) {
-                return;
-            }
-            {$scriptJs}
-            
-JS;
-            default:
-                return parent::buildJsOnEventScript($eventName, $scriptJs, $oEventJs);
         }
     }
 

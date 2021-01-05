@@ -14,6 +14,9 @@ use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
  * 
+ * TODO call `$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE)` when a list item is 
+ * selected. Also call getOnSelectScript() there somewhere.
+ * 
  * @method \exface\Core\Widgets\FileList getWidget()
  * 
  * @author Andrej Kabachnik
@@ -85,6 +88,7 @@ class UI5FileList extends UI5AbstractElement
 
         new sap.m.upload.UploadSet('{$this->getId()}', {
             showIcons: true,
+            selectionChanged: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
             {$this->buildJsPropertyUpload()}
             beforeItemRemoved: {$controller->buildJsEventHandler($this, self::EVENT_NAME_BEFORE_ITEM_REMOVED, true)},
             items: {
@@ -431,34 +435,22 @@ JS;
 JS;
     }
     
-    public function buildJsDataGetter(ActionInterface $action = null)
+    /**
+     *
+     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     */
+    protected function buildJsGetSelectedRows(string $oControlJs) : string
     {
-        if ($action === null) {
-            $rows = "sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows";
-        } elseif ($action instanceof iReadData) {
-            // If we are reading, than we need the special data from the configurator
-            // widget: filters, sorters, etc.
-            return $this->getConfiguratorElement()->buildJsDataGetter($action);
-        } else {
-            $rows = '[];' . <<<JS
-                
-        var aSelectedItems = oTable.getSelectedItems();
-        var oModelData = oTable.getModel().getData();
-        aSelectedItems.forEach(function(oItem){
-            rows.push(oModelData.rows[oTable.indexOfItem(oItem)]);
-        });
-        
-JS;
-        }
         return <<<JS
-    function() {
-        var oTable = sap.ui.getCore().byId('{$this->getId()}').getList();
-        var rows = {$rows};
-        return {
-            oId: '{$this->getWidget()->getMetaObject()->getId()}',
-            rows: (rows === undefined ? [] : rows)
-        };
-    }()
+                function() {
+                    var oList = $oControlJs.getList();
+                    var aRows = [];
+                    var oModelData = oList.getModel().getData();
+                    oList.getSelectedItems().forEach(function(oItem){
+                        aRows.push(oModelData.rows[oList.indexOfItem(oItem)]);
+                    });
+                    return aRows;
+                }()
 JS;
     }
     

@@ -243,8 +243,11 @@ JS;
         })();
         
 JS;
-        
-        $this->getDataElement()->addOnChangeScript($bindingScript);
+        if (method_exists($this->getDataElement(), 'addOnSelectScript')) {
+            $this->getDataElement()->addOnSelectScript($bindingScript);
+        } else {
+            $this->getDataElement()->addOnChangeScript($bindingScript);
+        }
         return $this;
     }
     

@@ -12,8 +12,6 @@ use exface\Core\Interfaces\Widgets\iCanPreloadData;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
 use exface\UI5Facade\Facades\Interfaces\UI5ViewInterface;
 use exface\Core\Interfaces\Widgets\iHaveIcon;
-use exface\UI5Facade\Facades\Interfaces\UI5ModelInterface;
-use exface\Core\Interfaces\Widgets\iTakeInput;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 
 /**

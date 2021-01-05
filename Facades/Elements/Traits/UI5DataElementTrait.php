@@ -17,6 +17,10 @@ use exface\UI5Facade\Facades\Elements\UI5DataPaginator;
 use exface\Core\Widgets\Button;
 use exface\Core\Widgets\MenuButton;
 use exface\Core\Widgets\ButtonGroup;
+use exface\Core\Exceptions\Facades\FacadeLogicError;
+use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
+use exface\Core\Interfaces\Actions\ActionInterface;
+use exface\Core\Interfaces\Actions\iReadData;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -99,6 +103,8 @@ trait UI5DataElementTrait {
     private $dynamicPageHeaderCollapsed = null;
     
     private $dynamicPageShowToolbar = false;
+    
+    private $OnSelectScripts = [];
     
     /**
      *
@@ -1220,21 +1226,6 @@ JS;
     }
     
     /**
-     * Fires the onChange event and triggers all onChange-scripts if the current value really changed.
-     * 
-     * Set $buildForView=true if the snippet is to be used in a view (i.e. as value of a control property)
-     * and $buildForView=false if you simply need to call the event handler from some other controller code.
-     * 
-     * @param bool $buildForView
-     * @return string
-     */
-    protected function buildJsOnChangeTrigger(bool $buildForView) : string
-    {
-        // TODO check if the selected row and it's data really changed - like in jEasyUI
-        return $this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, $buildForView);
-    }
-    
-    /**
      * Returns whether the dynamic page header should be collapsed or not, or if this has not been defined for this object.
      * 
      * @return bool|NULL
@@ -1600,15 +1591,17 @@ JS;
      */
     protected function buildJsClickHandlerLeftClick($oControllerJsVar = 'oController') : string
     {
+        $onClickJs = $this->getOnSelectScript();
         // Single click. Currently only supports one click action - the first one in the list of buttons
-        if ($leftclick_button = $this->getWidget()->getButtonsBoundToMouseAction(EXF_MOUSE_ACTION_LEFT_CLICK)[0]) {
+        if ($onClickJs || $leftclick_button = $this->getWidget()->getButtonsBoundToMouseAction(EXF_MOUSE_ACTION_LEFT_CLICK)[0]) {
+            $btnJs = $leftclick_button ? $this->getFacade()->getElement($leftclick_button)->buildJsClickEventHandlerCall($oControllerJsVar) : '';
             return <<<JS
             
             .attachBrowserEvent("click", function(oEvent) {
         		var oTargetDom = oEvent.target;
                 if(! ({$this->buildJsClickIsTargetRowCheck('oTargetDom')})) return;
-                
-                {$this->getFacade()->getElement($leftclick_button)->buildJsClickEventHandlerCall($oControllerJsVar)};
+                {$onClickJs}
+                {$btnJs};
             })
 JS;
         }
@@ -1746,5 +1739,161 @@ JS;
             $f->getElement($col)->registerExternalModules($controller);
         }
         return $this;
+    }
+    
+    /**
+     * 
+     * @param string $js
+     * @return UI5AbstractElement
+     */
+    public function addOnSelectScript(string $js) : UI5AbstractElement
+    {
+        $this->OnSelectScripts[] = $js;
+        return $this;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function getOnSelectScript() : string
+    {
+        return implode(";\n", array_unique($this->OnSelectScripts));
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueGetterMethod()
+     */
+    public function buildJsValueGetterMethod()
+    {
+        throw new FacadeLogicError('Cannot call buildJsValueGetterMethod() on a UI5 data element: use buildJsValueGetter() instead!');
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueSetterMethod()
+     */
+    public function buildJsValueSetterrMethod($valueJs)
+    {
+        throw new FacadeLogicError('Cannot call buildJsValueSetterMethod() on a UI5 data element: use buildJsValueSetter() instead!');
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueGetter()
+     */
+    public function buildJsValueGetter($dataColumnName = null, $rowNr = null)
+    {
+        $widget = $this->getDataWidget();
+        $rows = $this->buildJsGetSelectedRows('oTable');
+        if ($dataColumnName !== null) {
+            /* @var $col \exface\Core\Widgets\DataColumn */
+            if (! $col = $widget->getColumnByDataColumnName($dataColumnName)) {
+                if ($col = $widget->getColumnByAttributeAlias($dataColumnName)) {
+                    $dataColumnName = $col->getDataColumnName();
+                }
+            }
+            if (! $col && ! ($widget->getMetaObject()->getUidAttributeAlias() === $dataColumnName)) {
+                throw new WidgetConfigurationError($this->getWidget(), 'Cannot build live value getter for ' . $this->getWidget()->getWidgetType() . ': column "' . $dataColumnName . '" not found!');
+            }
+            $delim = $col && $col->isBoundToAttribute() ? $col->getAttribute()->getValueListDelimiter() : EXF_LIST_SEPARATOR;
+            $colMapper = '.map(function(value,index) { return value === undefined ? "" : value["' . $dataColumnName . '"];}).join("' . $delim . '")';
+        } else {
+            $colMapper = '';
+        }
+        
+        return <<<JS
+        
+(function(){
+    var oTable = sap.ui.getCore().byId('{$this->getId()}');
+    return {$rows}{$colMapper};
+}() || '')
+
+JS;
+    }
+    
+    /**
+     * Returns an inline-snippet (without `;`) to get an array of the currently selected data rows.
+     * 
+     * If no data is selected, the JS snippet must resolve to an empty array.
+     * 
+     * Each item of the array must be a JS object with the same structure as the rows in
+     * the main model of the data widget (in other words, it should contain a selection of
+     * those rows).
+     * 
+     * For single-select widget, this method must return an array with one or zero elements.
+     * 
+     * @param string $oControlJs
+     * @return string
+     */
+    protected abstract function buildJsGetSelectedRows(string $oControlJs) : string;
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsDataGetter()
+     */
+    public function buildJsDataGetter(ActionInterface $action = null)
+    {
+        if ($action === null) {
+            $getRows = "var rows = oControl.getModel().getData().rows;";
+        } elseif ($action instanceof iReadData) {
+            // If we are reading, than we need the special data from the configurator
+            // widget: filters, sorters, etc.
+            return $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->buildJsDataGetter($action);
+        } else {
+            $getRows = 'var rows = ' . $this->buildJsGetSelectedRows('oControl') . ';';
+        }
+        return <<<JS
+    function() {
+        var oControl = sap.ui.getCore().byId('{$this->getId()}');
+        {$getRows}
+        return {
+            oId: '{$this->getWidget()->getMetaObject()->getId()}',
+            rows: (rows === undefined ? [] : rows)
+        };
+    }()
+JS;
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsOnEventScript()
+     */
+    public function buildJsOnEventScript(string $eventName, string $scriptJs, string $oEventJs) : string
+    {
+        $parentResult = parent::buildJsOnEventScript($eventName, $scriptJs, $oEventJs);
+        switch ($eventName) {
+            // Before the change event is fired, check if the selection actually did change by
+            // comparing it to a saved copy of the previous selection.
+            case self::EVENT_NAME_CHANGE:
+                return <<<JS
+                
+            // Perform the on-select scripts in any case
+            {$this->getOnSelectScript()}
+            
+            // Check, if selection actually changed. Return here if not.
+            if (
+                (function(){
+                    var oControl = sap.ui.getCore().byId('{$this->getId()}');
+                    var newSelection = {$this->buildJsGetSelectedRows('oControl')};
+                    var oldSelection = oControl.data('exfPreviousSelection') || [];
+                    oControl.data('exfPreviousSelection', newSelection);
+                    return {$this->buildJsRowCompare('oldSelection', 'newSelection', false)};
+                })()
+            ) {
+                return;
+            }
+            {$parentResult}
+            
+JS;
+            default:
+                return $parentResult;
+        }
     }
 }

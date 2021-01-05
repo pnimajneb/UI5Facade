@@ -2,14 +2,13 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Facades\AbstractAjaxFacade\Elements\EChartsTrait;
-use exface\Core\Widgets\Chart;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Widgets\Data;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 
 /**
  * 
- * @method Chart getWidget()
+ * @method exface\Core\Widgets\Chart getWidget()
  * @method UI5ControllerInterface getController()
  * 
  * @author Andrej Kabachnik
@@ -23,6 +22,8 @@ class UI5Chart extends UI5AbstractElement
         buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
         UI5DataElementTrait::buildJsRowCompare insteadof EChartsTrait;
         EChartsTrait::buildJsDataResetter insteadof UI5DataElementTrait;
+        EChartsTrait::buildJsValueGetter insteadof UI5DataElementTrait;
+        EChartsTrait::buildJsDataGetter insteadof UI5DataElementTrait;
     }
     
     /**
@@ -385,8 +386,47 @@ JS;
         return $this->buildJsShowMessageOverlay($this->translate('WIDGET.DATATABLE.OFFLINE_HINT'));
     }
     
+    /**
+     * 
+     * @see UI5DataElementTrait::isEditable()
+     */
     protected function isEditable()
     {
         return false;
+    }
+    
+    /**
+     * 
+     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     */
+    protected function buildJsGetSelectedRows(string $oControlJs) : string
+    {
+        return $this->buildJsDataGetter() . '.rows';
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsOnEventScript()
+     */
+    public function buildJsOnEventScript(string $eventName, string $scriptJs, string $oEventJs) : string
+    {
+        switch ($eventName) {
+            // The UI5DataElementTrait prevents the change event from firing if the currently
+            // selected data is the same as the previous selection. This does not work with
+            // the EChartsTrait as the previously selected data is updated earlier. Also
+            // the EChartsTrait does the change-check by itself.
+            case self::EVENT_NAME_CHANGE:
+                return <<<JS
+                
+            // Perform the on-select scripts in any case
+            {$this->getOnSelectScript()}
+
+            {$scriptJs}
+            
+JS;
+            default:
+                return parent::buildJsOnEventScript($eventName, $scriptJs, $oEventJs);
+        }
     }
 }

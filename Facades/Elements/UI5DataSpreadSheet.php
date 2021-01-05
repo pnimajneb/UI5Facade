@@ -1,7 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\DataTypes\StringDataType;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JExcelTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
@@ -9,7 +8,10 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 class UI5DataSpreadSheet extends UI5AbstractElement
 {    
     use JExcelTrait;
-    use UI5DataElementTrait;
+    use UI5DataElementTrait {
+        
+        JExcelTrait::buildJsDataGetter insteadof UI5DataElementTrait;
+    }
     
     /**
      *
@@ -117,4 +119,25 @@ JS;
         
         return $this;
     }
+    
+    /**
+     *
+     * {@inheritdoc}
+     * @see UI5DataElementTrait::isEditable()
+     */
+    protected function isEditable()
+    {
+        return true;
+    }
+
+    /**
+     *
+     * {@inheritdoc}
+     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     */
+    protected function buildJsGetSelectedRows(string $oTableJs): string
+    {
+        return '[]';
+    }
+
 }
