@@ -275,7 +275,7 @@ JS;
         if ($this->needsPrefill()) {
             $prefill = $this->buildJsPrefillLoader('oView');
         } else {
-            $prefill = 'this._onPrefill();';
+            $prefill = 'if (typeof this._onPrefill === "function") {this._onPrefill();}';
         }
         
         // Finally, instantiate the dialog

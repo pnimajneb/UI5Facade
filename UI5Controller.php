@@ -361,6 +361,15 @@ sap.ui.define([
             var oController = this;
             var oView = this.getView();
 
+            // Make sure the main view of the controller is removed from router cache
+            // when it gets destroyed. If not done so, we were getting an error when trying
+            // to reload the view: "object was destroyed and cannot be used again". Don't
+            // know if this is a good solution, but it works for now.
+            oView.attachBeforeExit(function() {
+                var oRouter = oController.getRouter();
+                delete oRouter._oViews._oCache.view[oView.getViewName()];
+            });
+
             // Init model for view settings
             var oViewModel = new sap.ui.model.json.JSONModel({
                 _prefill: {

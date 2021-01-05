@@ -3,7 +3,6 @@ namespace exface\UI5Facade;
 
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ViewInterface;
-use exface\Core\Interfaces\WidgetInterface;
 use exface\UI5Facade\Facades\Elements\UI5AbstractElement;
 use exface\Core\DataTypes\StringDataType;
 use exface\UI5Facade\Facades\Interfaces\UI5ModelInterface;
