@@ -264,7 +264,8 @@ JS;
         visible: true,
         template: new sap.ui.core.Icon({
             src: "sap-icon://user-edit",
-            visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}"
+            visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}",
+            tooltip: "{i18n>WEBAPP.SHELL.NETWORK.OFFLINE_CHANGES_PENDING}"
         })
     })
 JS;
@@ -280,7 +281,8 @@ JS;
         $cells .= <<<JS
     ,new sap.ui.core.Icon({
         src: "sap-icon://user-edit",
-        visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}"
+        visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}",
+        tooltip: "{i18n>WEBAPP.SHELL.NETWORK.OFFLINE_CHANGES_PENDING}"
     }),
 JS;
         return $cells;
@@ -702,10 +704,12 @@ JS;
      */
     protected function buildJsOfflineHint(string $oTableJs = 'oTable') : string
     {
-        if ($this->isMList()) {
-            return $oTableJs . ".setNoDataText('{$this->translate('WIDGET.DATATABLE.OFFLINE_HINT')}');";
+        $hint = $this->escapeJsTextValue($this->translate('WIDGET.DATATABLE.OFFLINE_HINT'));
+        if ($this->isMList() || $this->isMTable()) {
+            return $oTableJs . '.setNoDataText("' . $hint . '");';
+        } else {
+            return "sap.ui.getCore().byId('{$this->getId()}_noData').setText(\"{$hint}\")";
         }
-        
         return '';
     }
     

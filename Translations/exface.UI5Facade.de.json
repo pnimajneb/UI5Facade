@@ -73,6 +73,7 @@
 	"WEBAPP.SHELL.NETWORK.STORAGE_WIDGET": "Widget-ID",
 	"WEBAPP.SHELL.NETWORK.STORAGE_DATASETS": "Datensätze",
 	"WEBAPP.SHELL.NETWORK.STORAGE_LAST_SYNC": "Letzte Synchronisation",
+	"WEBAPP.SHELL.NETWORK.OFFLINE_CHANGES_PENDING": "Offline-Änderungen noch nicht synchronisiert",
 	"WEBAPP.SHELL.PRELOAD.CLEARED": "Alle Offline-Daten gelöscht",
 	"WEBAPP.SHELL.PRELOAD.CLEARED_ERROR": "Löschen der Offline-Daten fehlgeschlagen.",
 	"WEBAPP.SHELL.PRELOAD.MENU": "Offline-Daten",

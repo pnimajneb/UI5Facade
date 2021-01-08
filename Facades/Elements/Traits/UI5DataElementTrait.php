@@ -614,7 +614,7 @@ JS;
 
 JS;
             
-        $onErrorJs = 'delete oTable._exfPendingData;' . $this->buildJsBusyIconHide();
+        $onErrorJs = 'delete oTable._exfPendingData; ' . $this->buildJsBusyIconHide();
         $onOfflineJs = $onErrorJs . $this->buildJsOfflineHint('oTable');
         
         $loadViaServerAdapterJs = $this->getServerAdapter()->buildJsServerRequest(
