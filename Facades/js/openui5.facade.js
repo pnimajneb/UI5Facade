@@ -446,7 +446,7 @@ const exfLauncher = {};
 																	new sap.m.Column({
 																		header: [
 																			new sap.m.Label({
-																				text: '{i18n>WEBAPP.SHELL.NETWORK.ERROR_TABLE_QUEUE}'
+																				text: '{i18n>WEBAPP.SHELL.NETWORK.ERROR_MESSAGE}'
 																			})
 																		]
 																	})
@@ -471,7 +471,7 @@ const exfLauncher = {};
 																				text: "{errorModel>ERROR_LOGID}"
 																			}),
 																			new sap.m.Text({
-																				text: "{errorModel>QUEUE__NAME}"
+																				text: "{errorModel>ERROR_MESSAGE}"
 																			})
 																		]
 																	})
