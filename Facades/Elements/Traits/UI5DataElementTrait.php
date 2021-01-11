@@ -1433,24 +1433,29 @@ JS;
         (function(){
             var oData = $oModelJs.getData();
             var aRows = oData.rows;
-            var rowsMarked = false;
+            var bRowsDirty = false;
             exfPreloader.getActionObjectData('{$widget->getMetaObject()->getId()}')
             .then(function(actionRows) {
+                var oDirtyIcon = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
                 for (var i = 0; i < actionRows.length; i++) {
                     for (var j = 0; j < aRows.length; j++) {
                         var actionId = actionRows[i]['{$uidAttributeAlias}'];
                         var rowId = aRows[j]['{$uidAttributeAlias}'];
                         if (actionRows[i]['{$uidAttributeAlias}'] == aRows[j]['{$uidAttributeAlias}']) {
                             aRows[j]['{$this->getDirtyFlagAlias()}'] = true;
-                            rowsMarked = true;
+                            bRowsDirty = true;
                             break;
                         }
                     }
                 }
-                var element = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
-                if (element) {
-                    element.setVisible(rowsMarked);
+                if (oDirtyIcon) {
+                    oDirtyIcon.setVisible(bRowsDirty);
                 }
+
+                if (bRowsDirty) {
+                    oData._dirty = true;
+                }
+
                 oData.rows = aRows;
                 $oModelJs.setData(oData);                
             })
@@ -1850,8 +1855,16 @@ JS;
         }
         return <<<JS
     function() {
+        var oDirtyCtrl = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
         var oControl = sap.ui.getCore().byId('{$this->getId()}');
         {$getRows}
+
+        if (oControl.getModel().getProperty('/_dirty') || (oDirtyCtrl && oDirtyCtrl.getVisible() === true)) {
+            for (var i = 0; i < rows.length; i++) {
+                delete rows[i]['{$this->getDirtyFlagAlias()}'];
+            }
+        }
+
         return {
             oId: '{$this->getWidget()->getMetaObject()->getId()}',
             rows: (rows === undefined ? [] : rows)

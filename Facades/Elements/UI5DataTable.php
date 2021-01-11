@@ -481,7 +481,15 @@ JS;
         return <<<JS
     function() {
         var oTable = sap.ui.getCore().byId('{$this->getId()}');
+        var oDirtyCtrl = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
         var rows = {$rows};
+
+        if (oTable.getModel().getProperty('/_dirty') || (oDirtyCtrl && oDirtyCtrl.getVisible() === true)) {
+            for (var i = 0; i < rows.length; i++) {
+                delete rows[i]['{$this->getDirtyFlagAlias()}'];
+            }
+        }
+        
         return {
             oId: '{$this->getWidget()->getMetaObject()->getId()}',
             rows: (rows === undefined ? [] : rows)
