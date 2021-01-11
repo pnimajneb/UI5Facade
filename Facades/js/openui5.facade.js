@@ -25,7 +25,7 @@ window.addEventListener('online', function(){
 		})
 		.catch(function(error){
 			shell.setBusy(false);
-			exfLauncher.showMessageToast("Sync failed. " + error);
+			exfLauncher.showMessageToast("Cannot synchronize offline actions: " + error);
 		})
 	}
 });
@@ -170,7 +170,7 @@ const exfLauncher = {};
 																						return;
 																					})
 																					.catch(function(error){
-																						console.error('Sync Error: ', error);
+																						console.error('Offline action sync error: ', error);
 																						_oLauncher.contextBar.getComponent().getPreloader().updateQueueCount()
 																						.then(function(){
 																							_oLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
@@ -350,10 +350,10 @@ const exfLauncher = {};
 																				text: "{queueModel>id}"
 																			}),
 																			new sap.m.Text({
-																				text: "{queueModel>object}"
+																				text: "{queueModel>object_name}"
 																			}),
 																			new sap.m.Text({
-																				text: "{queueModel>action_alias}"
+																				text: "{queueModel>action_name}"
 																			}),
 																			new sap.m.Text({
 																				text: "{queueModel>triggered}"
@@ -884,7 +884,7 @@ const exfLauncher = {};
 				} else {
 					oRow.addCell(new sap.m.Text({text: '0'}));
 
-					oRow.addCell(new sap.m.Text({text: 'not synced'}));
+					oRow.addCell(new sap.m.Text({text: '{i18n>WEBAPP.SHELL.NETWORK.STORAGE_NOT_SYNCED}'}));
 				}
 				oTable.addItem(oRow);						
 			});

@@ -48,27 +48,42 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
     {
         $headers = ! empty($this->getElement()->getAjaxHeaders()) ? 'headers: ' . json_encode($this->getElement()->getAjaxHeaders()) . ',' : '';        
         $controller = $this->getElement()->getController();
+        
+        $actionName = $this->getElement()->getWidget()->getCaption();
+        if ($actionName === null || $actionName === '') {
+            $actionName = $action->getName();
+        }
+        $actionNameJs = json_encode($actionName);
+        $objectNameJs = json_encode($action->getMetaObject()->getName());
+        
+        $translator = $this->getElement()->getFacade()->getApp()->getTranslator();
+        
         return <<<JS
 
 							$oParamsJs.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';
                             var oComponent = {$controller->buildJsComponentGetter()};                
-                            if (!navigator.onLine) {
+                            if (! navigator.onLine) {
                                 if (exfPreloader) {
                                     var actionParams = {
                                         type: 'POST',
         								url: '{$this->getElement()->getAjaxUrl()}',
                                         {$headers}
         								data: {$oParamsJs}
-                                    }                                
-                                    exfPreloader.addAction(actionParams, '{$action->getMetaObject()->getAliasWithNamespace()}')
+                                    };                          
+                                    exfPreloader.addAction(
+                                        actionParams, 
+                                        '{$action->getMetaObject()->getAliasWithNamespace()}',
+                                        {$actionNameJs},
+                                        {$objectNameJs}
+                                    )
                                     .then(function(key) {
-                                        var response = {success: 'Action saved in offline queue!'};
+                                        var response = {success: '{$translator->translate('WEBAPP.SHELL.NETWORK.ACTION_QUEUED')}'};
                                         $oModelJs.setData(response);
                                         $onModelLoadedJs
                                     })
                                     .catch(function(error) {
                                         console.error(error);
-                                        var response = {error: 'Action could not be saved in offline queue!'}
+                                        var response = {error: '{$translator->translate('WEBAPP.SHELL.NETWORK.ACTION_QUEUE_FAILED')}'}
                                         {$this->getElement()->buildJsShowMessageError('response.error', '"Server error"')}
                                         {$onErrorJs}
                                     })
