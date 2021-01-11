@@ -69,10 +69,24 @@ class UI5Dialog extends UI5Form
         $this->registerSubmitOnEnter($oControllerJs);
         
         if ($this->isMaximized() === false) {
-            $this->getController()->addMethod('closeDialog', $this, 'oEvent', "try{ this.getView().getModel('view').setProperty('/_prefill/current_data_hash', null); sap.ui.getCore().byId('{$this->getFacade()->getElement($widget)->getId()}').close(); } catch (e) { console.error('Could not close dialog: ' + e); }");
+            $this->getController()->addMethod('closeDialog', $this, 'oEvent', <<<JS
+
+                try { 
+                    this.getView().getModel('view').setProperty('/_prefill/current_data_hash', null); 
+                    sap.ui.getCore().byId('{$this->getFacade()->getElement($widget)->getId()}').close(); 
+                } catch (e) { 
+                    console.error('Could not close dialog: ' + e); 
+                }
+JS
+            );
             return $this->buildJsDialog();
         } else {
-            $this->getController()->addMethod('closeDialog', $this, 'oEvent', "this.getView().getModel('view').setProperty('/_prefill/current_data_hash', null); this.onNavBack(oEvent);");
+            $this->getController()->addMethod('closeDialog', $this, 'oEvent', <<<JS
+
+                this.getView().getModel('view').setProperty('/_prefill/current_data_hash', null); 
+                this.onNavBack(oEvent);
+JS
+            );
             $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget){
                 return $widget->isHidden() === false;
             });
@@ -448,12 +462,12 @@ JS;
         // If the prefill cannot be fetched due to being offline, show the offline message view
         // (if the dialog is a page) or an error-popup (if the dialog is a regular dialog).
         if ($this->isMaximized()) {
-            $offlineError = $oViewJs . '.getController().getRouter().getTargets().display("offline")';
+            $showOfflineMsgJs = $oViewJs . '.getController().getRouter().getTargets().display("offline")';
         } else {
-            $offlineError = <<<JS
+            $showOfflineMsgJs = <<<JS
             
             {$this->getController()->buildJsComponentGetter()}.showDialog('{$this->translate('WIDGET.DATATABLE.OFFLINE_ERROR_TITLE')}', '{$this->translate('WIDGET.DATATABLE.OFFLINE_ERROR')}', 'Error');
-            sap.ui.getCore().byId("{$this->getId()}").close();
+            {$this->buildJsCloseDialog()}
             
 JS;
         }
@@ -469,6 +483,13 @@ JS;
                 break;
             default: $filterRequestParams = '';  
         }
+        
+        $hideBusyJs = <<<JS
+
+                {$this->buildJsBusyIconHide()}; 
+                oViewModel.setProperty('/_prefill/pending', false);
+
+JS;
         
         // FIXME use buildJsPrefillLoaderSuccess here somewere?
         
@@ -503,15 +524,17 @@ JS;
             }
 
             oViewModel.setProperty('/_prefill/started', true);
+            oViewModel.setProperty('/_prefill/data', {});
+
             oResultModel.setData({});
             
             {$this->getServerAdapter()->buildJsServerRequest(
                 $action,
                 'oResultModel',
                 'data',
-                "{$this->buildJsBusyIconHide()}; oViewModel.setProperty('/_prefill/pending', false); ",
-                "console.error('Error loading prefill data!'); {$this->buildJsBusyIconHide()}; oViewModel.setProperty('/_prefill/pending', false);",
-                $offlineError
+                $hideBusyJs . " setTimeout(function(){ oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON())) }, 0);",
+                $hideBusyJs,
+                $showOfflineMsgJs
             )}
         })();
 			

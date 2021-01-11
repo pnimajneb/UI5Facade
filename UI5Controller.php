@@ -898,7 +898,8 @@ JS;
                         oViewModel.setProperty('/_prefill/pending', false);
                         {$callerElement->buildJsBusyIconHide()};
 JS;
-        $onModelLoadedJs .= $stopJs;               
+        
+        $onModelLoadedJs .= $stopJs . " setTimeout(function(){ oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON())) }, 0);";               
         $onErrorJs .= $stopJs;           
         $onOfflineJs .= $stopJs;
         
@@ -906,10 +907,11 @@ JS;
         if (! ($callerWidget instanceof Dialog)) {
             $oRouteParamsCheckJs = <<<JS
 
-            // Just pretend loading data if there are no rout params to save a request doomed
+            // Just pretend loading data if there are no route params - to save a request doomed
             // to get an empty response.
             if (oRouteParams.constructor !== Object || Object.keys(oRouteParams).length === 0) {
                 oViewModel.setProperty('/_prefill/started', true);
+                oViewModel.setProperty('/_prefill/data', {});
                 oResultModel.setData({});
                 {$onModelLoadedJs}
                 return;
@@ -949,6 +951,7 @@ JS;
             $oRouteParamsCheckJs;
            
             oViewModel.setProperty('/_prefill/started', true);
+            oViewModel.setProperty('/_prefill/data', {});
             oResultModel.setData({});
             
             {$callerElement->getServerAdapter()->buildJsServerRequest(
@@ -956,7 +959,7 @@ JS;
                 'oResultModel',
                 'data',
                 $onModelLoadedJs,
-                "console.error('Error loading prefill data!');" . $onErrorJs,
+                $onErrorJs,
                 $onOfflineJs
             )}
         })();

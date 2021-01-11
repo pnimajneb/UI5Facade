@@ -764,7 +764,6 @@ JS;
                 {$oModelJs}.setData({});
             }
             if (Array.isArray(oRowData.rows) && oRowData.rows.length === 1) {
-                sap.ui.getCore().byId('{$this->getElement()->getId()}').getModel('view').setProperty('/_prefill/data', oRowData);
                 {$oModelJs}.setData(oRowData.rows[0]);
             }
 
