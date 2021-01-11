@@ -35,14 +35,24 @@
 			}
 		</style>
 		
-		<script>
+		<script>	
+		
+			// See if arrow functions (ES6) are supported
+			var supportsES6 = function() {
+		      try {
+		        new Function("(a = 0) => a");
+		      } catch (err) {
+		    	  alert("Error 7EBO5IU: Incompatible browser detected!\n\nYou are using an outdated internet browser. This page will not work properly! Please open the link in Chrome, Firefox, Safari, Edge or similar.");
+		      }
+		    }();
+		    
 			// Check that service workers are registered
 			if ('serviceWorker' in navigator) {				
 			  // Use the window load event to keep the page load performant
-			  window.addEventListener('load', () => {
+			  window.addEventListener('load', function(){
 				navigator.serviceWorker.register('ServiceWorker.js');
 			  });
-			}			
+			}
 		</script>
 		
 		<!-- Load SAPUI5, select theme and control library -->
