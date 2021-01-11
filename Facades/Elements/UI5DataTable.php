@@ -250,41 +250,70 @@ JS;
      */
     protected function buildJsColumnsForUiTable()
     {
-        // Columns
+        $widget = $this->getWidget();
         $column_defs = '';
-        foreach ($this->getWidget()->getColumns() as $column) {
-            $column_defs .= ($column_defs ? ", " : '') . $this->getFacade()->getElement($column)->buildJsConstructorForUiColumn();
+        foreach ($widget->getColumns() as $column) {
+            $column_defs .= $this->getFacade()->getElement($column)->buildJsConstructorForUiColumn() . ',';
         }
-        $column_defs .= <<<JS
-    ,new sap.ui.table.Column('{$this->getDirtyFlagAlias()}',{
-        hAlign: "Center",
-        autoResizable: true,
-        width: "48px",
-        minWidth: 48,
-        visible: true,
-        template: new sap.ui.core.Icon({
-            src: "sap-icon://user-edit",
-            visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}",
-            tooltip: "{i18n>WEBAPP.SHELL.NETWORK.OFFLINE_CHANGES_PENDING}"
-        })
-    })
+        
+        // Add dirty-column for offline actions
+        if ($this->hasDirtyColumn()) {
+            $column_defs .= <<<JS
+        new sap.ui.table.Column('{$this->getDirtyFlagAlias()}',{
+            hAlign: "Center",
+            autoResizable: true,
+            width: "48px",
+            minWidth: 48,
+            visible: true,
+            template: new sap.m.Button({
+                icon: "sap-icon://time-entry-request",
+                visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}",
+                tooltip: "{i18n>WEBAPP.SHELL.NETWORK.OFFLINE_CHANGES_PENDING}",
+                type: sap.m.ButtonType.Transparent,
+                press: function(oEvent) {
+                    var oBtn = oEvent.getSource();
+                    exfLauncher.showOfflineQueuePopoverForItem(
+                        "{$widget->getMetaObject()->getAliasWithNamespace()}",
+                        "{$widget->getUidColumn()->getDataColumnName()}",
+                        oBtn.getModel().getProperty(oBtn.getBindingContext().getPath() + '/{$widget->getUidColumn()->getDataColumnName()}'), 
+                        oBtn
+                    );
+                }
+            })
+        }),
 JS;
+        }
         return $column_defs;
     }
     
     protected function buildJsCellsForMTable()
     {
+        $widget = $this->getWidget();
         $cells = '';
-        foreach ($this->getWidget()->getColumns() as $column) {
-            $cells .= ($cells ? ", " : '') . $this->getFacade()->getElement($column)->buildJsConstructorForCell();
+        foreach ($widget->getColumns() as $column) {
+            $cells .= $this->getFacade()->getElement($column)->buildJsConstructorForCell() . ",";
         }
-        $cells .= <<<JS
-    ,new sap.ui.core.Icon({
-        src: "sap-icon://user-edit",
-        visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}",
-        tooltip: "{i18n>WEBAPP.SHELL.NETWORK.OFFLINE_CHANGES_PENDING}"
-    }),
+        
+        // Add dirty-column for offline actions
+        if ($this->hasDirtyColumn()) {
+            $cells .= <<<JS
+        new sap.m.Button({
+            icon: "sap-icon://time-entry-request",
+            visible: "{= \$\{{$this->getDirtyFlagAlias()}\}  === true}",
+            tooltip: "{i18n>WEBAPP.SHELL.NETWORK.OFFLINE_CHANGES_PENDING}",
+            type: sap.m.ButtonType.Transparent,
+            press: function(oEvent) {
+                var oBtn = oEvent.getSource();
+                exfLauncher.showOfflineQueuePopoverForItem(
+                    "{$widget->getMetaObject()->getAliasWithNamespace()}",
+                    "{$widget->getUidColumn()->getDataColumnName()}",
+                    oBtn.getModel().getProperty(oBtn.getBindingContext().getPath() + '/{$widget->getUidColumn()->getDataColumnName()}'), 
+                    oBtn
+                );
+            }
+        }),
 JS;
+        }
         return $cells;
     }
     
@@ -317,15 +346,20 @@ JS;
         
         $column_defs = '';
         foreach ($this->getWidget()->getColumns() as $column) {
-            $column_defs .= ($column_defs ? ", " : '') . $this->getFacade()->getElement($column)->buildJsConstructorForMColumn();
+            $column_defs .= $this->getFacade()->getElement($column)->buildJsConstructorForMColumn() . ",";
         }
-        $column_defs .= <<<JS
-    ,new sap.m.Column('{$this->getDirtyFlagAlias()}',{
+        
+        // Add dirty-column for offline actions
+        if ($this->hasDirtyColumn()) {
+            $column_defs .= <<<JS
+
+    new sap.m.Column('{$this->getDirtyFlagAlias()}',{
         hAlign: "Center",
         importance: "High",
         visible: false
-    })
+    }),
 JS;
+        }
         
         return $column_defs;
     }
@@ -481,10 +515,10 @@ JS;
         return <<<JS
     function() {
         var oTable = sap.ui.getCore().byId('{$this->getId()}');
-        var oDirtyCtrl = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
+        var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
         var rows = {$rows};
 
-        if (oTable.getModel().getProperty('/_dirty') || (oDirtyCtrl && oDirtyCtrl.getVisible() === true)) {
+        if (oTable.getModel().getProperty('/_dirty') || (oDirtyColumn && oDirtyColumn.getVisible() === true)) {
             for (var i = 0; i < rows.length; i++) {
                 delete rows[i]['{$this->getDirtyFlagAlias()}'];
             }

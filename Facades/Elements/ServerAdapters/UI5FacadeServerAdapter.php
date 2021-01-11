@@ -56,7 +56,7 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
         $actionNameJs = json_encode($actionName);
         $objectNameJs = json_encode($action->getMetaObject()->getName());
         
-        $translator = $this->getElement()->getFacade()->getApp()->getTranslator();
+        $coreTranslator = $this->getElement()->getWorkbench()->getCoreApp()->getTranslator();
         
         return <<<JS
 
@@ -77,13 +77,13 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
                                         {$objectNameJs}
                                     )
                                     .then(function(key) {
-                                        var response = {success: '{$translator->translate('WEBAPP.SHELL.NETWORK.ACTION_QUEUED')}'};
+                                        var response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};
                                         $oModelJs.setData(response);
                                         $onModelLoadedJs
                                     })
                                     .catch(function(error) {
                                         console.error(error);
-                                        var response = {error: '{$translator->translate('WEBAPP.SHELL.NETWORK.ACTION_QUEUE_FAILED')}'}
+                                        var response = {error: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUE_FAILED')}'}
                                         {$this->getElement()->buildJsShowMessageError('response.error', '"Server error"')}
                                         {$onErrorJs}
                                     })

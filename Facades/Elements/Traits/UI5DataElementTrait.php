@@ -1434,7 +1434,7 @@ JS;
             var oData = $oModelJs.getData();
             var aRows = oData.rows;
             var bRowsDirty = false;
-            exfPreloader.getActionObjectData('{$widget->getMetaObject()->getId()}')
+            exfPreloader.getOfflineActionsDataRows('{$widget->getMetaObject()->getId()}')
             .then(function(actionRows) {
                 var oDirtyIcon = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
                 for (var i = 0; i < actionRows.length; i++) {
@@ -1472,6 +1472,15 @@ JS;
     protected function getDirtyFlagAlias() : string
     {
         return "{$this->getId()}" . "DirtyFlag";
+    }
+    
+    /**
+     * 
+     * @return bool
+     */
+    protected function hasDirtyColumn() : bool
+    {
+        return $this->getWidget()->hasUidColumn();
     }
     
     /**

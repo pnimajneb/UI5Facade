@@ -396,7 +396,7 @@ sap.ui.define([
             });
 		},
 		
-		preloader : function(){
+		_preloader : function(){
 			const exfPreloaderUI5 = {};
 			(function(){
 				this.updateQueueCount = function(){
@@ -436,8 +436,7 @@ sap.ui.define([
 		}(),
 		
 		getPreloader : function(){
-			return this.preloader;
-		}
-		
+			return this._preloader;
+		}		
 	});
 });

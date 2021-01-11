@@ -906,4 +906,91 @@ const exfLauncher = {};
 		dialog.open();
 		return;
 	}	
+	
+	this.showOfflineQueuePopoverForItem = function(sObjectAlias, sUidColumn, sUidValue, oTrigger) {	
+		var oPopover = new sap.m.Popover({
+			title: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_WAITING_ACTIONS}",
+			placement: "Left",
+			afterClose: function(oEvent) {
+				oEvent.getSource().destroy();
+			},
+			content: [
+				new sap.m.Table({
+					fixedLayout: false,
+					columns: [
+						new sap.m.Column({
+							header: [
+								new sap.m.Label({
+									text: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_ACTION}"
+								})
+							]
+						}),
+						new sap.m.Column({
+							header: [
+								new sap.m.Label({
+									text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_TRIGGERED}'
+								})
+							]
+						}),
+						new sap.m.Column({
+							header: [
+								new sap.m.Label({
+									text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_STATUS}'
+								})
+							]
+						}),
+						new sap.m.Column({
+							header: [
+								new sap.m.Label({
+									text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_TRIES}'
+								})
+							]
+						})
+					],
+					items: {
+						path: "queueModel>/data",
+						template: new sap.m.ColumnListItem({
+							cells: [new sap.m.Text({
+									text: "{queueModel>action_name}"
+								}),
+								new sap.m.Text({
+									text: "{queueModel>triggered}"
+								}),
+								new sap.m.Text({
+									text: "{queueModel>status}"
+								}),
+								new sap.m.Text({
+									text: "{queueModel>tries}"
+								})
+							]
+						})
+					}
+				})
+			]
+		})
+		.setModel(oTrigger.getModel())
+		.setModel(oTrigger.getModel('i18n'), 'i18n');
+		
+		exfPreloader.getActionQueueData(null, sObjectAlias, function(oRow){
+			return oRow[sUidColumn] == sUidValue;
+		})
+		.then(function(aQueueItems){
+			var oData = {
+				data: aQueueItems
+			};
+			oPopover.setModel(function(){return new sap.ui.model.json.JSONModel(oData)}(), 'queueModel');
+		})
+		.catch(function(data){
+			var oData = {
+				data: data
+			};
+			oPopover.setModel(function(){return new sap.ui.model.json.JSONModel(oData)}());
+		});
+	
+		jQuery.sap.delayedCall(0, this, function () {
+			oPopover.openBy(oTrigger);
+		});
+		
+		return;
+	}
 }).apply(exfLauncher);
