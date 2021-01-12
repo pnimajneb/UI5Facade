@@ -170,6 +170,19 @@ trait UI5DataElementTrait {
             $controller->addOnShowViewScript($this->buildJsShowMessageOverlay($widget->getAutoloadDisabledHint()));
         }
         
+        // Clear selection every time the prefill data changes. Otherwise in a table within
+        // a dialog if the first row was selected when the dialog was opened for object 1,
+        // the first row will also be selected if the dialog will be opened for object 2, etc.
+        // TODO it would be even better to check if previously selected UIDs are still there
+        // and select their rows again like we do in EuiData::buildJsonOnLoadSuccessSelectionFix()
+        if ($this->isUiTable()) {
+            $clearSelectionJs = "sap.ui.getCore().byId('{$this->getId()}').clearSelection()";
+        } else {
+            $clearSelectionJs = "sap.ui.getCore().byId('{$this->getId()}').removeSelections(true)";
+        }
+        $controller->addOnPrefillDataChangedScript($clearSelectionJs);
+        
+        // Handle preload
         if ($widget->isPreloadDataEnabled()) {
             $dataCols = [];
             $imgCols = [];
@@ -184,6 +197,7 @@ trait UI5DataElementTrait {
             $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$widget->getPage()->getUid()}', '{$widget->getId()}', '{$widget->getMetaObject()->getUidAttributeAlias()}');");
         }
         
+        // Generate the constructor for the inner widget
         $js = $this->buildJsConstructorForControl();
         
         $initModels = <<<JS
@@ -1639,7 +1653,8 @@ JS;
     }
     
     /**
-     *
+     * IDEA move context-menu-related methods to separate element UI5ContextMenu
+     * 
      * @param Button[]
      * @return string
      */
@@ -1663,7 +1678,8 @@ JS;
     }
     
     /**
-     *
+     * IDEA move context-menu-related methods to separate element UI5ContextMenu
+     * 
      * @param Button[] $buttons
      * @return string
      */
@@ -1692,6 +1708,8 @@ JS;
     
     /**
      *
+     * IDEA move context-menu-related methods to separate element UI5ContextMenu
+     * 
      * @param Button $button
      * @param boolean $startSection
      * @return string

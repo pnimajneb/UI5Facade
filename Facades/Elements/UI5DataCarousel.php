@@ -44,7 +44,12 @@ class UI5DataCarousel extends UI5Split
         $this->registerSyncOnMaster();
         
         $initSplitter = $this->buildJsSetSizesInitial("sap.ui.getCore().byId('{$this->getId()}')") . "setTimeout(function(){ {$this->buildJsEmptyHintShow()} }, 100);";
-        $this->getController()->addOnInitScript($initSplitter);
+        $this->getController()
+            // Reset splitter position when the view is loaded for the first time
+            ->addOnInitScript($initSplitter)
+            // Reset when it's hidden, so the splitter will be in the initial
+            // position when the view/dialog is reopened
+            ->addOnHideViewScript($initSplitter, true);
         
         $splitter = <<<JS
         
@@ -233,7 +238,7 @@ JS;
 
             {$bindings}
             
-            if (oSplit.getModel('_innerState').getProperty('/dataExpanded') === true) {
+            if (iRowIdx > -1 && oSplit.getModel('_innerState').getProperty('/dataExpanded') === true) {
                 if (sap.ui.Device.system.phone) {
                     {$this->buildJsSetSizesExpandDetails('oSplit')}
                 } else {
