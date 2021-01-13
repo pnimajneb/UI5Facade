@@ -21,6 +21,7 @@ use exface\Core\Exceptions\Facades\FacadeLogicError;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
+use exface\UI5Facade\Facades\Elements\UI5DataTable;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -175,7 +176,7 @@ trait UI5DataElementTrait {
         // the first row will also be selected if the dialog will be opened for object 2, etc.
         // TODO it would be even better to check if previously selected UIDs are still there
         // and select their rows again like we do in EuiData::buildJsonOnLoadSuccessSelectionFix()
-        if ($this->isUiTable()) {
+        if (($this instanceof UI5DataTable) && $this->isUiTable()) {
             $clearSelectionJs = "sap.ui.getCore().byId('{$this->getId()}').clearSelection()";
         } else {
             $clearSelectionJs = "sap.ui.getCore().byId('{$this->getId()}').removeSelections(true)";
