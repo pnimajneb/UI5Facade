@@ -1,9 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDisableConditionTrait;
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryInputValidationTrait;
-use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryContainerTrait;
 use exface\Core\Interfaces\WidgetInterface;
 
@@ -53,14 +50,15 @@ JS;
     {
         $js = '';
         $separatorWidgets = $this->getWidget()->getSeparatorWidgets();
-        foreach ($this->getWidget()->getWidgets() as $idx => $widget) {
+        $stretch = $this->getWidget()->isStretched();
+        foreach ($this->getWidget()->getWidgets() as $widget) {
 
             $element = $this->getFacade()->getElement($widget);
             if (in_array($widget, $separatorWidgets) === true) {
                 $element->setAlignment("sap.ui.core.TextAlign.Center");
             }
 
-            $element->setLayoutData($this->buildJsChildLayoutConstructor($widget));
+            $element->setLayoutData($this->buildJsChildLayoutConstructor($widget, $stretch));
 
             $widget->setWidth('100%');
 
@@ -97,18 +95,20 @@ JS;
      * @param WidgetInterface $child
      * @return string
      */
-    protected function buildJsChildLayoutConstructor(WidgetInterface $child) : string
+    protected function buildJsChildLayoutConstructor(WidgetInterface $child, bool $stretch = true) : string
     {
         //if the width of a child is undefined, it gets the following 
         if ($child->getWidth()->isUndefined()){
-            $props = "growFactor: 1, baseSize: \"0\"";
+            if ($stretch) {
+                $props = "growFactor: 1, baseSize: \"0\",";
+            }
         } else {
-            $props = "growFactor: 0,  baseSize: \"{$child->getWidth()->getValue()}\"";
+            $props = "growFactor: 0, baseSize: \"{$child->getWidth()->getValue()}\",";
         }
         if (!$this->getWidget()->hasSeperator()){
             $widgets = $this->getWidget()->getWidgets();
             if ($widgets[sizeof($widgets)-1] !== $child){
-                $props .= ", styleClass: \"sapUiTinyMarginEnd\"";
+                $props .= " styleClass: \"sapUiTinyMarginEnd\"";
             }
         }
         
@@ -132,4 +132,3 @@ JS;
         return $output;
     }
 }
-?>
