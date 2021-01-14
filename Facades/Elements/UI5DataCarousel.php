@@ -169,7 +169,7 @@ JS;
     protected function registerSyncOnMaster()
     {
         $dataIsEditable = $this->getDataElement()->isEditable();
-        foreach ($this->getWidget()->getDetailsWidget()->getChildrenRecursive() as $child) {
+        foreach ($this->getWidget()->getChildrenToSyncWithDataWidget($this->getWidget()->getDetailsWidget()) as $child) {
             if (! ($child instanceof iShowSingleAttribute)) {
                 continue;
             }
