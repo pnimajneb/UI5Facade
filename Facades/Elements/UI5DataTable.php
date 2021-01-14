@@ -10,6 +10,7 @@ use exface\Core\Widgets\DataColumn;
 use exface\Core\Widgets\DataButton;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
+use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 
 /**
  *
@@ -56,6 +57,18 @@ class UI5DataTable extends UI5AbstractElement
                 throw new WidgetConfigurationError($widget, "The attribute alias '{$syncAttributeAlias}' for multi select synchronisation was not found in the column attribute aliases for the widget '{$widget->getId()}'!");
             }
         }
+        
+        // Clear selection every time the prefill data changes. Otherwise in a table within
+        // a dialog if the first row was selected when the dialog was opened for object 1,
+        // the first row will also be selected if the dialog will be opened for object 2, etc.
+        // TODO it would be even better to check if previously selected UIDs are still there
+        // and select their rows again like we do in EuiData::buildJsonOnLoadSuccessSelectionFix()
+        if ($this->isUiTable()) {
+            $clearSelectionJs = "sap.ui.getCore().byId('{$this->getId()}').clearSelection()";
+        } else {
+            $clearSelectionJs = "sap.ui.getCore().byId('{$this->getId()}').removeSelections(true)";
+        }
+        $this->getController()->addOnPrefillDataChangedScript($clearSelectionJs);
         
         return $js;
     }
