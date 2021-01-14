@@ -133,7 +133,7 @@ JS;
      */
     protected function buildJsColorCssSetter(string $oControlJs, string $sColorJs) : string
     {
-        return "setTimeout(function(){ $oControlJs.$().find('.sapMPIBar').css('background-color', $sColorJs); }, 100)";
+        return "setTimeout(function(){ $oControlJs.$().find('.sapMPIBar').css('background-color', $sColorJs); }, 200)";
     }
     
     protected function buildJsPropertyState() : string
