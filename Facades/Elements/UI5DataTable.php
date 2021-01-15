@@ -11,6 +11,7 @@ use exface\Core\Widgets\DataButton;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
+use exface\Core\DataTypes\SortingDirectionsDataType;
 
 /**
  *
@@ -183,6 +184,19 @@ JS;
         }
         
         $grouper = $widget->getRowGrouper();
+        
+        $sorterDir = 'true';
+        foreach ($this->getWidget()->getSorters() as $sorterUxon) {
+            if ($sorterUxon->getProperty('attribute_alias') === $grouper->getGroupByColumn()->getAttributeAlias()) {
+                if ($sorterUxon->getProperty('direction') === SortingDirectionsDataType::DESC) {
+                    $sorterDir = 'true';
+                } else {
+                    $sorterDir = 'false';
+                }
+                break;
+            }
+        }
+        
         $caption = $this->escapeJsTextValue($grouper->getCaption());
         $caption .= $caption ? ': ' : '';
         
@@ -190,7 +204,7 @@ JS;
         
                 sorter: new sap.ui.model.Sorter(
     				'{$grouper->getGroupByColumn()->getDataColumnName()}', // sPath
-    				false, // bDescending
+    				{$sorterDir}, // bDescending
     				true // vGroup
     			),
     			groupHeaderFactory: function(oGroup) {
