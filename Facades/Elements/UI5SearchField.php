@@ -31,11 +31,13 @@ class UI5SearchField extends UI5Value
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $placeholder = $this->escapeJsTextValue($this->getPlaceholder());
         return <<<JS
         
         new sap.m.SearchField("{$this->getId()}", {
             width: {$this->buildJsPropertyWidthCollapsed()},
-            placeholder: "{$this->getPlaceholder()}",
+            placeholder: "{$placeholder}",
+            tooltip: "{$placeholder}",
             search: {$this->getSearchCallbackJs()},
             layoutData: new sap.m.OverflowToolbarLayoutData({priority: "NeverOverflow"})
         }).addEventDelegate({
