@@ -182,20 +182,44 @@ JS;
             return '';
         }
         
+        $grouper = $widget->getRowGrouper();
+        $caption = $this->escapeJsTextValue($grouper->getCaption());
+        $caption .= $caption ? ': ' : '';
+        
         return <<<JS
         
                 sorter: new sap.ui.model.Sorter(
-    				'{$widget->getRowGrouper()->getGroupByColumn()->getDataColumnName()}', // sPath
+    				'{$grouper->getGroupByColumn()->getDataColumnName()}', // sPath
     				false, // bDescending
     				true // vGroup
     			),
-    			/*groupHeaderFactory: function(oGroup) {
+    			groupHeaderFactory: function(oGroup) {
                     // TODO add support for counters
                     return new sap.m.GroupHeaderListItem({
-        				title: oGroup.key,
-        				upperCase: false
+        				title: "{$caption}" + (oGroup.key !== null ? oGroup.key : "{$this->escapeJsTextValue($grouper->getEmptyText())}"),
+                        type: "Active",
+                        press: function(oEvent) {
+                            var oHeaderItem = oEvent.getSource();
+                            var oList = oHeaderItem.getParent();
+                            var iHeaderIdx = oList.indexOfItem(oHeaderItem);
+                            var aItems = oList.getItems();
+                            var oItem;
+
+                            for (var i=0; i<aItems.length; i++) {
+                                if (i <= iHeaderIdx) continue;
+                                oItem = aItems[i];
+                                if (oItem instanceof sap.m.GroupHeaderListItem) break;
+                                if (oItem.getVisible()) {
+                                    oItem.setVisible(false);
+                                    oHeaderItem.setType('Navigation');
+                                } else {
+                                    oItem.setVisible(true);
+                                    oHeaderItem.setType('Active');
+                                }
+                            }
+                        }
         			});
-                },*/
+                },
 JS;
     }
     

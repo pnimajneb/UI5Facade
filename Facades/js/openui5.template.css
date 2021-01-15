@@ -29,6 +29,8 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 .sapMTB-Info-CTX .sapMBtnTransparent>.sapMBtnIcon {color: #fff}
 /* Fix for too narrow progress bars in mobile sap.m.Table */
 .sapMListTblSubCntValInline > .sapMPI {min-width: 150px}
+/* Fis missing border on navigatable sap.m.GroupHeaderListItem */
+.sapMGHLICell + .sapMListTblNavCol { border-top: 2px solid #ccc !important; }
 
 /* Panels */
 .exf-panel-no-border > .sapMPanelContent {border-bottom: none;}
