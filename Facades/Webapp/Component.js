@@ -298,7 +298,7 @@ sap.ui.define([
 		 * 
 		 * @return sap.m.Dialog
 		 */
-		showAjaxErrorDialog : function (jqXHR, sMessage) {console.log('ajax error dialog');
+		showAjaxErrorDialog : function (jqXHR, sMessage) {
 			var sContentType = jqXHR.getResponseHeader('Content-Type');
 			var sBodyType;
 			var sBody;
@@ -344,14 +344,14 @@ sap.ui.define([
 			var sTagId = 'dynamicview_' + sViewName.replace(/\./g, '_');
 			$('body').append('<script type="text/javascript" id="' + sTagId + '">' + sViewSource + '</script>');
 			var fnOnClose = function(){
-				console.log($('#' + sTagId));
 				$('#' + sTagId).remove();
 			};
 			oComponent.runAsOwner(function(){
                 sap.ui.core.mvc.JSView.create({
                     id: sViewId,
                     viewName: sViewName
-                }).then(function(oView){                    
+                })
+                .then(function(oView){                    
                     setTimeout(function() {
                         var oContentCtrl = oView.getContent()[0];
                         if (oContentCtrl instanceof sap.m.Dialog) {
@@ -365,6 +365,13 @@ sap.ui.define([
                         	var oFirstChild;
                         	var fHeight = 0;
                         	var fChildHeight = 0;
+                        	
+                        	// If the contents has it's own emphasized buttons, make the
+                        	// dialogs close-button non-emphasized to avoid confusion
+                        	if (oContentCtrl.$().find('.sapMBtnEmphasized').length > 0) {
+                        		oDialog.getEndButton().setType(sap.m.ButtonType.Default);
+                        	}
+                        	
                         	if (oContentCtrl instanceof sap.m.Page) {
                         		oContentCtrl
                         			.setShowNavButton(false)
@@ -380,18 +387,37 @@ sap.ui.define([
 	                        			oFirstChild = null;
 	                        		}
                         		}
-                        	}
-                        	var iChildHeight = oContentCtrl.getContent()[0].getContent()[0].$().height();
-                        	oView.setHeight('100%');
-                        	oDialog
-	                        	.setContentHeight((fHeight+2).toString() + 'px')
-	                    		.attachAfterClose(function() {
-		                            oView.destroy();
-		                            oDialog.destroy();
-		                            fnOnClose();
+                            	oView.setHeight('100%');
+                            	oDialog
+    	                        	.setContentHeight((fHeight+2).toString() + 'px')
+    	                    		.attachAfterClose(function() {
+    		                            oView.destroy();
+    		                            oDialog.destroy();
+    		                            fnOnClose();
 		                        });
+                        	}
                         }
                     }, 0);
+                })
+                .catch(function(e){
+                	var aMatches = e.message.match(/duplicate id '(.*)'/i);
+                	var oI18nModel = oComponent.getModel('i18n');
+                	var sDuplId;
+                	if (aMatches !== null && aMatches.length > 0) {
+                		sDuplId = aMatches[1];
+                		// If a login form is open, all subsequent server requests will produce
+                		// login promts in-turn. Don't show them or show a hint to fill out the
+                		// first form.
+                		if (sDuplId.startsWith('__LoginPrompt')) {
+                			if (sap.ui.getCore().byId(sDuplId).$().parents('.sapMDialog').length === 0) {
+                				oComponent.showErrorDialog(oI18nModel.getProperty('ERROR.FILL_OUT_LOGIN_FORM_FIRST'));
+                			}
+                			return;
+                		}
+                	}
+            		console.error(e);
+            		oComponent.showErrorDialog(oI18nModel.getProperty('ERROR.UNKNOWN_UI_ERROR') + " " + e.message, oI18nModel.getProperty('MESSAGE.ERROR_TITLE') + ' 7EDQYXT');
+                	return;
                 });
             });
 		},

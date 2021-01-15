@@ -47,7 +47,7 @@ body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > s
 
 /* LoginPrompt */
 .exf-loginprompt-flexbox > div {max-width: 95%}
-.sapMDialog .exf-loginprompt-flexbox > div {max-width: 100%;}
+.sapMDialog .exf-loginprompt-flexbox > div {max-width: 100%; width: 100%}
 .exf-loginprompt-panel > h2 {text-align: center; height: 4rem !important; line-height: 4rem !important; font-size: 1.2rem;}
 .exf-loginprompt-panel > .sapMPanelContent {border-left: 1px solid #cccccc; border-right: 1px solid #cccccc;}
 

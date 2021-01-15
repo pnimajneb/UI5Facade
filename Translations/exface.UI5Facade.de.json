@@ -7,6 +7,8 @@
 	"ERROR.EXCEPTION_MESSAGE": "Originalnachricht:",
 	"ERROR.NO_CONNECTION": "Server nicht erreichbar!",
 	"ERROR.NO_CONNECTION_HINT": "Überprüfen Sie Ihre Netzwerkverbindung und versuchen Sie es erneut! Wenn das nicht hilft, wenden Sie sich bitte an den Support!",
+	"ERROR.UNKNOWN_UI_ERROR": "Unbekannter UI-Fehler: Bitte wenden Sie sich an den Support!",
+	"ERROR.FILL_OUT_LOGIN_FORM_FIRST": "Bitte füllen Sie zuerst das Login-Formular aus!",
 	"SAP-ERROR": "im SAP",
 	"SAP-LOGIC": "vom SAP",
 	
