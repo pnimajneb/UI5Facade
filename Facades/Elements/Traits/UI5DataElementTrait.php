@@ -1434,6 +1434,8 @@ JS;
         return <<<JS
 
         (function(){
+            if (exfPreloader === undefined) return;
+
             var oData = $oModelJs.getData();
             var aRows = oData.rows;
             var bRowsDirty = false;
