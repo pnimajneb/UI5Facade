@@ -15,7 +15,7 @@ If the app is not quite stable yet, it can be very helpful to test it locally be
 	- If using a version control system (git, SVN) on the export folder, use another folder temporarily
 2. Export the app 
 3. Start Chrome in no-CORS mode avoid AJAX-requests to SAP being blocked.
-	- Use a portable version of Chrome (as of january 2021 you need [Chrome 79](https://www.filehorse.com/download-google-chrome-portable-64/46659/) or less - newer versions block SAP cookis in no-CORS mode).
+	- Use a portable version of Chrome (as of january 2021 you need [Chrome 79](https://www.filehorse.com/download-google-chrome-portable-64/46659/) or less - newer versions block SAP cookies in no-CORS mode).
 	- Create a separate folder for the user data: e.g. `c:\noCorsBrowserData`
 	- Create special shortcut: `GoogleChromePortable.exe --disable-web-security --disable-gpu --disable-features=CookiesWithoutSameSiteMustBeSecure --user-data-dir="c:\noCorsBrowserData"`
 4. Open the app there (preferably using a web server and `http://localhost/...`)
