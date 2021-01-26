@@ -81,7 +81,7 @@
     "rows": [
         {
             "CREATED_ON": "2018-04-04 09:15:51",
-            "MODIFIED_ON": "2020-11-09 20:18:08",
+            "MODIFIED_ON": "2021-01-25 17:30:54",
             "CREATED_BY_USER": "0x31000000000000000000000000000000",
             "MODIFIED_BY_USER": "0x31000000000000000000000000000000",
             "UID": "0x11e837e8c505989491380205857feb80",
@@ -94,7 +94,7 @@
             "DATA_SOURCE": "0x32000000000000000000000000000000",
             "APP": "0x11e837e87a640bfd91380205857feb80",
             "SHORT_DESCRIPTION": "",
-            "PARENT_OBJECT": "0x32370000000000000000000000000000",
+            "PARENT_OBJECT": "",
             "DATA_ADDRESS_PROPS": null,
             "DEFAULT_EDITOR_UXON": {
                 "widget_type": "Form",
