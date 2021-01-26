@@ -1,7 +1,6 @@
 <?php
 namespace exface\UI5Facade\Exceptions;
 
-use exface\Core\Exceptions\InvalidArgumentException;
 use exface\Core\Interfaces\Exceptions\WidgetExceptionInterface;
 use exface\Core\Exceptions\Widgets\WidgetExceptionTrait;
 
@@ -11,7 +10,7 @@ use exface\Core\Exceptions\Widgets\WidgetExceptionTrait;
  * @author Andrej Kabachnik
  *
  */
-class UI5ExportUnsupportedWidgetException extends InvalidArgumentException implements WidgetExceptionInterface
+class UI5ExportUnsupportedWidgetException extends UI5ExportUnsupportedException implements WidgetExceptionInterface
 {
     use WidgetExceptionTrait;
     

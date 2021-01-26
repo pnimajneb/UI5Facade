@@ -35,6 +35,7 @@ use exface\Core\Exceptions\Actions\ActionRuntimeError;
 use exface\Core\Factories\TaskFactory;
 use GuzzleHttp\Psr7\ServerRequest;
 use exface\Core\DataTypes\BooleanDataType;
+use exface\UI5Facade\Exceptions\UI5ExportUnsupportedException;
 
 /**
  * Generates the code for a selected Fiori Webapp project.
@@ -48,6 +49,13 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
 {
     private $facadeSelectorString = 'exface\\UI5Facade\\Facades\\UI5Facade';
     
+    private $errors = [];
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\CommonLogic\AbstractAction::init()
+     */
     protected function init()
     {
         parent::init();
@@ -57,6 +65,11 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         $this->setIcon(Icons::HDD_O);
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\CommonLogic\AbstractAction::perform()
+     */
     protected function perform(TaskInterface $task, DataTransactionInterface $transaction) : ResultInterface
     {
         if ($task instanceof CliTaskInterface) {
@@ -117,11 +130,14 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
                 'current_version_date' => DateTimeDataType::now(),
                 'MODIFIED_ON' => $row['MODIFIED_ON']
             ]);
-            // Do not pass the transaction to the update to force autocommit
-            // FIXME updating the app for some reason does not work because the current user cannot be found. Why???
+            
             $updSheet->dataUpdate(false, $transaction);
             
-            yield PHP_EOL . 'Exported to ' . $webappFolder;
+            if ($this->hasErrors()) {
+                yield PHP_EOL . 'Export failed with ' . count($this->getErrors()) . ' errors!';
+            } else {           
+                yield PHP_EOL . 'Exported to ' . $webappFolder;
+            }
             
             // Trigger regular action post-processing as required by AbstractActionDeferred.
             $this->performAfterDeferred($result, $transaction);
@@ -147,35 +163,46 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
     protected function exportWebapp(UiPageInterface $rootPage, UI5Facade $facade, array $appDataRow) : \Generator
     {
         $appPath = $this->getExportPath($appDataRow);
+        $backupPath = $appPath . '.bkp';
         $webcontentPath = $appPath . DIRECTORY_SEPARATOR . 'WebContent';
-        if (! file_exists($webcontentPath)) {
+        if (file_exists($appPath)) {
+            rename($appPath, $backupPath);
+        }
+        
+        try {
             Filemanager::pathConstruct($webcontentPath);
-        } else {
-            Filemanager::emptyDir($webcontentPath);
+            
+            $webcontentPath = $webcontentPath . DIRECTORY_SEPARATOR;
+            /* @var $webapp \exface\UI5Facade\Webapp */ 
+            $webapp = $facade->initWebapp($appDataRow['app_id'], $appDataRow);
+            
+            if (! file_exists($webcontentPath . 'view')) {
+                Filemanager::pathConstruct($webcontentPath . 'view');
+            }
+            if (! file_exists($webcontentPath . 'controller')) {
+                Filemanager::pathConstruct($webcontentPath . 'controller');
+            }
+            if (! file_exists($webcontentPath . 'libs')) {
+                Filemanager::pathConstruct($webcontentPath . 'libs');
+            }
+                 
+            yield 'Exporting to ' . $appPath . ':' . PHP_EOL . PHP_EOL;
+            yield from $this->exportFile($webapp, 'index.html', $webcontentPath, '  ');
+            yield from $this->exportFile($webapp, 'Component.js', $webcontentPath, '  ');
+            yield from $this->exportTranslations($rootPage->getApp(), $webapp, $webcontentPath, '  ');
+            yield '  view' . DIRECTORY_SEPARATOR . ' + controller' . DIRECTORY_SEPARATOR . PHP_EOL;
+            yield from $this->exportStaticViews($webapp, $webcontentPath, '    ');
+            yield from $this->exportPages($webapp, $webcontentPath, '    ');
+            yield from $this->exportFile($webapp, 'manifest.json', $webcontentPath, '  ');
+        } catch (\Throwable $e) {
+            $this->getWorkbench()->getLogger()->logException($e);
+            $this->addError($e);
         }
         
-        $webcontentPath = $webcontentPath . DIRECTORY_SEPARATOR;
-        /* @var $webapp \exface\UI5Facade\Webapp */ 
-        $webapp = $facade->initWebapp($appDataRow['app_id'], $appDataRow);
-        
-        if (! file_exists($webcontentPath . 'view')) {
-            Filemanager::pathConstruct($webcontentPath . 'view');
-        }
-        if (! file_exists($webcontentPath . 'controller')) {
-            Filemanager::pathConstruct($webcontentPath . 'controller');
-        }
-        if (! file_exists($webcontentPath . 'libs')) {
-            Filemanager::pathConstruct($webcontentPath . 'libs');
-        }
-             
-        yield 'Exporting to ' . $appPath . ':' . PHP_EOL . PHP_EOL;
-        yield from $this->exportFile($webapp, 'index.html', $webcontentPath, '  ');
-        yield from $this->exportFile($webapp, 'Component.js', $webcontentPath, '  ');
-        yield from $this->exportTranslations($rootPage->getApp(), $webapp, $webcontentPath, '  ');
-        yield '  view' . DIRECTORY_SEPARATOR . ' + controller' . DIRECTORY_SEPARATOR . PHP_EOL;
-        yield from $this->exportStaticViews($webapp, $webcontentPath, '    ');
-        yield from $this->exportPages($webapp, $webcontentPath, '    ');
-        yield from $this->exportFile($webapp, 'manifest.json', $webcontentPath, '  ');
+        if ($this->hasErrors()) {
+            Filemanager::deleteDir($appPath);
+            rename($backupPath, $appPath);
+        } 
         
         return $appPath;
     }
@@ -229,12 +256,14 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
             yield from $this->exportWidget($webapp, $widget, $exportFolder, $linkDepth, $msgIndent);
         } catch (\Throwable $e) {
             $this->getWorkbench()->getLogger()->logException($e);
+            $this->addError($e);
             yield 'ERROR exporting views for page "' . $page->getAliasWithNamespace() . '": ' . PHP_EOL . $e->getMessage() . PHP_EOL . '... in ' . $e->getFile() . ' on line ' . $e->getLine() . PHP_EOL;
         }
     }
     
     protected function exportWidget(Webapp $webapp, WidgetInterface $widget, string $exportFolder, int $linkDepth, string $msgIndent) : \Generator
     {
+        $unsupported = null;
         try {
             $facade = FacadeFactory::createFromString('exface.UI5Facade.UI5Facade', $this->getWorkbench());
             $request = new ServerRequest('GET', '');
@@ -248,39 +277,47 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
             $viewJs = StringDataType::encodeUTF8($viewJs);
             
             $controllerJs = $controller->buildJsController();
+        } catch (UI5ExportUnsupportedException $unsupported) {
+            $this->addError($unsupported);
+            yield $msgIndent . '+ ERROR in widget ' . $widget->getWidgetType() . ' "' . $widget->getCaption() . '": UI configuration not supported by export!' . PHP_EOL;
+            foreach ($unsupported->getErrors() as $error) {
+                yield $msgIndent . '|  - ' . $error . PHP_EOL;
+            }
         } catch (\Throwable $e) {
             throw new ActionRuntimeError($this, 'Cannot export view/controller for widget ' . $widget->getWidgetType() . ' "' . $widget->getCaption() . '" (object "' . $widget->getMetaObject()->getAliasWithNamespace() . '", id "' . $widget->getId() . '") in page "' . $widget->getPage()->getAliasWithNamespace() . '": ' . $e->getMessage(), null, $e);
         }
         
-        if (! $viewJs) {
-            throw new ActionRuntimeError($this, 'Cannot export view for for widget "' . $widget->getId() . '" in page "' . $widget->getPage()->getAliasWithNamespace() . '": the generated UI5 view is empty!');
+        if (! $unsupported) {
+            if (! $viewJs) {
+                throw new ActionRuntimeError($this, 'Cannot export view for for widget "' . $widget->getId() . '" in page "' . $widget->getPage()->getAliasWithNamespace() . '": the generated UI5 view is empty!');
+            }
+            
+            if (! $controllerJs) {
+                throw new ActionRuntimeError($this, 'Cannot export controller for for widget "' . $widget->getId() . '" in page "' . $widget->getPage()->getAliasWithNamespace() . '": the generated UI5 controller is empty!');
+            }
+            
+            // Copy external includes and replace their paths in the controller
+            $controllerJs = $this->exportExternalLibs($controllerJs, $exportFolder . DIRECTORY_SEPARATOR . 'libs');
+            
+            // Save view and controller as files
+            $controllerFile = rtrim($exportFolder, "\\/") . DIRECTORY_SEPARATOR . $controller->getPath(true);
+            $controllerDir = pathinfo($controllerFile, PATHINFO_DIRNAME);
+            if (! is_dir($controllerDir)) {
+                Filemanager::pathConstruct($controllerDir);
+            }
+            
+            $viewFile = rtrim($exportFolder, "\\/") . DIRECTORY_SEPARATOR . $view->getPath(true);
+            $viewDir = pathinfo($viewFile, PATHINFO_DIRNAME);
+            if (! is_dir($viewDir)) {
+                Filemanager::pathConstruct($viewDir);
+            }
+            
+            yield $msgIndent . '+ Widget ' . $widget->getWidgetType() . ' "' . $widget->getCaption() . '": ' . PHP_EOL;
+            file_put_contents($viewFile, $viewJs);
+            yield $msgIndent . '| ' . StringDataType::substringAfter($view->getPath(), $webapp->getComponentPath() . '/') . PHP_EOL;
+            file_put_contents($controllerFile, $controllerJs);
+            yield $msgIndent . '| ' . StringDataType::substringAfter($controller->getPath(), $webapp->getComponentPath() . '/') . PHP_EOL;
         }
-        
-        if (! $controllerJs) {
-            throw new ActionRuntimeError($this, 'Cannot export controller for for widget "' . $widget->getId() . '" in page "' . $widget->getPage()->getAliasWithNamespace() . '": the generated UI5 controller is empty!');
-        }
-        
-        // Copy external includes and replace their paths in the controller
-        $controllerJs = $this->exportExternalLibs($controllerJs, $exportFolder . DIRECTORY_SEPARATOR . 'libs');
-        
-        // Save view and controller as files
-        $controllerFile = rtrim($exportFolder, "\\/") . DIRECTORY_SEPARATOR . $controller->getPath(true);
-        $controllerDir = pathinfo($controllerFile, PATHINFO_DIRNAME);
-        if (! is_dir($controllerDir)) {
-            Filemanager::pathConstruct($controllerDir);
-        }
-        
-        $viewFile = rtrim($exportFolder, "\\/") . DIRECTORY_SEPARATOR . $view->getPath(true);
-        $viewDir = pathinfo($viewFile, PATHINFO_DIRNAME);
-        if (! is_dir($viewDir)) {
-            Filemanager::pathConstruct($viewDir);
-        }
-        
-        yield $msgIndent . '+ Widget ' . $widget->getWidgetType() . ' "' . $widget->getCaption() . '": ' . PHP_EOL;
-        file_put_contents($viewFile, $viewJs);
-        yield $msgIndent . '| ' . StringDataType::substringAfter($view->getPath(), $webapp->getComponentPath() . '/') . PHP_EOL;
-        file_put_contents($controllerFile, $controllerJs);
-        yield $msgIndent . '| ' . StringDataType::substringAfter($controller->getPath(), $webapp->getComponentPath() . '/') . PHP_EOL;
         
         if ($linkDepth > 0) {
             foreach ($this->findLinkedViewWidgets($widget) as $dialog) {
@@ -446,4 +483,32 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         return [];
     }
     
+    /**
+     * 
+     * @param \Throwable $e
+     * @return ExportFioriWebapp
+     */
+    protected function addError(\Throwable $e) : ExportFioriWebapp
+    {
+        $this->errors[] = $e;
+        return $this;
+    }
+    
+    /**
+     * 
+     * @return \Throwable[]
+     */
+    protected function getErrors() : array
+    {
+        return $this->errors;   
+    }
+    
+    /**
+     * 
+     * @return bool
+     */
+    protected function hasErrors() : bool
+    {
+        return ! empty($this->errors);
+    }
 }

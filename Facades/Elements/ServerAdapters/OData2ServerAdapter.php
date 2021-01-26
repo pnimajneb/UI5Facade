@@ -31,6 +31,11 @@ use exface\Core\Interfaces\Widgets\iHaveColumns;
 use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\Factories\DataTypeFactory;
 use exface\Core\Interfaces\Model\CompoundAttributeInterface;
+use exface\UI5Facade\Exceptions\UI5ExportUnsupportedException;
+use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
+use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
+use exface\Core\Factories\DataSheetFactory;
+use exface\Core\Interfaces\DataSheets\DataSheetInterface;
 
 
 /**
@@ -133,24 +138,6 @@ class OData2ServerAdapter implements UI5ServerAdapterInterface
     
     /**
      * 
-     * @param WidgetInterface $widget
-     * @throws UI5ExportUnsupportedWidgetException
-     */
-    protected function checkWidgetExportable(WidgetInterface $widget)
-    {
-        switch (true) {
-            case ($widget instanceof Data):
-                foreach ($widget->getColumns() as $col) {
-                    if ($col->hasFooter()) {
-                        throw new UI5ExportUnsupportedWidgetException($widget, 'Cannot export data widgets with column footers!');
-                    }
-                }
-                break;
-        }
-    }
-    
-    /**
-     * 
      * @return bool
      */
     protected function getUseConnectionCredentials() : bool
@@ -206,13 +193,92 @@ class OData2ServerAdapter implements UI5ServerAdapterInterface
             case get_class($action) === SaveData::class:
                 return $this->buildJsDataWrite($action, $oModelJs, $oParamsJs, $onModelLoadedJs, $onErrorJs, $onOfflineJs);
             default:
-                //throw new UI5ExportUnsupportedActionException('Action "' . $action->getAliasWithNamespace() . '" cannot be used with Fiori export!');
+                //throw new UI5ExportUnsupportedActionException($action, 'Action "' . $action->getAliasWithNamespace() . '" cannot be used with Fiori export!');
                 return <<<JS
 
         console.error('Unsupported action {$action->getAliasWithNamespace()}', {$oParamsJs});
 
 JS;
         }
+    }
+    
+    /**
+     * 
+     * @param WidgetInterface $widget
+     * @throws UI5ExportUnsupportedWidgetException
+     */
+    protected function checkWidgetExportable(WidgetInterface $widget) 
+    {
+        $e = new UI5ExportUnsupportedWidgetException($widget, 'Cannot export widget ' . $widget->getWidgetType());
+        
+        $readData = DataSheetFactory::createFromObject($widget->getMetaObject());
+        $readData = $widget->prepareDataSheetToRead($readData);
+        $this->checkDataSheetExportable($readData, $e);
+        
+        $prefillData = DataSheetFactory::createFromObject($widget->getMetaObject());
+        $prefillData = $widget->prepareDataSheetToPrefill($prefillData);
+        $this->checkDataSheetExportable($prefillData, $e);
+        
+        if ($e->hasErrors()) {
+            throw $e;
+        }
+        
+        return;
+    }
+    
+    /**
+     * 
+     * @param DataSheetInterface $sheet
+     * @param UI5ExportUnsupportedException $e
+     */
+    protected function checkDataSheetExportable(DataSheetInterface $sheet, UI5ExportUnsupportedException $e)
+    {
+        foreach ($sheet->getAggregations() as $aggr) {
+            $e->addError('Aggregation ' . $aggr->getAttributeAlias() . ' not supported with OData 2.0 export');
+        }
+        
+        if ($sheet->hasAggregateAll()) {
+            $e->addError('Aggregating all data to a single row not supported with OData 2.0 export');
+        }
+        
+        foreach ($sheet->getColumns() as $col) {
+            if ($col->isAttribute() === false) {
+                $e->addError('Only regular attributes supported: "' . $col->getExpressionObj()->toString() . '"');
+            }
+            if (! $col->getAttribute()->getRelationPath()->isEmpty()) {
+                $e->addError('Relations not supported: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
+            }
+            if ($col->hasTotals()) {
+                foreach ($col->getTotals() as $total) {
+                    $e->addError('Column footer/totals not supported: "' . $total->getAggregator()->exportString() . '" used on data column "' . $col->getAttributeAlias() . '"');
+                }
+            }
+        }
+        
+        return;
+    }
+    
+    /**
+     * 
+     * @param MetaObjectInterface $object
+     * @throws UI5ExportUnsupportedException
+     */
+    protected function checkObjectExportable(MetaObjectInterface $object)
+    {
+        $e = new UI5ExportUnsupportedException('Cannot export object "' . $object->getName() . '" (alias ' . $object->getAliasWithNamespace() . ')');
+        
+        if ($object->hasDataSource() && ! ($object->getDataConnection() instanceof OData2Connector)) {
+            $e->addError('Unsupported data source: the object MUST use the OData2Connector or a derivative in its data source!');
+        }
+        if (! $object->getBehaviors()->isEmpty()) {
+            $e->addError('Behaviors not supported: their logic cannot be transferred to JavaScript!');
+        }
+        
+        if ($e->hasErrors()) {
+            throw $e;
+        }
+        
+        return;
     }
     
     /**
@@ -243,13 +309,7 @@ JS;
             }          
         }
         
-        if ($widget instanceof iHaveColumns) {
-            foreach ($widget->getColumns() as $col) {
-                if ($col->getExpression()->isMetaAttribute() === false) {
-                    throw new UI5ExportUnsupportedWidgetException($col, 'Cannot export column "' . $col->getCaption() . '" (' . $col->getAttributeAlias() . ') - only columns referencing meta attributes currently work in exported apps.');
-                }
-            }
-        }
+        $this->checkWidgetExportable($widget);
         
         $dateAttributes = [];
         $timeAttributes = [];
@@ -836,6 +896,8 @@ JS;
      */
     protected function getODataModelParams(MetaObjectInterface $object) : string
     {
+        $this->checkObjectExportable($object);
+        
         $connection = $object->getDataConnection();        
         if (! $connection instanceof OData2Connector) {
             throw new FacadeLogicError('Cannot use direct OData 2 connections with object "' . $object->getName() . '" (' . $object->getAliasWithNamespace() . ')!');
