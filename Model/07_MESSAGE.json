@@ -78,6 +78,20 @@
             "HINT": "Check if the backend supports OData $batch requests with multiple operations",
             "TYPE": "ERROR",
             "DOCS": ""
+        },
+        {
+            "CREATED_ON": "2021-01-15 12:20:16",
+            "MODIFIED_ON": "2021-01-15 12:20:16",
+            "CREATED_BY_USER": "0x31000000000000000000000000000000",
+            "MODIFIED_BY_USER": "0x31000000000000000000000000000000",
+            "UID": "0x11eb83e1a4ba574683e1025041000001",
+            "APP": "0x11e837e87a640bfd91380205857feb80",
+            "CODE": "7EDQYXT",
+            "TITLE": "JavaScript runtime error",
+            "DESCRIPTION": "",
+            "HINT": "",
+            "TYPE": "ERROR",
+            "DOCS": ""
         }
     ],
     "totals_rows": [],
