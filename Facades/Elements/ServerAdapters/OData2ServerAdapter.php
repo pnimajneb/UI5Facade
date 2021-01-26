@@ -23,17 +23,13 @@ use exface\Core\Actions\SaveData;
 use exface\Core\Actions\CreateData;
 use exface\Core\DataTypes\TimeDataType;
 use exface\Core\Interfaces\WidgetInterface;
-use exface\Core\Widgets\Data;
 use exface\UI5Facade\Exceptions\UI5ExportUnsupportedWidgetException;
 use exface\Core\CommonLogic\UxonObject;
 use exface\Core\Actions\Autosuggest;
-use exface\Core\Interfaces\Widgets\iHaveColumns;
 use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\Factories\DataTypeFactory;
 use exface\Core\Interfaces\Model\CompoundAttributeInterface;
 use exface\UI5Facade\Exceptions\UI5ExportUnsupportedException;
-use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
-use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
 use exface\Core\Factories\DataSheetFactory;
 use exface\Core\Interfaces\DataSheets\DataSheetInterface;
 
