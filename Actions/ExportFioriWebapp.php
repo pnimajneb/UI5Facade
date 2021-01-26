@@ -134,7 +134,7 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
             $updSheet->dataUpdate(false, $transaction);
             
             if ($this->hasErrors()) {
-                yield PHP_EOL . 'Export failed with ' . count($this->getErrors()) . ' errors!';
+                yield PHP_EOL . 'Export failed with ' . count($this->getErrors()) . ' errors! Previous state of the export folder has been restored.';
             } else {           
                 yield PHP_EOL . 'Exported to ' . $webappFolder;
             }
