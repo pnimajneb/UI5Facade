@@ -47,7 +47,7 @@ class UI5Chart extends UI5AbstractElement
         $chart = <<<JS
 
                 new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getId()}_echarts\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
+                    content: "<div id=\"{$this->getId()}_echarts\" class=\"exf-chart\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
                     afterRendering: function(oEvent) { 
                         {$this->buildJsEChartsInit($this->getFacade()->getConfig()->getOption('LIBS.ECHARTS.THEME_NAME'))}
                         {$this->buildJsEventHandlers()}
