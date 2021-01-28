@@ -1440,8 +1440,8 @@ JS;
             var aRows = oData.rows;
             var bRowsDirty = false;
             exfPreloader.getOfflineActionsDataRows('{$widget->getMetaObject()->getId()}')
-            .then(function(actionRows) {
-                var oDirtyIcon = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
+            .then(function(actionRows) {console.log('dirty');
+                var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
                 for (var i = 0; i < actionRows.length; i++) {
                     for (var j = 0; j < aRows.length; j++) {
                         var actionId = actionRows[i]['{$uidAttributeAlias}'];
@@ -1453,8 +1453,8 @@ JS;
                         }
                     }
                 }
-                if (oDirtyIcon) {
-                    oDirtyIcon.setVisible(bRowsDirty);
+                if (oDirtyColumn) {
+                    oDirtyColumn.setVisible(bRowsDirty);
                 }
 
                 if (bRowsDirty) {

@@ -442,18 +442,24 @@ const exfLauncher = {};
 	            new sap.m.Column({
 	                header: new sap.m.Label({
 	                    text: "{i18n>WEBAPP.SHELL.NETWORK.STORAGE_OBJECT}"
-	                })
+	                }),
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 	            }),
 	            new sap.m.Column({
 	                header: new sap.m.Label({
 	                    text: "{i18n>WEBAPP.SHELL.NETWORK.STORAGE_DATASETS}"
-	                })
+	                }),
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 	            }),
 	            ,
 	            new sap.m.Column({
 	                header: new sap.m.Label({
 	                    text: "{i18n>WEBAPP.SHELL.NETWORK.STORAGE_LAST_SYNC}"
-	                })
+	                }),
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 	            })
 	        ]
 		}).setBusyIndicatorDelay(0);
@@ -511,7 +517,7 @@ const exfLauncher = {};
 	this.showOfflineQueuePopoverForItem = function(sObjectAlias, sUidColumn, sUidValue, oTrigger) {	
 		var oPopover = new sap.m.Popover({
 			title: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_WAITING_ACTIONS}",
-			placement: "Left",
+			placement: "Right",
 			afterClose: function(oEvent) {
 				oEvent.getSource().destroy();
 			},
@@ -525,28 +531,36 @@ const exfLauncher = {};
 								new sap.m.Label({
 									text: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_ACTION}"
 								})
-							]
+							],
+	                        popinDisplay: sap.m.PopinDisplay.Inline,
+							demandPopin: true,
 						}),
 						new sap.m.Column({
 							header: [
 								new sap.m.Label({
 									text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_TRIGGERED}'
 								})
-							]
+							],
+	                        popinDisplay: sap.m.PopinDisplay.Inline,
+							demandPopin: true,
 						}),
 						new sap.m.Column({
 							header: [
 								new sap.m.Label({
 									text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_STATUS}'
-								})
-							]
+								}),
+							],
+	                        popinDisplay: sap.m.PopinDisplay.Inline,
+							demandPopin: true,
 						}),
 						new sap.m.Column({
 							header: [
 								new sap.m.Label({
 									text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_TRIES}'
-								})
-							]
+								}),
+							],
+	                        popinDisplay: sap.m.PopinDisplay.Inline,
+							demandPopin: true,
 						})
 					],
 					items: {
@@ -618,7 +632,7 @@ const exfLauncher = {};
 						new sap.m.ToolbarSpacer(),
 						new sap.m.Button({
 							text: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_DELETE}",
-							icon: "sap-icon://cancel",
+							icon: "sap-icon://delete",
 							press: function(oEvent){
 								var oButton = oEvent.getSource();																					
 								var table = oButton.getParent().getParent()
@@ -785,53 +799,62 @@ const exfLauncher = {};
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
-							text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_ID}'
-						})
-					]
-				}),
-				new sap.m.Column({
-					header: [
-						new sap.m.Label({
 							text: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_OBJECT}"
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_ACTION}"
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_TRIGGERED}'
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_STATUS}'
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_TRIES}'
 						})
-					]
-				})
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
+				}),
+				new sap.m.Column({
+					header: [
+						new sap.m.Label({
+							text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_ID}'
+						})
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
+				}),
 			],
 			items: {
 				path: "queueModel>/data",
 				template: new sap.m.ColumnListItem({
 					cells: [
-						new sap.m.Text({
-							text: "{queueModel>id}"
-						}),
 						new sap.m.Text({
 							text: "{queueModel>object_name}"
 						}),
@@ -846,7 +869,10 @@ const exfLauncher = {};
 						}),
 						new sap.m.Text({
 							text: "{queueModel>tries}"
-						})
+						}),
+						new sap.m.Text({
+							text: "{queueModel>id}"
+						}),
 					]
 				})
 			}
@@ -896,42 +922,54 @@ const exfLauncher = {};
 						new sap.m.Label({
 							text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_ID}'
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_OBJECT}"
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: "{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_ACTION}"
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_TRIGGERED}'
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: '{i18n>WEBAPP.SHELL.NETWORK.ERROR_TABLE_LOGID}'
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				}),
 				new sap.m.Column({
 					header: [
 						new sap.m.Label({
 							text: '{i18n>WEBAPP.SHELL.NETWORK.ERROR_MESSAGE}'
 						})
-					]
+					],
+                    popinDisplay: sap.m.PopinDisplay.Inline,
+					demandPopin: true,
 				})
 			],
 			items: {

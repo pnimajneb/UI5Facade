@@ -303,13 +303,11 @@ JS;
     {
         $widget = $this->getWidget();
         $column_defs = '';
-        foreach ($widget->getColumns() as $column) {
-            $column_defs .= $this->getFacade()->getElement($column)->buildJsConstructorForUiColumn() . ',';
-        }
         
         // Add dirty-column for offline actions
         if ($this->hasDirtyColumn()) {
             $column_defs .= <<<JS
+            
         new sap.ui.table.Column('{$this->getDirtyFlagAlias()}',{
             hAlign: "Center",
             autoResizable: true,
@@ -326,7 +324,7 @@ JS;
                     exfLauncher.showOfflineQueuePopoverForItem(
                         "{$widget->getMetaObject()->getAliasWithNamespace()}",
                         "{$widget->getUidColumn()->getDataColumnName()}",
-                        oBtn.getModel().getProperty(oBtn.getBindingContext().getPath() + '/{$widget->getUidColumn()->getDataColumnName()}'), 
+                        oBtn.getModel().getProperty(oBtn.getBindingContext().getPath() + '/{$widget->getUidColumn()->getDataColumnName()}'),
                         oBtn
                     );
                 }
@@ -334,6 +332,11 @@ JS;
         }),
 JS;
         }
+        
+        foreach ($widget->getColumns() as $column) {
+            $column_defs .= $this->getFacade()->getElement($column)->buildJsConstructorForUiColumn() . ',';
+        }
+        
         return $column_defs;
     }
     
@@ -341,11 +344,14 @@ JS;
     {
         $widget = $this->getWidget();
         $cells = '';
-        foreach ($widget->getColumns() as $column) {
-            $cells .= $this->getFacade()->getElement($column)->buildJsConstructorForCell() . ",";
-        }
+        
         
         // Add dirty-column for offline actions
+        // NOTE: in the case of sap.m.Table it is important to place the dirty column
+        // first because it checks for the UID column and eventually adds it. This MUST
+        // happen before columns are rendered as there is no explicit link between columns
+        // and cells and having more columns than cells (because of adding the UID column
+        // at some point) causes very strange behavior!
         if ($this->hasDirtyColumn()) {
             $cells .= <<<JS
         new sap.m.Button({
@@ -358,13 +364,18 @@ JS;
                 exfLauncher.showOfflineQueuePopoverForItem(
                     "{$widget->getMetaObject()->getAliasWithNamespace()}",
                     "{$widget->getUidColumn()->getDataColumnName()}",
-                    oBtn.getModel().getProperty(oBtn.getBindingContext().getPath() + '/{$widget->getUidColumn()->getDataColumnName()}'), 
+                    oBtn.getModel().getProperty(oBtn.getBindingContext().getPath() + '/{$widget->getUidColumn()->getDataColumnName()}'),
                     oBtn
                 );
             }
         }),
 JS;
         }
+        
+        foreach ($widget->getColumns() as $column) {
+            $cells .= $this->getFacade()->getElement($column)->buildJsConstructorForCell() . ",";
+        }
+        
         return $cells;
     }
     
@@ -396,20 +407,23 @@ JS;
         }
         
         $column_defs = '';
-        foreach ($this->getWidget()->getColumns() as $column) {
-            $column_defs .= $this->getFacade()->getElement($column)->buildJsConstructorForMColumn() . ",";
-        }
         
         // Add dirty-column for offline actions
         if ($this->hasDirtyColumn()) {
             $column_defs .= <<<JS
-
-    new sap.m.Column('{$this->getDirtyFlagAlias()}',{
-        hAlign: "Center",
-        importance: "High",
-        visible: false
-    }),
+            
+                    new sap.m.Column('{$this->getDirtyFlagAlias()}',{
+                        hAlign: "Center",
+                        importance: "High",
+                        visible: false,
+                        popinDisplay: sap.m.PopinDisplay.Inline,
+						demandPopin: true,
+                    }),
 JS;
+        }
+        
+        foreach ($this->getWidget()->getColumns() as $column) {
+            $column_defs .= $this->getFacade()->getElement($column)->buildJsConstructorForMColumn() . ",";
         }
         
         return $column_defs;
