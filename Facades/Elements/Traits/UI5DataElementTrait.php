@@ -183,7 +183,7 @@ trait UI5DataElementTrait {
             }
             $preloadDataCols = json_encode($dataCols);
             $preloadImgCols = json_encode($imgCols);
-            $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$widget->getPage()->getUid()}', '{$widget->getId()}', '{$widget->getMetaObject()->getUidAttributeAlias()}');");
+            $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$widget->getPage()->getUid()}', '{$widget->getId()}', '{$widget->getMetaObject()->getUidAttributeAlias()}', '{$widget->getMetaObject()->getName()}');");
         }
         
         // Generate the constructor for the inner widget
