@@ -614,6 +614,8 @@ const exfLauncher = {};
 	 * Shows a dialog with a table showing currently queued offline actions (not yet sent
 	 * to the server).
 	 * 
+	 * @param {sap.ui.base.Event} [oEvent]
+	 * 
 	 * @return void
 	 */
 	this.showOfflineQueue = function(oEvent){
@@ -898,9 +900,11 @@ const exfLauncher = {};
 	/**
 	 * Shows a dialog with a table with offline actions server errors
 	 * 
+	 * @param {sap.ui.base.Event} [oEvent]
+	 * 
 	 * @return void
 	 */
-	this.showOfflineErrors = function(){
+	this.showOfflineErrors = function(oEvent){
 		var oButton = oEvent.getSource();
 		var oTable = new sap.m.Table({
 			autoPopinMode: true,
@@ -1021,7 +1025,8 @@ const exfLauncher = {};
 	/**
 	 * Loads all preload data from the server
 	 * 
-	 * @param oEvent
+	 * @param {sap.ui.base.Event} [oEvent]
+	 * 
 	 * @return Promise
 	 */
 	this.syncPreload = function(oEvent){
@@ -1043,6 +1048,8 @@ const exfLauncher = {};
 	/**
 	 * Removes all preload data
 	 * 
+	 * @param {sap.ui.base.Event} [oEvent]
+	 * 
 	 * @return Promise
 	 */
 	this.clearPreload = function(oEvent){
@@ -1062,6 +1069,8 @@ const exfLauncher = {};
 	
 	/**
 	 * Shows the offline menu
+	 * 
+	 * @param {sap.ui.base.Event} [oEvent]
 	 * 
 	 * @return void
 	 */
