@@ -7,6 +7,12 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Actions\ReadData;
 use exface\Core\Actions\ReadPrefill;
 use exface\UrlDataConnector\Actions\CallOData2Operation;
+use exface\Core\Interfaces\WidgetInterface;
+use exface\Core\Interfaces\Widgets\iTriggerAction;
+use exface\Core\Interfaces\Actions\iShowDialog;
+use exface\Core\Interfaces\Model\MetaObjectInterface;
+use exface\Core\Widgets\Dialog;
+use exface\Core\Widgets\Button;
 
 class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
 {
@@ -44,6 +50,112 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
         }
     }
     
+    /**
+     * 
+     * @param ActionInterface $action
+     * @param MetaObjectInterface $prevLevelObject
+     * @param string $prevLevelName
+     * @return array
+     */
+    protected function getEffectedRelations(ActionInterface $action, MetaObjectInterface $prevLevelObject = null, string $prevLevelName = null) : array
+    {
+        $effects = [];
+        $button = $action->isDefinedInWidget() ? $action->getWidgetDefinedIn() : null;
+        if ($button) {
+            if (! ($name = $button->getCaption())) {
+                $name = $action->getName();
+            }
+            $thisLevelObject = $button->getMetaObject();
+            
+            if ($thisLevelObject !== $prevLevelObject) {
+                if ($prevLevelName && $prevLevelObject && $prevLevelObject !== $button->getMetaObject()) {
+                    $name .= ' > ' . $prevLevelName;
+                }
+                if ($prevLevelObject !== null && $relationFromPrev = $prevLevelObject->findRelation($thisLevelObject, true)) {
+                    $effects[] = [
+                        'name' => $name,
+                        'relation' => $relationFromPrev
+                    ];
+                }
+            }
+            /*
+             if ($action->getMetaObject() !== $button->getMetaObject() && $action->getMetaObject() !== $prevLevelObject) {
+             $thisLevelObject = $action->getMetaObject();
+             $effects[] = [
+             'object_alias' => $thisLevelObject->getAliasWithNamespace(),
+             'object_uid' => $thisLevelObject->getId(),
+             'name' => $name
+             ];
+             }*/
+            
+            if ($inputWidget = $button->getInputWidget()) {
+                if ($inputWidget->getMetaObject() !== $button->getMetaObject() && $inputWidget->getMetaObject() !== $prevLevelObject && $relationFromPrev = $prevLevelObject->findRelation($inputWidget->getMetaObject(), true)) {
+                    $effects[] = [
+                        'name' => $name,
+                        'relation' => $relationFromPrev
+                    ];
+                }
+                if ($inputDialogTrigger = $inputWidget->getParentByClass(Button::class)) {
+                    if ($parentAction = $inputDialogTrigger->getAction()) {
+                        $effects = array_merge($effects, $this->getEffectedRelations($parentAction, $thisLevelObject, $name));
+                    }
+                }
+            }
+        }
+        
+        return $effects;
+    }
+    
+    /**
+     * 
+     * @param ActionInterface $action
+     * @param string $oRequestParamsJs
+     * @param string $aEffectsJs
+     * @return string
+     */
+    protected function buildJsEffects(ActionInterface $action, string $oRequestParamsJs, string $aEffectsJs) : string
+    {
+        $thisObj = $this->getElement()->getMetaObject();
+        $selfEffectName = json_encode($this->getElement()->getWidget()->getCaption());
+        $effectsJs .= <<<JS
+        
+                            aEffects.push({
+                                name: {$selfEffectName},
+                                effected_object_alias: "{$thisObj->getAliasWithNamespace()}",
+                                effected_object_uid: "{$thisObj->getId()}",
+                                effected_object_key_alias: "{$thisObj->getUidAttributeAlias()}",
+                                key_column: "{$thisObj->getUidAttributeAlias()}",
+                                key_values: function(){
+                                    return ({$oRequestParamsJs}.data.rows || []).map(function(row,index) {
+                                        return row['{$thisObj->getUidAttributeAlias()}'];
+                                    })
+                                }()
+                            });
+JS;
+        foreach ($this->getEffectedRelations($action, $thisObj) as $effect) {
+            $effectedRel = $effect['relation'];
+            $effectedObj = $effectedRel->getRightObject();
+            $effectedKeyDataCol = $effectedRel->getLeftKeyAttribute()->getAlias();
+            $effectsJs .= <<<JS
+            
+                            aEffects.push({
+                                name: "{$effect['name']}",
+                                effected_object_alias: "{$effectedObj->getAliasWithNamespace()}",
+                                effected_object_uid: "{$effectedObj->getId()}",
+                                effected_object_key_alias: "{$effectedRel->getRightKeyAttribute()->getAlias()}",
+                                key_column: "{$effectedKeyDataCol}",
+                                key_values: function(){
+                                    return ({$oRequestParamsJs}.data.rows || []).map(function(row,index) {
+                                        return row['{$effectedKeyDataCol}'];
+                                    })
+                                }()
+                            });
+JS;
+        }
+        
+        return $effectsJs;
+    }
+    
     protected function buildJsClickCallServerAction(ActionInterface $action, string $oModelJs, string $oParamsJs, string $onModelLoadedJs, string $onErrorJs = '', string $onOfflineJs = '') : string
     {
         $headers = ! empty($this->getElement()->getAjaxHeaders()) ? 'headers: ' . json_encode($this->getElement()->getAjaxHeaders()) . ',' : '';        
@@ -60,6 +172,9 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
         
         return <<<JS
 
+                            var aEffects = [];
+                            {$this->buildJsEffects($action, $oParamsJs, 'aEffects')};
+
 							$oParamsJs.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';
                             var oComponent = {$controller->buildJsComponentGetter()};                
                             if (! navigator.onLine) {
@@ -74,7 +189,8 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
                                         actionParams, 
                                         '{$action->getMetaObject()->getAliasWithNamespace()}',
                                         {$actionNameJs},
-                                        {$objectNameJs}
+                                        {$objectNameJs},
+                                        aEffects
                                     )
                                     .then(function(key) {
                                         var response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};

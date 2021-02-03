@@ -564,10 +564,10 @@ const exfLauncher = {};
 						})
 					],
 					items: {
-						path: "queueModel>/data",
+						path: "queueModel>/rows",
 						template: new sap.m.ColumnListItem({
 							cells: [new sap.m.Text({
-									text: "{queueModel>action_name}"
+									text: "{queueModel>effect_name}"
 								}),
 								new sap.m.Text({
 									text: "{queueModel>triggered}"
@@ -587,20 +587,20 @@ const exfLauncher = {};
 		.setModel(oTrigger.getModel())
 		.setModel(oTrigger.getModel('i18n'), 'i18n');
 		
-		exfPreloader.getActionQueueData(null, sObjectAlias, function(oRow){
-			return oRow[sUidColumn] == sUidValue;
-		})
-		.then(function(aQueueItems){
+		exfPreloader.getOfflineActionsEffects(sObjectAlias)
+        .then(function(aEffects){
 			var oData = {
-				data: aQueueItems
+				rows: []
 			};
+			aEffects.forEach(function(oEffect){
+				var oRow = oEffect.offline_queue_item;
+				oRow.effect_name = oEffect.name;
+				oData.rows.push(oRow);
+			});
 			oPopover.setModel(function(){return new sap.ui.model.json.JSONModel(oData)}(), 'queueModel');
 		})
 		.catch(function(data){
-			var oData = {
-				data: data
-			};
-			oPopover.setModel(function(){return new sap.ui.model.json.JSONModel(oData)}());
+			// TODO
 		});
 	
 		jQuery.sap.delayedCall(0, this, function () {

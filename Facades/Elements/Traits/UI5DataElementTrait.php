@@ -1439,20 +1439,18 @@ JS;
             var oData = $oModelJs.getData();
             var aRows = oData.rows;
             var bRowsDirty = false;
-            exfPreloader.getOfflineActionsDataRows('{$widget->getMetaObject()->getId()}')
-            .then(function(actionRows) {console.log('dirty');
+            exfPreloader.getOfflineActionsEffects('{$widget->getMetaObject()->getAliasWithNamespace()}')
+            .then(function(aEffects) {
                 var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
-                for (var i = 0; i < actionRows.length; i++) {
+                aEffects.forEach(function(oEffect){
                     for (var j = 0; j < aRows.length; j++) {
-                        var actionId = actionRows[i]['{$uidAttributeAlias}'];
-                        var rowId = aRows[j]['{$uidAttributeAlias}'];
-                        if (actionRows[i]['{$uidAttributeAlias}'] == aRows[j]['{$uidAttributeAlias}']) {
+                        if (oEffect.key_values.indexOf(aRows[j]['{$uidAttributeAlias}']) > -1) {
                             aRows[j]['{$this->getDirtyFlagAlias()}'] = true;
                             bRowsDirty = true;
                             break;
                         }
                     }
-                }
+                });
                 if (oDirtyColumn) {
                     oDirtyColumn.setVisible(bRowsDirty);
                 }
@@ -1799,7 +1797,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueSetterMethod()
      */
-    public function buildJsValueSetterrMethod($valueJs)
+    public function buildJsValueSetterMethod($valueJs)
     {
         throw new FacadeLogicError('Cannot call buildJsValueSetterMethod() on a UI5 data element: use buildJsValueSetter() instead!');
     }
