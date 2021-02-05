@@ -199,6 +199,32 @@ JS;
     }
     
     /**
+     *
+     * @param WidgetInterface $widget
+     * @return DataSheetInterface
+     */
+    protected function getDataSheetToRead(WidgetInterface $widget) : DataSheetInterface
+    {
+        $readData = DataSheetFactory::createFromObject($widget->getMetaObject());
+        $readData = $widget->prepareDataSheetToRead($readData);
+        return $readData;
+    }
+    
+   /**
+    * 
+    * @param WidgetInterface $widget
+    * @return DataSheetInterface
+    */
+    protected function getDataSheetToPrefill(WidgetInterface $widget) : DataSheetInterface
+    {
+        $prefillData = DataSheetFactory::createFromObject($widget->getMetaObject());
+        $prefillData = $widget->prepareDataSheetToPrefill($prefillData);
+        return $prefillData;
+    }
+    
+    
+    
+    /**
      * 
      * @param WidgetInterface $widget
      * @throws UI5ExportUnsupportedWidgetException
@@ -207,12 +233,10 @@ JS;
     {
         $e = new UI5ExportUnsupportedWidgetException($widget, 'Cannot export widget ' . $widget->getWidgetType());
         
-        $readData = DataSheetFactory::createFromObject($widget->getMetaObject());
-        $readData = $widget->prepareDataSheetToRead($readData);
+        $readData = $this->getDataSheetToRead($widget);
         $this->checkDataSheetExportable($readData, $e);
         
-        $prefillData = DataSheetFactory::createFromObject($widget->getMetaObject());
-        $prefillData = $widget->prepareDataSheetToPrefill($prefillData);
+        $prefillData = $this->getDataSheetToPrefill($widget);
         $this->checkDataSheetExportable($prefillData, $e);
         
         if ($e->hasErrors()) {
@@ -242,7 +266,14 @@ JS;
                 $e->addError('Only regular attributes supported: "' . $col->getExpressionObj()->toString() . '"');
             }
             if (! $col->getAttribute()->getRelationPath()->isEmpty()) {
-                $e->addError('Relations not supported: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
+                foreach ($col->getAttribute()->getRelationPath()->getRelations() as $rel) {
+                    if (! $rel->isForwardRelation()) {
+                        $e->addError('Reverse relations not supported: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
+                    }
+                    if (! $rel->getLeftKeyAttribute()->getDataAddressProperty('odata_navigationproperty')) {
+                        $e->addError('Relation not based on OData NavigationProperty: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
+                    }
+                }
             }
             if ($col->hasTotals()) {
                 foreach ($col->getTotals() as $total) {
@@ -310,17 +341,37 @@ JS;
         $dateAttributes = [];
         $timeAttributes = [];
         $compoundAttributes = $this->getCompoundAttributePropertiesForObject($object);
-        foreach ($object->getAttributes() as $qpart) {
-            if ($qpart->getDataType() instanceof DateDataType) {
-                $dateAttributes[] = $qpart->getAlias();
+        $expands = [];
+        foreach ($this->getDataSheetToRead($widget)->getColumns() as $col) {
+            $attr = $col->getAttribute();
+            if ($attr->getDataType() instanceof DateDataType) {
+                $dateAttributes[] = $attr->getAliasWithRelationPath();
             }
-            if ($qpart->getDataType() instanceof TimeDataType) {
-                $timeAttributes[] = $qpart->getAlias();
-            }            
+            if ($attr->getDataType() instanceof TimeDataType) {
+                $timeAttributes[] = $attr->getAliasWithRelationPath();
+            }
+            if (! $attr->getRelationPath()->isEmpty()) {
+                $exp = '';
+                foreach ($attr->getRelationPath()->getRelations() as $rel) {
+                    $navProp = $rel->getLeftKeyAttribute()->getDataAddressProperty('odata_navigationproperty');
+                    $exp .= ($exp ? '/' : '') . $navProp;
+                }
+                if ($expands[$exp] === null) {
+                    $expands[$exp] = [
+                        'expand' => $exp,
+                        'properties' => []
+                    ];
+                }
+                $expands[$exp]['properties'][] = [
+                    'alias' => $attr->getAliasWithRelationPath(),
+                    'address' => $attr->getDataAddress()
+                ];
+            }
         }
         $dateAttributesJson = json_encode($dateAttributes);
         $timeAttributesJson = json_encode($timeAttributes);
         $compoundAttributesJson = json_encode($compoundAttributes);
+        $expandJs = empty($expands) ? 'null' : json_encode(array_values($expands), JSON_PRETTY_PRINT);
         
         $opISNOT = EXF_COMPARATOR_IS_NOT;
         $opEQ = EXF_COMPARATOR_EQUALS;
@@ -344,6 +395,7 @@ JS;
                 time: $timeAttributesJson
             };
             var compoundAttributes = {$compoundAttributesJson};
+            var aExpands = {$expandJs};
             
             // Pagination
             if ({$oParamsJs}.hasOwnProperty('length') === true) {
@@ -352,6 +404,11 @@ JS;
                     oDataReadParams.\$skip = {$oParamsJs}.start;      
                 }
                 oDataReadParams.\$inlinecount = 'allpages';
+            }
+            if (aExpands !== null) {
+                oDataReadParams.\$expand = aExpands.map(function(oExpand) {
+                    return oExpand.expand;
+                }).join(',');
             }
 
             // Header Filters 
@@ -479,6 +536,21 @@ JS;
                 sorters: oDataReadSorters,
                 success: function(oData, response) {
                     var resultRows = oData.results;
+
+                    // expanded (JOINed) data
+                    if (aExpands !== null) {
+                        aExpands.forEach(function(oExpand) {
+                            resultRows.forEach(function(oRow, iRowIdx) {
+                                oExpand.expand.split('/').forEach(function(sPath) {
+                                    if (oRow === null) return null;
+                                    oRow = oRow[sPath] || null;
+                                });
+                                oExpand.properties.forEach(function(oExpandedProp) {
+                                    resultRows[iRowIdx][oExpandedProp.alias] = (oRow === null ? null : oRow[oExpandedProp.address]);
+                                });
+                            });
+                        });
+                    }
 
                     //Date Conversion
                     if (oAttrsByDataType.date[0] !== undefined) {
