@@ -189,7 +189,7 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
             yield 'Exporting to ' . $appPath . ':' . PHP_EOL . PHP_EOL;
             yield from $this->exportFile($webapp, 'index.html', $webcontentPath, '  ');
             yield from $this->exportFile($webapp, 'Component.js', $webcontentPath, '  ');
-            yield from $this->exportTranslations($rootPage->getApp(), $webapp, $webcontentPath, '  ');
+            yield from $this->exportTranslations(($rootPage->hasApp() ? $rootPage->getApp() : $this->getApp()), $webapp, $webcontentPath, '  ');
             yield '  view' . DIRECTORY_SEPARATOR . ' + controller' . DIRECTORY_SEPARATOR . PHP_EOL;
             yield from $this->exportStaticViews($webapp, $webcontentPath, '    ');
             yield from $this->exportPages($webapp, $webcontentPath, '    ');
