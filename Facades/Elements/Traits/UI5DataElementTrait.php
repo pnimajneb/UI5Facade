@@ -1430,7 +1430,6 @@ JS;
      */
     protected function buildJsMarkRowsAsDirty(string $oModelJs) : string
     {
-        
         if (! ($this->getServerAdapter() instanceof UI5FacadeServerAdapter)) {
             return '';
         }
@@ -1487,6 +1486,9 @@ JS;
      */
     protected function hasDirtyColumn() : bool
     {
+        if (! ($this->getServerAdapter() instanceof UI5FacadeServerAdapter)) {
+            return false;
+        }
         return $this->getWidget()->hasUidColumn();
     }
     
