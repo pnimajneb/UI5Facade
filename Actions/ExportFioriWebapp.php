@@ -201,7 +201,9 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         
         if ($this->hasErrors()) {
             Filemanager::deleteDir($appPath);
-            rename($backupPath, $appPath);
+            if (file_exists($backupPath)) {
+                rename($backupPath, $appPath);
+            }
         } 
         
         return $appPath;
