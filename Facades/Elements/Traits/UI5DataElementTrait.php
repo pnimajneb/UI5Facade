@@ -22,6 +22,7 @@ use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\UI5DataTable;
+use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -1429,13 +1430,16 @@ JS;
      */
     protected function buildJsMarkRowsAsDirty(string $oModelJs) : string
     {
+        
+        if (! ($this->getServerAdapter() instanceof UI5FacadeServerAdapter)) {
+            return '';
+        }
+        
         $widget = $this->getWidget();
         $uidAttributeAlias = $widget->getMetaObject()->getUidAttributeAlias();
         return <<<JS
 
         (function(){
-            if (exfPreloader === undefined) return;
-
             var oData = $oModelJs.getData();
             var aRows = oData.rows;
             var bRowsDirty = false;

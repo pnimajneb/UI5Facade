@@ -166,7 +166,7 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         $backupPath = $appPath . '.bkp';
         $webcontentPath = $appPath . DIRECTORY_SEPARATOR . 'WebContent';
         if (file_exists($appPath)) {
-            rename($appPath, $backupPath);
+            @rename($appPath, $backupPath);
         }
         
         try {
@@ -202,7 +202,7 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         if ($this->hasErrors()) {
             Filemanager::deleteDir($appPath);
             if (file_exists($backupPath)) {
-                rename($backupPath, $appPath);
+                @rename($backupPath, $appPath);
             }
         } 
         
