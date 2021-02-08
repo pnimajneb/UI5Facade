@@ -270,7 +270,7 @@ JS;
                     if (! $rel->isForwardRelation()) {
                         $e->addError('Reverse relations not supported: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
                     }
-                    if (! $rel->getLeftKeyAttribute()->getDataAddressProperty('odata_navigationproperty')) {
+                    if (! $rel->getLeftKeyAttribute()->getDataAddressProperty(OData2JsonUrlBuilder::DS_ODATA_NAVIGATIONPROPERTY)) {
                         $e->addError('Relation not based on OData NavigationProperty: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
                     }
                 }
@@ -353,7 +353,7 @@ JS;
             if (! $attr->getRelationPath()->isEmpty()) {
                 $exp = '';
                 foreach ($attr->getRelationPath()->getRelations() as $rel) {
-                    $navProp = $rel->getLeftKeyAttribute()->getDataAddressProperty('odata_navigationproperty');
+                    $navProp = $rel->getLeftKeyAttribute()->getDataAddressProperty(OData2JsonUrlBuilder::DS_ODATA_NAVIGATIONPROPERTY);
                     $exp .= ($exp ? '/' : '') . $navProp;
                 }
                 if ($expands[$exp] === null) {
@@ -1170,7 +1170,7 @@ JS;
         foreach ($attributes as $attr) {
             if (! ($attr instanceof CompoundAttributeInterface)) {
                 $key = $attr->getAlias();
-                $attributesType->$key= $attr->getDataAddressProperty('odata_type');
+                $attributesType->$key= $attr->getDataAddressProperty(OData2JsonUrlBuilder::DS_ODATA_TYPE);
             }
         }
         $attributesType = json_encode($attributesType);
@@ -1254,10 +1254,10 @@ JS;
             foreach ($uidAttribute->getComponents() as $comp) {
                 $alias = $comp->getAttribute()->getAlias();
                 $uidAliases[] = $alias;
-                $attributesType->$alias = $comp->getAttribute()->getDataAddressProperty('odata_type');
+                $attributesType->$alias = $comp->getAttribute()->getDataAddressProperty(OData2JsonUrlBuilder::DS_ODATA_TYPE);
             }
         } else {
-            $attributesType->$uidAttributeAlias = $uidAttribute->getDataAddressProperty('odata_type');
+            $attributesType->$uidAttributeAlias = $uidAttribute->getDataAddressProperty(OData2JsonUrlBuilder::DS_ODATA_TYPE);
         }
         $attributesType = json_encode($attributesType);
         $uidAliasesJson = json_encode($uidAliases);
@@ -1324,7 +1324,7 @@ JS;
         $attributesType = (object)array();
         foreach ($attributes as $attr) {
             $key = $attr->getAlias();
-            $attributesType->$key= $attr->getDataAddressProperty('odata_type');
+            $attributesType->$key= $attr->getDataAddressProperty(OData2JsonUrlBuilder::DS_ODATA_TYPE);
         }
         $attributesType = json_encode($attributesType);
         $bUseBatchJs = $this->getUseBatchFunctionImports() ? 'true' : 'false';
