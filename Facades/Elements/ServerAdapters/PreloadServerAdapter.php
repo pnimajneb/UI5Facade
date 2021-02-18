@@ -153,6 +153,9 @@ JS;
                         console.log('No preloaded data found: falling back to server request');
                         {$fallBackRequest}
                     }
+                })
+                .then(function(){
+                    return $oModelJs;
                 });
                 
 JS;

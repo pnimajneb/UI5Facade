@@ -207,8 +207,9 @@ JS;
                                 } else {
                                     {$onOfflineJs}
                                 }
+                                return $oModelJs;
                             } else {
-                                $.ajax({
+                                return $.ajax({
     								type: 'POST',
     								url: '{$this->getElement()->getAjaxUrl()}',
                                     {$headers}
@@ -240,7 +241,10 @@ JS;
                                             {$this->getElement()->getController()->buildJsComponentGetter()}.showAjaxErrorDialog(jqXHR)
                                         }
     								}
-    							});
+    							})
+                                .then(function(){
+                                    return $oModelJs;
+                                });
                             }
                                         
 JS;
@@ -254,7 +258,7 @@ JS;
                 
                 $oParamsJs.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';                
 
-                $.ajax({
+                return $.ajax({
 					type: 'GET',
 					url: '{$this->getElement()->getAjaxUrl()}',
                     {$headers}
@@ -294,7 +298,10 @@ JS;
                             {$this->getElement()->getController()->buildJsComponentGetter()}.showAjaxErrorDialog(jqXHR)
                         }
 					}
-				});
+				})
+                .then(function(){
+                    return $oModelJs;
+                });
                 
 JS;
     }
@@ -305,7 +312,7 @@ JS;
         
             $oParamsJs.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';                
             
-            $.ajax({
+            return $.ajax({
                 url: "{$this->getElement()->getAjaxUrl()}",
                 type: "GET",
 				data: {$oParamsJs},
@@ -330,6 +337,9 @@ JS;
                     }
                 }
 			})
+            .then(function(){
+                return $oModelJs;
+            })
 JS;
     }
 }

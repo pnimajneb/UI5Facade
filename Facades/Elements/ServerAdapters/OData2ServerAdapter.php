@@ -530,78 +530,78 @@ JS;
                     }
                 }
             }
-
-            oDataModel.read('/{$object->getDataAddress()}', {
-                urlParameters: oDataReadParams,
-                filters: oDataReadFilters,
-                sorters: oDataReadSorters,
-                success: function(oData, response) {
-                    var resultRows = oData.results;
-
-                    // expanded (JOINed) data
-                    if (aExpands !== null) {
-                        aExpands.forEach(function(oExpand) {
-                            resultRows.forEach(function(oRow, iRowIdx) {
-                                oExpand.expand.split('/').forEach(function(sPath) {
-                                    if (oRow === null) return null;
-                                    oRow = oRow[sPath] || null;
-                                });
-                                oExpand.properties.forEach(function(oExpandedProp) {
-                                    resultRows[iRowIdx][oExpandedProp.alias] = (oRow === null ? null : oRow[oExpandedProp.address]);
+            return new Promise (function(resolve, reject) {
+                oDataModel.read('/{$object->getDataAddress()}', {
+                    urlParameters: oDataReadParams,
+                    filters: oDataReadFilters,
+                    sorters: oDataReadSorters,
+                    success: function(oData, response) {
+                        var resultRows = oData.results;
+    
+                        // expanded (JOINed) data
+                        if (aExpands !== null) {
+                            aExpands.forEach(function(oExpand) {
+                                resultRows.forEach(function(oRow, iRowIdx) {
+                                    oExpand.expand.split('/').forEach(function(sPath) {
+                                        if (oRow === null) return null;
+                                        oRow = oRow[sPath] || null;
+                                    });
+                                    oExpand.properties.forEach(function(oExpandedProp) {
+                                        resultRows[iRowIdx][oExpandedProp.alias] = (oRow === null ? null : oRow[oExpandedProp.address]);
+                                    });
                                 });
                             });
-                        });
-                    }
-
-                    //Date Conversion
-                    if (oAttrsByDataType.date[0] !== undefined) {
-                        for (var i = 0; i < resultRows.length; i++) {
-                            for (var j = 0; j < oAttrsByDataType.date.length; j++) {
-                                var attr = oAttrsByDataType.date[j].toString();
-                                var d = resultRows[i][attr];
-                                if (d !== undefined && d !== "" && d !== null) {
-                                    var date = moment.utc(d);
-                                    var newVal = exfTools.date.format(date, '{$dateTimeFormat}');                                 
-                                    resultRows[i][attr] = newVal;
+                        }
+    
+                        //Date Conversion
+                        if (oAttrsByDataType.date[0] !== undefined) {
+                            for (var i = 0; i < resultRows.length; i++) {
+                                for (var j = 0; j < oAttrsByDataType.date.length; j++) {
+                                    var attr = oAttrsByDataType.date[j].toString();
+                                    var d = resultRows[i][attr];
+                                    if (d !== undefined && d !== "" && d !== null) {
+                                        var date = moment.utc(d);
+                                        var newVal = exfTools.date.format(date, '{$dateTimeFormat}');                                 
+                                        resultRows[i][attr] = newVal;
+                                    }
                                 }
                             }
                         }
-                    }
-                    //Time Conversion
-                    if (oAttrsByDataType.time[0] !== undefined) {
-                        for (var i = 0; i < resultRows.length; i++) {
-                            for (var j = 0; j < oAttrsByDataType.time.length; j++) {
-                                var attr = oAttrsByDataType.time[j].toString();
-                                var d = resultRows[i][attr];
-                                if (d.ms !== undefined && d.ms !== "" && d.ms !== null) {
-                                    var hours = Math.floor(d.ms / (1000 * 60 * 60));
-                                    var minutes = Math.floor(d.ms / 60000 - hours * 60);
-                                    var seconds = Math.floor(d.ms / 1000 - hours * 60 * 60 - minutes * 60);
-                                    var newVal = hours + ":" + minutes + ":" + seconds;
-                                    resultRows[i][attr] = newVal;
+                        //Time Conversion
+                        if (oAttrsByDataType.time[0] !== undefined) {
+                            for (var i = 0; i < resultRows.length; i++) {
+                                for (var j = 0; j < oAttrsByDataType.time.length; j++) {
+                                    var attr = oAttrsByDataType.time[j].toString();
+                                    var d = resultRows[i][attr];
+                                    if (d.ms !== undefined && d.ms !== "" && d.ms !== null) {
+                                        var hours = Math.floor(d.ms / (1000 * 60 * 60));
+                                        var minutes = Math.floor(d.ms / 60000 - hours * 60);
+                                        var seconds = Math.floor(d.ms / 1000 - hours * 60 * 60 - minutes * 60);
+                                        var newVal = hours + ":" + minutes + ":" + seconds;
+                                        resultRows[i][attr] = newVal;
+                                    }
                                 }
                             }
                         }
-                    }
-
-                    //adding compound attribute columns
-                    if (Object.keys(compoundAttributes).length > 0) {
-                         for (var i = 0; i < resultRows.length; i++) {
-                            var row = resultRows[i];
-                            {$this->buildJsCompoundAttributeMergeValues('compoundAttributes', 'row')}
-                            resultRows[i] = row;
+    
+                        //adding compound attribute columns
+                        if (Object.keys(compoundAttributes).length > 0) {
+                             for (var i = 0; i < resultRows.length; i++) {
+                                var row = resultRows[i];
+                                {$this->buildJsCompoundAttributeMergeValues('compoundAttributes', 'row')}
+                                resultRows[i] = row;
+                            }
                         }
-                    }
-                    
-                    //Local Filtering
-                    if ({$oParamsJs}.data && {$oParamsJs}.data.filters && {$oParamsJs}.data.filters.conditions) {                            
-                        if (oLocalFilters.length !== 0) {
-                            var conditions = {$oParamsJs}.data.filters.conditions;
-                            
-                            //QuickSearchFilter Local
-                            if ({$oParamsJs}.q !== undefined && {$oParamsJs}.q !== "" && oQuickSearchFilters[0] !== undefined) {
-                                var quickSearchVal = {$oParamsJs}.q.toString().toLowerCase();
-                                resultRows = resultRows.filter(row => {
+                        
+                        //Local Filtering
+                        if ({$oParamsJs}.data && {$oParamsJs}.data.filters && {$oParamsJs}.data.filters.conditions) {                            
+                            if (oLocalFilters.length !== 0) {
+                                var conditions = {$oParamsJs}.data.filters.conditions;
+                                
+                                //QuickSearchFilter Local
+                                if ({$oParamsJs}.q !== undefined && {$oParamsJs}.q !== "" && oQuickSearchFilters[0] !== undefined) {
+                                    var quickSearchVal = {$oParamsJs}.q.toString().toLowerCase();
+                                    resultRows = resultRows.filter(row => {
                                         var filtered = false;
                                         for (var i = 0; i < oQuickSearchFilters.length; i++) {
                                             if (oLocalFilters.includes(oQuickSearchFilters[i]) && row[oQuickSearchFilters[i]].toString().toLowerCase().includes(quickSearchVal)) {
@@ -612,66 +612,69 @@ JS;
                                             }
                                         }
                                         return filtered;
-                                });
-                            }
-                            
-                            for (var i = 0; i < oLocalFilters.length; i++) {
-                                var filterAttr = oLocalFilters[i];
-                                var cond = {};
-                                for (var j = 0; j < conditions.length; j++) {
-                                    if (conditions[j].expression === filterAttr) {
-                                        cond = conditions[j];
+                                    });
+                                }
+                                
+                                for (var i = 0; i < oLocalFilters.length; i++) {
+                                    var filterAttr = oLocalFilters[i];
+                                    var cond = {};
+                                    for (var j = 0; j < conditions.length; j++) {
+                                        if (conditions[j].expression === filterAttr) {
+                                            cond = conditions[j];
+                                        }
                                     }
+                                    if (cond.value === undefined || cond.value === null || cond.value === '') {
+                                        continue;
+                                    }
+                                    switch (cond.comparator) {
+                                        case '{$opEQ}':
+                                            resultRows = resultRows.filter(row => {
+                                                return row[cond.expression] == cond.value
+                                            });
+                                            break;
+                                        case '{$opNE}':
+                                            resultRows = resultRows.filter(row => {
+                                                return row[cond.expression] !== cond.value
+                                            });
+                                            break;
+                                        case '{$opISNOT}':
+                                            var val = cond.value.toString().toLowerCase();
+                                            resultRows = resultRows.filter(row => {
+                                                if (row[cond.expression] === undefined) return true;
+                                                return ! row[cond.expression].toString().toLowerCase().includes(val);
+                                            });
+                                            break;
+                                        default:
+                                            var val = cond.value.toString().toLowerCase();
+                                            resultRows = resultRows.filter(row => {
+                                                if (row[cond.expression] === undefined) return false;
+                                                return row[cond.expression].toString().toLowerCase().includes(val);
+                                            });
+                                    }                                    
                                 }
-                                if (cond.value === undefined || cond.value === null || cond.value === '') {
-                                    continue;
-                                }
-                                switch (cond.comparator) {
-                                    case '{$opEQ}':
-                                        resultRows = resultRows.filter(row => {
-                                            return row[cond.expression] == cond.value
-                                        });
-                                        break;
-                                    case '{$opNE}':
-                                        resultRows = resultRows.filter(row => {
-                                            return row[cond.expression] !== cond.value
-                                        });
-                                        break;
-                                    case '{$opISNOT}':
-                                        var val = cond.value.toString().toLowerCase();
-                                        resultRows = resultRows.filter(row => {
-                                            if (row[cond.expression] === undefined) return true;
-                                            return ! row[cond.expression].toString().toLowerCase().includes(val);
-                                        });
-                                        break;
-                                    default:
-                                        var val = cond.value.toString().toLowerCase();
-                                        resultRows = resultRows.filter(row => {
-                                            if (row[cond.expression] === undefined) return false;
-                                            return row[cond.expression].toString().toLowerCase().includes(val);
-                                        });
-                                }                                    
                             }
                         }
+    
+                        var oRowData = {
+                            rows: resultRows
+                        };
+    
+                        // Pagination
+                        if (oData.__count !== undefined) {
+                            oRowData.recordsFiltered = oData.__count;
+                            oRowData.recordsTotal = oData.__count;
+                        }
+    
+                        {$oModelJs}.setData(oRowData);
+                        {$onModelLoadedJs}
+                        resolve($oModelJs);
+                    },
+                    error: function(oError){                    
+                        {$this->buildJsServerResponseError('oError')}
+                        {$onErrorJs}
+                        reject($oModelJs);
                     }
-
-                    var oRowData = {
-                        rows: resultRows
-                    };
-
-                    // Pagination
-                    if (oData.__count !== undefined) {
-                        oRowData.recordsFiltered = oData.__count;
-                        oRowData.recordsTotal = oData.__count;
-                    }
-
-                    {$oModelJs}.setData(oRowData);
-                    {$onModelLoadedJs}
-                },
-                error: function(oError){                    
-                    {$this->buildJsServerResponseError('oError')}
-                    {$onErrorJs}
-                }
+                });
             });
                 
 JS;
@@ -1143,6 +1146,9 @@ JS;
     }
     
     /**
+     * Sends an OData create or update request depending on the passed action.
+     * 
+     * // FIXME how to return a promise resolving to the original JSONModel here? 
      * 
      * @param ActionInterface $action
      * @param string $oModelJs
@@ -1233,6 +1239,9 @@ JS;
     }
     
     /**
+     * Sends an OData delete request.
+     * 
+     * // FIXME how to return a promise resolving to the original JSONModel here? 
      * 
      * @param string $oModelJs
      * @param string $oParamsJs
@@ -1278,7 +1287,6 @@ JS;
             var uidAlias = '{$uidAttributeAlias}';
             var attributesType = {$attributesType};
             var compoundAttributes = {$compoundAttributesJson};
-            var 
             
             for (var i = 0; i < rowCount; i++) {
                 var data = {$oParamsJs}.data.rows[i];
@@ -1294,6 +1302,9 @@ JS;
     }
     
     /**
+     * Sends an OData request to call a function import.
+     * 
+     * // FIXME how to return a promise resolving to the original JSONModel here? 
      * 
      * @param ActionInterface $action
      * @param string $oModelJs

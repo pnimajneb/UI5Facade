@@ -815,9 +815,14 @@ JS;
      */
     public function buildJsDependentControlSelector(string $controlName, UI5AbstractElement $ownerElement, string $oControllerJsVar = null) : string
     {
-        $propertyName = $this->buildJsObjectName($controlName, $ownerElement);
+        return $this->buildJsDependentObjectGetter($controlName, $ownerElement, $oControllerJsVar);
+    }
+    
+    public function buildJsDependentObjectGetter(string $objectName, UI5AbstractElement $ownerElement, string $oControllerJsVar = null) : string
+    {
+        $propertyName = $this->buildJsObjectName($objectName, $ownerElement);
         if (! $this->hasProperty($propertyName)) {
-            throw new OutOfBoundsException('Dependent control "' . $propertyName . ' not found in controller "' . $this->getName() . '"');
+            throw new OutOfBoundsException('Dependent object "' . $propertyName . ' not found in controller "' . $this->getName() . '"');
         }
         
         if ($oControllerJsVar === null) {

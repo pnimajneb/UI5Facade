@@ -304,6 +304,7 @@ interface UI5ControllerInterface {
     public function hasDependent(string $name, UI5AbstractElement $ownerElement) : bool;
     
     /**
+     * Returns an inline JS snippet to get a dependent control saved previously via addDependentControl().
      * 
      * @param string $controlName
      * @param UI5AbstractElement $ownerElement
@@ -315,6 +316,16 @@ interface UI5ControllerInterface {
      */
     public function buildJsDependentControlSelector(string $controlName, UI5AbstractElement $ownerElement, string $oControllerJsVar = null) : string;
     
+    /**
+     * Returns an inline JS snippet to get the dependen object (controller property)
+     * 
+     * @param string $objectName
+     * @param UI5AbstractElement $ownerElement
+     * @param string $oControllerJsVar
+     * 
+     * @return string
+     */
+    public function buildJsDependentObjectGetter(string $objectName, UI5AbstractElement $ownerElement, string $oControllerJsVar = null) : string;
     /**
      * 
      * @return string

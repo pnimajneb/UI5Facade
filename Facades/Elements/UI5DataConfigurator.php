@@ -69,6 +69,16 @@ class UI5DataConfigurator extends UI5Tabs
         return $this->getIncludeFilterTab();
     }
     
+    protected function hasTabAdvancedSearch() : bool
+    {
+        return true;
+    }
+    
+    protected function hasTabSorters() : bool
+    {
+        return true;
+    }
+    
     /**
      * 
      * {@inheritDoc}
@@ -105,13 +115,39 @@ JS;
             showResetEnabled: true,
             reset: {$controller->buildJsEventHandler($this, self::EVENT_BUTTON_RESET, true)},
             panels: [
+                {$this->buildJsPanelsConstructors()}
+            ]
+        })
+        .setModel({$this->buildJsCreateModel()}, "{$this->getModelNameForConfig()}")
+        .setModel({$this->buildJsCreateModel()}, "{$this->getModelNameForConfig()}_initial")
+
+JS;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsPanelsConstructors() : string
+    {
+        return <<<JS
+
                 {$this->buildJsTabFilters()}
                 {$this->buildJsTabSorters()}
                 {$this->buildJsTabSearch()}
                 {$this->buildJsTabColumns()}
-            ]
-        })
-        .setModel(function(){
+JS;
+    }
+    
+    /**
+     * Returns the JS to initialize the inner JSONModel (returning that model)
+     * 
+     * @return string
+     */
+    protected function buildJsCreateModel() : string
+    {
+        return <<<JS
+function(){
             var oModel = new sap.ui.model.json.JSONModel();
             var columns = {$this->buildJsonColumnData()};
             var sortables = {$this->buildJsonSorterData()};
@@ -122,19 +158,7 @@ JS;
             }
             oModel.setData(data);
             return oModel;        
-        }(), "{$this->getModelNameForConfig()}").setModel(function(){
-            var oModel = new sap.ui.model.json.JSONModel();
-            var columns = {$this->buildJsonColumnData()};
-            var sortables = {$this->buildJsonSorterData()};
-            var data = {
-                "columns": columns,
-                "sortables": sortables,
-                "sorters": [{$this->buildJsInitialSortItems()}]
-            }
-            oModel.setData(data);
-            return oModel;          
-        }(), "{$this->getModelNameForConfig()}_initial")
-
+        }()
 JS;
     }
                
@@ -485,7 +509,7 @@ JS;
      */
     public function buildJsDataGetter(ActionInterface $action = null, bool $unrendered = false)
     {
-        if ($unrendered === true) {
+        if ($unrendered === true || $this->hasTabAdvancedSearch() === false) {
             return $this->buildJsDataGetterViaTrait($action, $unrendered);
         }
         
@@ -527,6 +551,31 @@ function(){
     }
     return oData;
 }()
+
+JS;
+    }
+    
+    public function buildJsDataLoaderParams(string $oParamsJs) : string
+    {
+        if ($this->hasTabSorters()) {
+            $addSortersJs = <<<JS
+
+                // Add sorters from P13nDialog
+                aSortItems = sap.ui.getCore().byId('{$this->getIdOfSortPanel()}').getSortItems();
+                for (var i in aSortItems) {
+                    $oParamsJs.sort = (params.sort ? params.sort+',' : '') + aSortItems[i].getColumnKey();
+                    $oParamsJs.order = (params.order ? params.order+',' : '') + (aSortItems[i].getOperation() == 'Ascending' ? 'asc' : 'desc');
+                } 
+
+JS;
+        } else {
+            $addSortersJs = '';
+        }
+        
+        return <<<JS
+
+                $oParamsJs.data = {$this->buildJsDataGetter()};
+                $addSortersJs
 
 JS;
     }

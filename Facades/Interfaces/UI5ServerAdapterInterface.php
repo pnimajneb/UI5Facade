@@ -18,6 +18,7 @@ interface UI5ServerAdapterInterface {
     public function getElement() : UI5AbstractElement;
     
     /**
+     * Returns the JS code to load data from the server and return a promise resolving to the loaded JSONModel.
      * 
      * @param ActionInterface $action
      * @param string $oModelJs
