@@ -42,13 +42,20 @@ class UI5Map extends UI5AbstractElement
         $controller = $this->getController(); 
         $this->registerExternalModules($controller);
         
-        $this->leafletVarTemp = 'oController.' . $controller->buildJsObjectName('leaflet', $this);
+        $leafletVarJs = $controller->buildJsObjectName('leaflet', $this);
+        
+        // Make sure buildJsLeafletVar() returns oController.xxx to maximize performance
+        // because many initialization scripts require the leaflet variable and would
+        // otherwise run all the logic to find the component, the controller, etc.
+        $this->leafletVarTemp = 'oController.' . $leafletVarJs;
         $chart = <<<JS
 
                 new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getIdLeaflet()}\" class=\"exf-chart\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
-                    afterRendering: function(oEvent) {   
-                        {$this->buildJsLeafletInit()};                     
+                    content: "<div id=\"{$this->getIdLeaflet()}\" class=\"exf-chart\" style=\"height: 100%; min-height: 100px; overflow: hidden;\"></div>",
+                    afterRendering: function(oEvent) { 
+                        if (oController.$leafletVarJs === null || oController.$leafletVarJs === undefined) {  
+                            {$this->buildJsLeafletInit()};     
+                        }                
 
                         sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}').getParent(), function(){
                             {$this->buildJsLeafletResize()}
@@ -57,6 +64,7 @@ class UI5Map extends UI5AbstractElement
                 })
 
 JS;
+        // Remove the precalculated var name after init scripts were generated (see above).
         $this->leafletVarTemp = null;
                         
         return $this->buildJsPanelWrapper($chart, $oControllerJs);
