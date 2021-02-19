@@ -132,3 +132,8 @@ html.sap-tablet .sapMDialog, html.sap-desktop .sapMDialog {min-width: 25rem !imp
 /* Wizard */
 /* FIX next-button of mobile wizzards floating in the upper part of the screen - even if the wizard itself is not visible! */
 html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !important; left: inherit !important; bottom: inherit !important;}
+
+/* Map */
+.exf-map {z-index: 0}
+.exf-map-popup h3 {padding-left: 0}
+.exf-map-popup-table > tbody > tr > td:nth-of-type(2) {font-weight: bold}

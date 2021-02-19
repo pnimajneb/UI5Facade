@@ -1149,7 +1149,9 @@ JS;
 
                     new sap.m.OverflowToolbarButton({
                         icon: "sap-icon://refresh",
-                        press: {$this->getController()->buildJsMethodCallFromView('onLoadData', $this)}
+                        press: function(oEvent){
+                            {$this->buildJsRefresh()}
+                        }
                     })
 
 JS;
@@ -1157,7 +1159,7 @@ JS;
         
         $qsElement = $this->getQuickSearchElement();
         if ($qsElement instanceof UI5SearchField) {
-            $qsElement->setSearchCallbackJs($this->getController()->buildJsMethodCallFromView('onLoadData', $this));
+            $qsElement->setSearchCallbackJs("function(oEvent){ {$this->buildJsRefresh()} }");
         }
         return $qsElement->buildJsConstructorForMainControl($oControllerJs);
     }

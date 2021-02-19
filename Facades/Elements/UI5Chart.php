@@ -315,19 +315,11 @@ JS;
     }
     
     /**
-     * 
-     * @return string
+     * @see UI5DataElementTrait
      */
-    protected function buildJsQuickSearchConstructor() : string
+    protected function hasQuickSearch() : bool
     {
-        return <<<JS
-
-                    new sap.m.OverflowToolbarButton({
-                        icon: "sap-icon://refresh",
-                        press: {$this->getController()->buildJsMethodCallFromView('onLoadData', $this)}
-                    })
-
-JS;
+        return false;
     }
     
     /**

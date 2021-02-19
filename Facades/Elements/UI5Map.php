@@ -51,7 +51,7 @@ class UI5Map extends UI5AbstractElement
         $chart = <<<JS
 
                 new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getIdLeaflet()}\" class=\"exf-chart\" style=\"height: 100%; min-height: 100px; overflow: hidden;\"></div>",
+                    content: "<div id=\"{$this->getIdLeaflet()}\" class=\"{$this->buildCssElementClass()}\" style=\"height: 100%; min-height: 100px; overflow: hidden;\"></div>",
                     afterRendering: function(oEvent) { 
                         if (oController.$leafletVarJs === null || oController.$leafletVarJs === undefined) {  
                             {$this->buildJsLeafletInit()};     
@@ -173,22 +173,6 @@ JS;
     
     /**
      * 
-     * @return string
-     */
-    protected function buildJsQuickSearchConstructor() : string
-    {
-        return <<<JS
-
-                    new sap.m.OverflowToolbarButton({
-                        icon: "sap-icon://refresh",
-                        press: {$this->getController()->buildJsMethodCallFromView('onLoadData', $this)}
-                    })
-
-JS;
-    }
-    
-    /**
-     * 
      * @see UI5DataElementTrait
      */
     protected function getDataWidget() : Data
@@ -233,7 +217,18 @@ JS;
         return $this->buildJsLeafletGetSelectedRows();
     }
     
+    /**
+     * @see UI5DataElementTrait
+     */
     protected function hasPaginator() : bool
+    {
+        return false;
+    }
+    
+    /**
+     * @see UI5DataElementTrait
+     */
+    protected function hasQuickSearch() : bool
     {
         return false;
     }
