@@ -116,7 +116,7 @@ JS;
         } elseif ($tpl instanceof UI5ValueBindingInterface) {
             $tpl->setValueBindingPrefix($modelPrefix);
         }
-        if (($tpl instanceof UI5CompoundControlInterface) && ($hideCaptions === true || $widget->getHideCaption() === true)) {
+        if (($tpl instanceof UI5CompoundControlInterface) && ($hideCaptions === true || $widget->getHideCaption() === true || $cellWidget->getHideCaption() === true)) {
             return $tpl->buildJsConstructorForMainControl();
         } else {
             return $tpl->buildJsConstructor();
@@ -144,7 +144,7 @@ JS;
 						{$this->buildJsPropertyWidth()}
 						header: [
                             new sap.m.Label({
-                                text: "{$col->getCaption()}"
+                                text: "{$this->getCaption()}"
                             })
                         ],
                         {$alignment}
