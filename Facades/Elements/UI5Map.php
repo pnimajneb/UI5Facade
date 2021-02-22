@@ -60,6 +60,8 @@ class UI5Map extends UI5AbstractElement
                         sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}').getParent(), function(){
                             {$this->buildJsLeafletResize()}
                         });
+
+                        sap.ui.getCore().byId('{$this->getId()}').getParent().addStyleClass('sapUiNoContentPadding');
                     }
                 })
 
