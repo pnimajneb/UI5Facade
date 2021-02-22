@@ -267,9 +267,17 @@ JS;
         {$this->buildJsPseudoEventHandlers()}
 JS;
     }
-                
+             
+    /**
+     * 
+     * @param int $valueColIdx
+     * @param int $textColIdx
+     * @return string
+     */
     protected function buildJsPropertySuggestionItemSelected(int $valueColIdx, int $textColIdx) : string
     {
+        // Remember to trigger the change event here as it is not triggered automatically.
+        // The `buildJsSetSelectedKeyMethod()` does not trigger change either!
         return <<<JS
             function(oEvent){
                 var oItem = oEvent.getParameter("selectedRow");
@@ -278,6 +286,7 @@ JS;
                 var oInput = oEvent.getSource();
                 oInput.{$this->buildJsSetSelectedKeyMethod("aCells[ {$valueColIdx} ].getText()", "aCells[ {$textColIdx} ].getText()")};
                 oInput.setValueState(sap.ui.core.ValueState.None);
+                oInput.fireChange({value: aCells[ {$valueColIdx} ].getText()});
 			},
 JS;
     }
