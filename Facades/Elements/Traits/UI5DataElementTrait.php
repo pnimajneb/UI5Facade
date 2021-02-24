@@ -490,8 +490,16 @@ JS;
     }
     
     /**
-     * Returns the body of a controller function to fill the table with data: onLoadDataTableId(oControlEvent).
+     * Returns the body of a controller method to fill the widget with data: onLoadDataTableId(oControlEvent).
+     * 
+     * **IMPORTANT:** The controller metho MUST return a promise that resolves to the JSONModel
+     * containing the loaded data. Thus, if you add cancelling logic, don't forget to return
+     * a promise - see the `if (oViewModel.getProperty(sPendingPropery) === true)` branch below
+     * for an example. 
      *
+     * @param string $oControlEventJsVar
+     * @param string $keepPagePosJsVar
+     * 
      * @return string
      */
     protected function buildJsDataLoader($oControlEventJsVar = 'oControlEvent', $keepPagePosJsVar = 'bKeepPagingPos')
@@ -529,7 +537,7 @@ JS;
                         }, 0);
                     };
                     oPrefillBinding.attachChange(fnPrefillHandler);
-                    return;
+                    return Promise.resolve(sap.ui.getCore().byId('{$this->getId()}').getModel());
                 }
                 
                 {$disableEditableChangesWatcher}
