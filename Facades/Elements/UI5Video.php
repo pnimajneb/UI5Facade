@@ -2,12 +2,11 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
-use exface\Core\DataTypes\BinaryDataType;
 
 /**
- * Generates custom PDFViewer using the popular PDF.js library
+ * Generates custom VideoPlayer control to show a HTML5 video
  * 
- * @method \exface\Core\Widgets\PDFViewer getWidget()
+ * @method \exface\Core\Widgets\Video getWidget()
  *
  * @author Andrej Kabachnik
  *        
