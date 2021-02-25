@@ -95,7 +95,7 @@ new sap.m.GenericTile("{$this->getId()}", {
             ]
         })
     ]
-}).addStyleClass("sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout {$tileClass}")
+}).addStyleClass("sapUiTinyMarginBegin sapUiTinyMarginTop tileLayout {$tileClass} {$this->buildCssElementClass()}")
 JS;
     }
      
@@ -152,5 +152,15 @@ JS;
 JS;
         }
         return '';
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildCssElementClass()
+     */
+    public function buildCssElementClass()
+    {
+        return 'exf-tile';
     }
 }
