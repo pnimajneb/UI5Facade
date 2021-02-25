@@ -59,6 +59,33 @@ interface UI5ControllerInterface {
      */
     public function addProperty(string $name, string $js) : UI5ControllerInterface;
     
+    /**
+     * Adds a controller method for a specific owner control.
+     * 
+     * **NOTE:** adding a method with the same name again will overwrite the previous version.
+     * No checks are done regarding compatibility! 
+     * 
+     * E.g. `$controller->addMethod('onLoad', $control, 'param1, param2', 'console.log(param1), 'My method')`
+     * will result in the following code somewhere in the controller:
+     * 
+     * ```
+     *  // My method
+     *  onLoadControlId: function(param1, param2) {
+     *      console.log(param1)
+     *  },
+     *  
+     * ```
+     * 
+     * Adding methods this way allows to use short method names with automatically generated
+     * namespace suffixes. Also it makes sure, the method is added only once.
+     * 
+     * @param string $methodName
+     * @param UI5AbstractElement $methodOwner
+     * @param string $params
+     * @param string $body
+     * @param string $comment
+     * @return UI5ControllerInterface
+     */
     public function addMethod(string $methodName, UI5AbstractElement $methodOwner, string $params, string $body, $comment = '') : UI5ControllerInterface;
     
     /**
