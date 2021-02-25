@@ -45,8 +45,8 @@ JS;
         return <<<JS
         
                         new sap.m.FlexBox({
-                            height: "100%",
-                            width: "100%",
+                            {$this->buildJsPropertyHeight()}
+                            {$this->buildJsPropertyVisibile()}
                             justifyContent: "Center",
                             alignItems: "Center",
                             items: [

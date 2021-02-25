@@ -6,6 +6,7 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControlWithToolbarInterface;
 use exface\Core\Widgets\Panel;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryLayoutTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5HelpButtonTrait;
+use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 
 /**
  * 
@@ -29,12 +30,12 @@ class UI5Panel extends UI5Container
         $panel = <<<JS
 
                 new sap.m.Panel("{$this->getId()}", {
-                    height: "100%",
+                    {$this->buildJsPropertyHeight()}
                     content: [
                         {$this->buildJsChildrenConstructors(false)}
                     ],
                     {$this->buildJsProperties()}
-                }).addStyleClass("sapUiNoContentPadding")
+                }).addStyleClass("sapUiNoContentPadding {$this->buildCssElementClass()}")
 
 JS;
         if ($this->hasPageWrapper() === true) {
@@ -212,7 +213,7 @@ JS;
         return <<<JS
         
             new sap.ui.layout.form.SimpleForm({$id} {
-                width: "100%",
+                {$this->buildJsPropertyHeight()}
                 {$this->buildJsPropertyEditable()}
                 layout: "ResponsiveGridLayout",
                 adjustLabelSpan: false,
@@ -308,5 +309,38 @@ JS;
     public function buildJsLayouter() : string
     {
         return '';
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildCssElementClass()
+     */
+    public function buildCssElementClass()
+    {
+        return 'exf-panel';
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsPropertyHeight()
+     */
+    protected function buildJsPropertyHeight() : string
+    {
+        $widget = $this->getWidget();
+        if (! $widget->getHeight()->isUndefined()) {
+            return "height: '{$this->getHeight()}'";
+        }
+        $parent = $widget->getParent();
+        if ($parent && ($parent instanceof iContainOtherWidgets)) {
+            $visibleSiblingsCnt = $parent->countWidgets(function($child){
+               return $child->isHidden() === false; 
+            });
+            if ($visibleSiblingsCnt > 1) {
+                return '';
+            }
+        }
+        return parent::buildJsPropertyHeight();
     }
 }

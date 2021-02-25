@@ -78,4 +78,14 @@ class UI5Form extends UI5Panel
     {
         return $this->getFacade()->getElement($this->getWidget()->getToolbarMain())->buildJsConstructor();
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildCssElementClass()
+     */
+    public function buildCssElementClass()
+    {
+        return 'exf-form';
+    }
 }
