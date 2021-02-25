@@ -1,12 +1,11 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\SplitPanel;
 use exface\Core\Widgets\SplitHorizontal;
 
 /**
  * 
- * @method SplitPanel getWidget()
+ * @method \exface\Core\Widgets\SplitPanel getWidget()
  * 
  * @author Andrej Kabachnik
  *
@@ -29,5 +28,15 @@ class UI5SplitPanel extends UI5Panel
                     layoutData: new sap.ui.layout.SplitterLayoutData({
                         size: "' . $size . '"
                     })';
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Panel::buildJsPropertyHeight()
+     */
+    protected function buildJsPropertyHeight() : string
+    {
+        return 'height: "100%",';
     }
 }
