@@ -52,14 +52,21 @@ class UI5Map extends UI5AbstractElement
         // because many initialization scripts require the leaflet variable and would
         // otherwise run all the logic to find the component, the controller, etc.
         $this->leafletVarTemp = 'oController.' . $leafletVarJs;
+        
+        // **IMPORTANT:** it seems, an outer div with the id of the control is required because
+        // otherwise the map is not rendered at all after navigating to a view via routing. The map
+        // gets rendered even before the view is shown, but once the view is visible, the leaflet-div
+        // is empty while the leaflet-var is initialized, which is very strange.
+        // I guess, this has something to do with the so-called "preserved content" of sap.ui.core.HTML 
+        // (see for an explanation for possible causes: https://github.com/SAP/openui5/issues/1162).
         $chart = <<<JS
 
                 new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getIdLeaflet()}\" class=\"{$this->buildCssElementClass()}\" style=\"height: 100%; min-height: 100px; overflow: hidden;\"></div>",
+                    content: "<div id=\"{$this->getId()}\" style=\"height: 100%;\"><div id=\"{$this->getIdLeaflet()}\" class=\"{$this->buildCssElementClass()}\" style=\"height: 100%; min-height: 100px; overflow: hidden;\"></div></div>",
                     afterRendering: function(oEvent) { 
                         if (oController.$leafletVarJs === null || oController.$leafletVarJs === undefined) {  
-                            {$this->buildJsLeafletInit()};     
-                        }                
+                                {$this->buildJsLeafletInit()};     
+                        } 
 
                         sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}').getParent(), function(){
                             {$this->buildJsLeafletResize()}
