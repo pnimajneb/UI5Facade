@@ -36,6 +36,8 @@ use exface\Core\Factories\TaskFactory;
 use GuzzleHttp\Psr7\ServerRequest;
 use exface\Core\DataTypes\BooleanDataType;
 use exface\UI5Facade\Exceptions\UI5ExportUnsupportedException;
+use exface\Core\Interfaces\DataSheets\DataSheetInterface;
+use exface\Core\Interfaces\Tasks\ResultMessageStreamInterface;
 
 /**
  * Generates the code for a selected Fiori Webapp project.
@@ -66,11 +68,11 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
     }
     
     /**
-     * 
+     *
      * {@inheritDoc}
-     * @see \exface\Core\CommonLogic\AbstractAction::perform()
+     * @see \exface\Core\CommonLogic\AbstractActionDeferred::performImmediately()
      */
-    protected function perform(TaskInterface $task, DataTransactionInterface $transaction) : ResultInterface
+    protected function performImmediately(TaskInterface $task, DataTransactionInterface $transaction, ResultMessageStreamInterface $result) : array
     {
         if ($task instanceof CliTaskInterface) {
             $input = DataSheetFactory::createFromObject($this->getInputObjectExpected());
@@ -117,35 +119,38 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         // Disable all global actions as they cannot be used with the oData adapter
         $facade->getWorkbench()->getConfig()->setOption('WIDGET.DATATOOLBAR.GLOBAL_ACTIONS', new UxonObject());
         
-        $result = new ResultMessageStream($task);
-        $generator = function() use ($rootPage, $facade, $row, $input, $transaction, $result) {
-            $appGen = $this->exportWebapp($rootPage, $facade, $row);
-            yield from $appGen;
-            $webappFolder = $appGen->getReturn();
-            
-            // Update build-timestamp
-            $updSheet = DataSheetFactory::createFromObject($input->getMetaObject());
-            $updSheet->addRow([
-                $input->getMetaObject()->getUidAttributeAlias() => $row[$input->getUidColumn()->getName()],
-                'current_version_date' => DateTimeDataType::now(),
-                'MODIFIED_ON' => $row['MODIFIED_ON']
-            ]);
-            
-            $updSheet->dataUpdate(false, $transaction);
-            
-            if ($this->hasErrors()) {
-                yield PHP_EOL . 'Export failed with ' . count($this->getErrors()) . ' errors! Previous state of the export folder has been restored.';
-            } else {           
-                yield PHP_EOL . 'Exported to ' . $webappFolder;
-            }
-            
-            // Trigger regular action post-processing as required by AbstractActionDeferred.
-            $this->performAfterDeferred($result, $transaction);
-        };
+        return [$rootPage, $facade, $row, $input, $transaction];
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\CommonLogic\AbstractActionDeferred::performDeferred()
+     */
+    protected function performDeferred(UiPageInterface $rootPage = null, UI5Facade $facade = null, array $row = [], DataSheetInterface $input = null, DataTransactionInterface $transaction = null) : \Generator
+    {
+        if ($rootPage === null || $facade === null || empty($row) || $input === null || $transaction === null) {
+            yield PHP_EOL . 'Export failed due to missing parameters!';
+        }
+        $appGen = $this->exportWebapp($rootPage, $facade, $row);
+        yield from $appGen;
+        $webappFolder = $appGen->getReturn();
         
-        $result->setMessageStreamGenerator($generator);
+        // Update build-timestamp
+        $updSheet = DataSheetFactory::createFromObject($input->getMetaObject());
+        $updSheet->addRow([
+            $input->getMetaObject()->getUidAttributeAlias() => $row[$input->getUidColumn()->getName()],
+            'current_version_date' => DateTimeDataType::now(),
+            'MODIFIED_ON' => $row['MODIFIED_ON']
+        ]);
         
-        return $result;
+        $updSheet->dataUpdate(false, $transaction);
+        
+        if ($this->hasErrors()) {
+            yield PHP_EOL . 'Export failed with ' . count($this->getErrors()) . ' errors! Previous state of the export folder has been restored.';
+        } else {
+            yield PHP_EOL . 'Exported to ' . $webappFolder;
+        }
     }
     
     protected function getExportPath(array $appData) : string
