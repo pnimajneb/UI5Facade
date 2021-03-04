@@ -296,8 +296,64 @@ JS;
     
     protected function buildJsSetSizesInitial(string $oSplitJs) : string
     {
-        $expandedSizesJs = parent::buildJsSetSizesInitial($oSplitJs);
+        // Calculate initial sizes of the split areas:
+        // 1) collect height/width dimensions of split panels depending on orientation
+        // 2) calculate UI5 sizes from them and remember the results
+        // 3) replace panel dimensions with standard values to avoid percentual values
+        // being applied multiple times (e.g. 30% of 30%)
+        // NOTE: caching UI5 sizes is important because the original widths of split
+        // panels are lost after first run and the method should always yield
+        // identical results!
+        if (empty($this->sizesInitial)) {
+            $widget = $this->getWidget();
+            
+            foreach ($widget->getPanels() as $panel) {
+                if ($widget->isSideBySide()) {
+                    $dims[] = $panel->getWidth();
+                    if (! $panel->getWidth()->isUndefined()) {
+                        $panel->setWidth('100%');
+                    }
+                } else {
+                    $dims[] = $panel->getHeight();
+                    if (! $panel->getHeight()->isUndefined()) {
+                        $panel->setHeight(null);
+                    }
+                }
+                
+            }
+            
+            foreach ($dims as $dim) {
+                switch (true) {
+                    case $dim->isUndefined():
+                    case $dim->isMax():
+                        $this->sizesInitial[] = null;
+                        break;
+                    case $dim->isRelative():
+                        $this->sizesInitial[] = (($widget->isSideBySide() ? $this->getWidthRelativeUnit() : $this->getHeightRelativeUnit()) * $dim->getValue()) . 'px';
+                        break;
+                    default:
+                        $this->sizesInitial[] = $dim->getValue();
+                }
+            }
+        }
         
+        $sizesJson = json_encode($this->sizesInitial);
+        
+        $expandedSizesJs = <<<JS
+        
+            // Restore initial sizes of split areas
+            (function(){
+                var aSizes = $sizesJson;
+                $oSplitJs.getContentAreas().forEach(function(oControl, i){
+                    if (aSizes.length > i) {
+                        oControl.setLayoutData(
+                            new sap.ui.layout.SplitterLayoutData({size: aSizes[i]})
+                        );
+                    }
+                });
+            })();
+            
+JS;
         return <<<JS
 
             if (sap.ui.Device.system.phone) {
@@ -361,4 +417,3 @@ JS;
         return $this->getFacade()->getElement($this->getWidget()->getDetailsWidget());
     }
 }
-?>
