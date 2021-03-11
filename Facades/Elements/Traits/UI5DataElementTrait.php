@@ -522,6 +522,10 @@ JS;
         // running right now, we listen for changes on the property. Once it is not
         // set to true anymore, we can do the refresh. The setTimeout() wrapper is
         // needed to make sure all filters bound to the prefill model got their values!
+        // NOTE: the setTimeout() in the prefill-change-handler is needed because it seems
+        // to take time for the model bindings to get their values. Without a setTimeout()
+        // or with setTimeout(..., 0) the filters till have their values from before the
+        // prefill!
         $js = <<<JS
         
                 var oViewModel = sap.ui.getCore().byId("{$this->getId()}").getModel("view");
@@ -534,7 +538,7 @@ JS;
                         {$this->buildJsBusyIconHide()};
                         setTimeout(function() {
                             {$this->buildJsRefresh()};
-                        }, 0);
+                        }, 10);
                     };
                     oPrefillBinding.attachChange(fnPrefillHandler);
                     return Promise.resolve(sap.ui.getCore().byId('{$this->getId()}').getModel());
