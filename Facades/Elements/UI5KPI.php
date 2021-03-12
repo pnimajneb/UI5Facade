@@ -35,8 +35,10 @@ class UI5KPI extends UI5Display
                 $modelInit = ".setModel(new sap.ui.model.json.JSONModel(), '{$this->getModelNameForLazyData()}')";
                 // Add the load-data method to the controller
                 $controller->addMethod('onLoadData', $this, 'oEvent', $this->buildJsDataLoderFromServer('oEvent'));
-                // Call that metho every time the view is prefilled
+                // Call that method every time the view is prefilled
                 $controller->addOnPrefillDataChangedScript($controller->buildJsMethodCallFromController('onLoadData', $this, '', $oControllerJs));
+                // Call that method every time the view is shown
+                $controller->addOnShowViewScript($controller->buildJsMethodCallFromController('onLoadData', $this, '', $oControllerJs), false);
                 // Make sure the lazy-model is empty before the view is prefilled. If not done so,
                 // the KPI will show old data while the new prefill is being loaded because the
                 // KPI's data is not explicitly connected with the prefill data and will not get
@@ -174,6 +176,14 @@ JS;
                 };
                 
                 var oModel = oControl.getModel('{$this->getModelNameForLazyData()}');
+                var oViewModel = sap.ui.getCore().byId("{$this->getId()}").getModel("view");
+                var sPendingPropery = "/_prefill/pending";
+
+                // Skip loading if prefill pending (loader will be triggered again on prefill change)
+                if (oViewModel.getProperty(sPendingPropery) === true) {
+                    return;
+                }
+
                 oModel.setData({});
 
                 {$this->getServerAdapter()->buildJsServerRequest(
