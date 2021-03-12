@@ -47,9 +47,25 @@ class UI5Filter extends UI5AbstractElement
         return parent::isVisible();
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::addPseudoEventHandler()
+     */
     public function addPseudoEventHandler($event, $code)
     {
         $this->getFacade()->getElement($this->getWidget()->getInputWidget())->addPseudoEventHandler($event, $code);
+        return $this;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::setLayoutData()
+     */
+    public function setLayoutData(string $layoutDataConstructorJs) : UI5AbstractElement
+    {
+        $this->getFacade()->getElement($this->getWidget()->getInputWidget())->setLayoutData($layoutDataConstructorJs);
         return $this;
     }
 }
