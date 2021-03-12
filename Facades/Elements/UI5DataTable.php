@@ -256,6 +256,8 @@ JS;
             $toolbar = '';
         }
         
+        $enableGrouping = $widget->hasRowGroups() ? 'enableGrouping: true,' : '';
+        
         $js = <<<JS
             new sap.ui.table.Table("{$this->getId()}", {
                 width: "{$this->getWidth()}",
@@ -264,6 +266,7 @@ JS;
         		selectionBehavior: {$selection_behavior},
                 enableColumnReordering:true,
                 enableColumnFreeze: true,
+                {$enableGrouping}
         		filter: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
         		sort: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
                 rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
@@ -753,7 +756,7 @@ JS;
         // the model is refreshed. This hack fixes it by forcing sorted columns to keep their
         // indicator.
         if ($this->isUiTable() === true) {
-            $sortOrderFix = <<<JS
+            $uiTableSortOrderFix = <<<JS
             
             sap.ui.getCore().byId('{$this->getId()}').getColumns().forEach(function(oColumn){
                 if (oColumn.getSorted() === true) {
@@ -765,7 +768,7 @@ JS;
             });
 
 JS;
-            $setFooterRows = <<<JS
+            $uiTableSetFooterRows = <<<JS
 
             if (footerRows){
 				oTable.setFixedBottomRowCount(parseInt(footerRows));
@@ -775,20 +778,31 @@ JS;
             
             // Weird code to make the table fill it's container. If not done, tables within
             // sap.f.Card will not be high enough. 
-            $heightFix = 'oTable.setVisibleRowCountMode("Fixed").setVisibleRowCountMode("Auto");';
+            $uiTableHeightFix = 'oTable.setVisibleRowCountMode("Fixed").setVisibleRowCountMode("Auto");';
+            
+            // To get the experimental row grouping of the ui.table working, we need to
+            // 1. set `enableGrouping` of the table (see `buildJsConstructorForUiTable()`)
+            // 2. set the `grouped` flag on the column (see `UI5DataColumn::buildJsConstructorForUiColumn()`)
+            // 3. pass the column or its id to the table via `setGroupBy` which is done here
+            // Strangely Table.setGroupBy() fails if the column has no model data, so we
+            // must do it here after the model was loaded.
+            if ($this->getWidget()->hasRowGroups()) {
+                $uiTableGroupingInit = "sap.ui.getCore().byId('{$this->getId()}').setGroupBy('{$this->getFacade()->getElement($this->getWidget()->getRowGrouper()->getGroupByColumn())->getId()}');";
+            }
         }
         
         return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
 
 			var footerRows = {$oModelJs}.getProperty("/footerRows");
-            {$setFooterRows}
+            {$uiTableSetFooterRows}
 
             {$paginator->buildJsSetTotal($oModelJs . '.getProperty("/recordsFiltered")', 'oController')};
             {$paginator->buildJsRefresh('oController')};  
             {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, false)};
             {$singleResultJs};
-            {$sortOrderFix};
-            {$heightFix};
+            {$uiTableSortOrderFix};
+            {$uiTableHeightFix};
+            {$uiTableGroupingInit};
             {$this->buildJsCellConditionalDisablers()};   
             
 JS;

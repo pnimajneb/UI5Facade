@@ -23,7 +23,7 @@ class UI5DataColumn extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $parentElement = $this->getFacade()->getElement($this->getWidget()->getParent());
+        $parentElement = $this->getFacade()->getElement($this->getWidget()->getDataWidget());
         if (($parentElement instanceof UI5DataTable) && $parentElement->isMTable()) {
             return $this->buildJsConstructorForMColumn();
         }
@@ -38,6 +38,14 @@ class UI5DataColumn extends UI5AbstractElement
     public function buildJsConstructorForUiColumn()
     {
         $col = $this->getWidget();
+        $table = $col->getDataWidget();
+        
+        $grouped = '';
+        if (($table instanceof DataTable) && $table->hasRowGroups()) {
+            if ($col === $table->getRowGrouper()->getGroupByColumn()) {
+                $grouped = 'grouped: true,';
+            }
+        }
         
         return <<<JS
 
@@ -52,6 +60,7 @@ class UI5DataColumn extends UI5AbstractElement
         {$this->buildJsPropertyTooltip()}
 	    {$this->buildJsPropertyVisibile()}
 	    {$this->buildJsPropertyWidth()}
+        {$grouped}
 	})
 	.data('_exfAttributeAlias', '{$col->getAttributeAlias()}')
 	.data('_exfDataColumnName', '{$col->getDataColumnName()}')
