@@ -129,6 +129,7 @@ const exfLauncher = {};
 	this.contextBar = function(){
 		var _oComponent = {};
 		var _oContextBar = {
+			lastContextRefresh : null,
 			init : function (oComponent) {
 				_oComponent = oComponent;
 				
@@ -152,6 +153,9 @@ const exfLauncher = {};
 					}
 					if (extras && extras.ContextBar){
 						_oContextBar.refresh(extras.ContextBar);
+					} else if (_oContextBar.lastContextRefresh === null || (Math.abs((new Date()) - _oContextBar.lastContextRefresh)) > 3000) {
+						_oContextBar.lastContextRefresh = new Date();
+						_oContextBar.load();
 					}
 				});
 				oComponent.getPreloader().updateQueueCount();
@@ -193,6 +197,9 @@ const exfLauncher = {};
 				var aItemsOld = _oShell.getHeader().getContent();
 				var iItemsIndex = 5;
 				var oControl = {};
+				
+				_oContextBar.lastContextRefresh = new Date();
+				
 				oToolbar.removeAllContent();
 				
 				for (var i=0; i<aItemsOld.length; i++) {
