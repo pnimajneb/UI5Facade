@@ -213,7 +213,6 @@ JS;
         return <<<JS
         
             new sap.ui.layout.form.SimpleForm({$id} {
-                {$this->buildJsPropertyHeight()}
                 {$this->buildJsPropertyEditable()}
                 layout: "ResponsiveGridLayout",
                 adjustLabelSpan: false,
@@ -330,7 +329,7 @@ JS;
     {
         $widget = $this->getWidget();
         if (! $widget->getHeight()->isUndefined()) {
-            return "height: '{$this->getHeight()}'";
+            return "height: '{$this->getHeight()}',";
         }
         $parent = $widget->getParent();
         if ($parent && ($parent instanceof iContainOtherWidgets)) {
