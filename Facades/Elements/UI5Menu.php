@@ -74,7 +74,7 @@ JS;
         /* @var $btn_element \exface\UI5Facade\Facades\Elements\UI5Button */
         $btn_element = $this->getFacade()->getElement($button);
         
-        if ($button->getIcon()) {
+        if ($button->getIcon() && $button->getShowIcon(true) === true) {
             $icon = 'icon: "' . $btn_element->buildCssIconClass($button->getIcon()) . '",';
         } else {
             $icon = '';
@@ -82,11 +82,13 @@ JS;
         
         $handler = $btn_element->buildJsClickViewEventHandlerCall();
         $press = $handler !== '' ? 'press: ' . $handler . ',' : '';
+        $caption = $this->escapeJsTextValue($btn_element->getCaption());
         
         return <<<JS
 
             new sap.m.StandardListItem({
-				title: "{$btn_element->getCaption()}",
+				title: "{$caption}",
+                tooltip: "{$caption}",
                 iconDensityAware: true,
 				iconInset: true,
                 type: "Active",
