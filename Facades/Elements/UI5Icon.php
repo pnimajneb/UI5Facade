@@ -107,12 +107,29 @@ JS;
     protected function buildJsPropertyValue()
     {
         $src = $this->buildJsValue();
+        
         if ($src === '') {
             return '';
         }
         return <<<JS
             src: {$src},
 JS;
+    }
+    
+    public function buildJsValueBindingOptions()
+    {
+        $js = parent::buildJsValueBindingOptions();
+        $widget = $this->getWidget();
+        if ($widget->hasIconScale()) {
+            return <<<JS
+
+                formatter: function(value){
+                    var sIcon = {$this->buildJsScaleResolver('value', $widget->getIconScale(), $widget->isIconScaleRangeBased())};
+                    return sIcon;
+                },
+JS;
+        }
+        return $js;
     }
     
     /**

@@ -97,7 +97,7 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Interfaces\UI5ValueBindingInterface::buildJsValueBindingOptions()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValueBindingOptions()
      */
     public function buildJsValueBindingOptions()
     {
