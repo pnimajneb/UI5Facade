@@ -1931,7 +1931,7 @@ JS;
 
         return {
             oId: '{$this->getWidget()->getMetaObject()->getId()}',
-            rows: ()
+            rows: rows
         };
     }()
 JS;

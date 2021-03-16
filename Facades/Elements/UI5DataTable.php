@@ -594,7 +594,7 @@ JS;
         
         return {
             oId: '{$this->getWidget()->getMetaObject()->getId()}',
-            rows: (rows === undefined ? [] : rows)
+            rows: rows
         };
     }()
 JS;
