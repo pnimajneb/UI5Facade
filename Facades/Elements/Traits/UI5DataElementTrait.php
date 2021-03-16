@@ -106,8 +106,6 @@ trait UI5DataElementTrait {
     
     private $dynamicPageShowToolbar = false;
     
-    private $OnSelectScripts = [];
-    
     /**
      *
      * {@inheritDoc}
@@ -150,6 +148,11 @@ trait UI5DataElementTrait {
         $controller = $this->getController();
         
         $this->registerExternalModules($this->getController());
+        
+        // Add placeholders for the custom events here. If not done so, at least the select-event will be
+        // added too late and won't be there in the generated controller.
+        $this->getController()->addOnEventScript($this, 'select', '');
+        $this->getController()->addOnEventScript($this, 'refresh', '');
         
         $controller->addMethod('onUpdateFilterSummary', $this, '', $this->buildJsFilterSummaryUpdater());
         $controller->addMethod('onLoadData', $this, 'oControlEvent, bKeepPagingPos', $this->buildJsDataLoader());
@@ -797,6 +800,7 @@ JS;
             {$this->buildJsDataLoaderOnLoadedHandleWidgetLinks($oModelJs)}
             {$editableTableWatchChanges}          
             {$this->buildJsMarkRowsAsDirty($oModelJs)}
+            {$this->getController()->buildJsEventHandler($this, 'refresh', false)}
 		
 JS;
     }
@@ -1649,7 +1653,7 @@ JS;
      */
     protected function buildJsClickHandlerLeftClick($oControllerJsVar = 'oController') : string
     {
-        $onClickJs = $this->getOnSelectScript();
+        $onClickJs = $this->getController()->buildJsEventHandler($this, 'select', false);
         // Single click. Currently only supports one click action - the first one in the list of buttons
         if ($onClickJs || $leftclick_button = $this->getWidget()->getButtonsBoundToMouseAction(EXF_MOUSE_ACTION_LEFT_CLICK)[0]) {
             $btnJs = $leftclick_button ? $this->getFacade()->getElement($leftclick_button)->buildJsClickEventHandlerCall($oControllerJsVar) : '';
@@ -1810,17 +1814,19 @@ JS;
      */
     public function addOnSelectScript(string $js) : UI5AbstractElement
     {
-        $this->OnSelectScripts[] = $js;
+        $this->getController()->addOnEventScript($this, 'select', $js);
         return $this;
     }
     
     /**
-     * 
-     * @return string
+     *
+     * @param string $js
+     * @return UI5AbstractElement
      */
-    protected function getOnSelectScript() : string
+    public function addOnRefreshScript(string $js) : UI5AbstractElement
     {
-        return implode(";\n", array_unique($this->OnSelectScripts));
+        $this->getController()->addOnEventScript($this, 'refresh', $js);
+        return $this;
     }
     
     /**
@@ -1915,6 +1921,7 @@ JS;
         var oDirtyCtrl = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
         var oControl = sap.ui.getCore().byId('{$this->getId()}');
         {$getRows}
+        rows = rows || [];
 
         if (oControl.getModel().getProperty('/_dirty') || (oDirtyCtrl && oDirtyCtrl.getVisible() === true)) {
             for (var i = 0; i < rows.length; i++) {
@@ -1924,7 +1931,7 @@ JS;
 
         return {
             oId: '{$this->getWidget()->getMetaObject()->getId()}',
-            rows: (rows === undefined ? [] : rows)
+            rows: ()
         };
     }()
 JS;
@@ -1945,7 +1952,7 @@ JS;
                 return <<<JS
                 
             // Perform the on-select scripts in any case
-            {$this->getOnSelectScript()}
+            {$this->getController()->buildJsEventHandler($this, 'select', false)}
             
             // Check, if selection actually changed. Return here if not.
             if (

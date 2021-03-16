@@ -551,13 +551,13 @@ JS;
     public function buildJsDataGetter(ActionInterface $action = null)
     {
         if ($action === null) {
-            $rows = "sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows";
+            $rows = "sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows || []";
         } elseif ($action instanceof iReadData) {
             // If we are reading, than we need the special data from the configurator
             // widget: filters, sorters, etc.
             return $this->getConfiguratorElement()->buildJsDataGetter($action);
         } elseif ($this->isEditable() && $action->implementsInterface('iModifyData')) {
-            $rows = "oTable.getModel().getData().rows";
+            $rows = "oTable.getModel().getData().rows || []";
         } else {
             if ($this->isUiTable()) {
                 $rows = '[];' . <<<JS
@@ -584,7 +584,7 @@ JS;
     function() {
         var oTable = sap.ui.getCore().byId('{$this->getId()}');
         var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
-        var rows = {$rows};
+        var rows = {$rows}
 
         if (oTable.getModel().getProperty('/_dirty') || (oDirtyColumn && oDirtyColumn.getVisible() === true)) {
             for (var i = 0; i < rows.length; i++) {
@@ -803,7 +803,7 @@ JS;
             {$uiTableSortOrderFix};
             {$uiTableHeightFix};
             {$uiTableGroupingInit};
-            {$this->buildJsCellConditionalDisablers()};   
+            {$this->buildJsCellConditionalDisablers()};
             
 JS;
     }

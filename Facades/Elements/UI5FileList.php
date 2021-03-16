@@ -15,7 +15,7 @@ use exface\Core\Exceptions\Facades\FacadeRuntimeError;
  * Generates sap.m.upload.UploadSet for a FileList widget.
  * 
  * TODO call `$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE)` when a list item is 
- * selected. Also call getOnSelectScript() there somewhere.
+ * selected. Also call `$this->getController()->buildJsEventHandler($this, 'select', false)` there somewhere.
  * 
  * @method \exface\Core\Widgets\FileList getWidget()
  * 

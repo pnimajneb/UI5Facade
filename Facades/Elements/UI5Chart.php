@@ -5,6 +5,8 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\EChartsTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Widgets\Data;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
+use exface\Core\Factories\ActionFactory;
+use exface\Core\Actions\SaveData;
 
 /**
  * 
@@ -393,7 +395,7 @@ JS;
      */
     protected function buildJsGetSelectedRows(string $oControlJs) : string
     {
-        return $this->buildJsDataGetter() . '.rows';
+        return $this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class)) . '.rows';
     }
     
     /**
@@ -412,7 +414,7 @@ JS;
                 return <<<JS
                 
             // Perform the on-select scripts in any case
-            {$this->getOnSelectScript()}
+            {$this->getController()->buildJsEventHandler($this, 'select', false)}
 
             {$scriptJs}
             
