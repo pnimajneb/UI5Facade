@@ -6,6 +6,8 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Widgets\Data;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\DataTypes\StringDataType;
+use exface\Core\Widgets\Parts\Maps\DataSelectionMarkerLayer;
+use exface\Core\Interfaces\Widgets\iUseData;
 
 /**
  * 
@@ -39,6 +41,8 @@ class UI5Map extends UI5AbstractElement
         
         $controller = $this->getController(); 
         $this->registerExternalModules($controller);
+        
+        $this->registerLiveReferenceAtLinkedElements();
         
         // Add a single data loader controller method for all layers. However, give it an additional
         // parameter oLeafletParams so each layer can override request params if needed. The content
@@ -260,5 +264,26 @@ JS;
     protected function hasQuickSearch() : bool
     {
         return false;
+    }
+    
+    /**
+     *
+     * @see LeafletTrait::registerLiveReferenceAtLinkedElements()
+     */
+    protected function registerLiveReferenceAtLinkedElements()
+    {
+        foreach ($this->getWidget()->getLayers() as $layer) {
+            if (($layer instanceof iUseData) && $link = $layer->getDataWidgetLink()) {
+                $linked_element = $this->getFacade()->getElement($link->getTargetWidget());
+                if ($linked_element) {
+                    if ($layer instanceof DataSelectionMarkerLayer) {
+                        $linked_element->addOnSelectScript($this->buildJsLeafletRefresh());
+                    } else {
+                        $linked_element->addOnRefreshScript($this->buildJsLeafletRefresh());
+                    }
+                }
+            }
+        }
+        return $this;
     }
 }
