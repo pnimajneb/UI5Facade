@@ -64,6 +64,7 @@ body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > s
 .sapMGT.exf-col-4 {width: calc(33% - 0.5rem)}
 .sapMGT.exf-col-6 {width: calc(50% - 0.5rem)}
 .sapMGT.exf-col-12 {width: 100%}
+.sapMGT.OneByOne .sapMText .sapMTextMaxLine.sapMTextLineClamp {-webkit-line-clamp: 3 !important}
 .exf-icon-tile .sapMGTContent {margin-top: -40px}
 .exf-tiles > .sapMPanelContent {border-bottom: none;}
 .exf-tile > .sapMGTHdrContent.OneByOne > .sapMGTSubHdrTxt > .sapMText {white-space: normal;max-height: 2rem;  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;text-overflow: -o-ellipsis-lastline;}
