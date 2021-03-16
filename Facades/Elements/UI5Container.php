@@ -81,6 +81,16 @@ JS;
     }
     
     /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::hasButtonBack()
+     */
+    public function hasButtonBack() : bool
+    {
+        return $this->hasPageWrapper();
+    }
+    
+    /**
      * Wraps the given content in a sap.m.Page with back-button and a title.
      *
      * @param string $contentJs

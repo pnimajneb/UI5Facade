@@ -738,4 +738,14 @@ JS;
         
         return '';
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Container::hasButtonBack()
+     */
+    public function hasButtonBack() : bool
+    {
+        return true;
+    }
 }

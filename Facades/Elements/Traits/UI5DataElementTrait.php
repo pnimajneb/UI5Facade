@@ -885,7 +885,7 @@ JS;
      *
      * @return boolean
      */
-    protected function isWrappedInDynamicPage()
+    public function isWrappedInDynamicPage()
     {
         $widget = $this->getWidget();
         if ($widget->getHideHeader() === null) {
@@ -1264,7 +1264,36 @@ JS;
      */
     protected function getDynamicPageShowBackButton() : bool
     {
-        return $this->getView()->isWebAppRoot() === false && ($this->getWidget()->hasParent() === false || ! ($this->getWidget()->getParent() instanceof Dialog));
+        // No back-button if we are on the root view (there is nowhere to go back)
+        if ($this->getView()->isWebAppRoot()) {
+            return false;
+        }
+        
+        // Show back-button if the table is the view root (and the view is not app root - see above)
+        $viewRootEl = $this->getView()->getRootElement();
+        if ($viewRootEl === $this) {
+            return true;
+        }
+        
+        // In all other cases see if any parent already has a back-button
+        $parent = $this->getWidget()->getParent();
+        while ($parent) {
+            $parentEl = $this->getFacade()->getElement($parent);
+            // If back-button found - don't show another one
+            if ($parentEl->hasButtonBack() === true) {
+                return false;
+            }
+            // If we reached the view root, stop looking (otherwise we will get a controller
+            // not initialized exception!)
+            if ($parentEl === $viewRootEl) {
+                break;
+            }
+            // Next parent
+            $parent = $parent->getParent();
+        }
+        
+        // If no parent has a back-button, place one here
+        return true;
     }
     
     /**
@@ -1936,5 +1965,10 @@ JS;
             default:
                 return $parentResult;
         }
+    }
+    
+    public function hasButtonBack() : bool
+    {
+        return $this->isWrappedInDynamicPage() && $this->getDynamicPageShowBackButton();
     }
 }

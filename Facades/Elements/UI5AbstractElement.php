@@ -583,5 +583,18 @@ JS;
     {
         return ! (($this->getWidget() instanceof iFillEntireContainer) || $this->getWidget()->getWidth()->isMax());
     }
+    
+    /**
+     * Return TRUE if the widget has its own nav-back button (e.g. because it is a UI5 page-like control)
+     * 
+     * It is a good idea to only show a single back-button per screen, so for nested 
+     * containers there should be some kind of logic to determine, which of the back-buttons 
+     * to show.
+     * 
+     * @return bool
+     */
+    public function hasButtonBack() : bool
+    {
+        return false;
+    }
 }
-?>
