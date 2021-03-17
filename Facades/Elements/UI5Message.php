@@ -78,6 +78,9 @@ JS;
             case MessageTypeDataType::INFO:
                 $type = 'sap.ui.core.MessageType.Information';
                 break;
+            case MessageTypeDataType::QUESTION:
+                $type = 'sap.ui.core.MessageType.Information, customIcon: "sap-icon://question-mark"';
+                break;
             default:
                 $type = 'sap.ui.core.MessageType.None';
         }
