@@ -559,13 +559,17 @@ JS;
         } elseif ($this->isEditable() && $action->implementsInterface('iModifyData')) {
             $rows = "oTable.getModel().getData().rows || []";
         } else {
+            // NOTE: selected indices are not neccessarily the row indices in the model!
+            // The table sometimes sorts the rows differently (e.g. when grouping in used).
             if ($this->isUiTable()) {
                 $rows = '[];' . <<<JS
         
         var aSelectedIndices = oTable.getSelectedIndices();
-        var aDataRows = oTable.getModel().getData().rows;
+        var oModel = oTable.getModel();
+        var oCxt;
         for (var i in aSelectedIndices) {
-            rows.push(aDataRows[aSelectedIndices[i]]);
+            oCxt = oTable.getContextByIndex(aSelectedIndices[i]);
+            rows.push(oModel.getProperty(oCxt.sPath));
         }
 
 JS;
