@@ -30,6 +30,8 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
     
     private $valueBoundToModel = null;
     
+    private $removeLabelIfNoCaption = false;
+    
     /**
      * 
      * {@inheritDoc}
@@ -108,7 +110,13 @@ JS;
     protected function buildJsLabelWrapper($element_constructor)
     {
         $widget = $this->getWidget();
+        $caption = $this->getCaption();
         
+        if ($this->getRemoveLabelIfNoCaption() && $caption === '') {
+            return $element_constructor;
+        }
+        
+        $caption = $this->escapeJsTextValue($caption);
         $labelAppearance = '';
         if ($widget->getHideCaption() === true) {
             $labelAppearance .= 'visible: false,';
@@ -122,7 +130,7 @@ JS;
         
         $label = <<<JS
         new sap.m.Label({
-            text: "{$this->getCaption()}",
+            text: "{$caption}",
             {$this->buildJsPropertyTooltip()}
             {$labelAppearance}
         }),
@@ -432,5 +440,25 @@ JS;
         }
         
         return $js;
+    }
+    
+    /**
+     * 
+     * @return bool
+     */
+    protected function getRemoveLabelIfNoCaption() : bool
+    {
+        return $this->removeLabelIfNoCaption;
+    }
+    
+    /**
+     * 
+     * @param bool $value
+     * @return UI5Value
+     */
+    public function setRemoveLabelIfNoCaption(bool $value) : UI5Value
+    {
+        $this->removeLabelIfNoCaption = $value;
+        return $this;
     }
 }

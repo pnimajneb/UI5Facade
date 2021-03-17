@@ -78,6 +78,8 @@ body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > s
 
 /* Forms */
 .sapUiFormTitle:empty {display: none;}
+/* FIX */
+.sapUiSimpleForm .sapUiRespGrid > div:first-child > .sapUiRespGridHSpace0 {display: none;}
 
 /* HTML widgets */
 .exf-html {font-size: 0.875rem;}

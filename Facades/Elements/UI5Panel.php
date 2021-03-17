@@ -7,6 +7,8 @@ use exface\Core\Widgets\Panel;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryLayoutTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5HelpButtonTrait;
 use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
+use exface\Core\Interfaces\WidgetInterface;
+use exface\Core\Widgets\Message;
 
 /**
  * 
@@ -96,6 +98,16 @@ JS;
         }
     }
     
+    protected function hasChildrenCaption() : bool
+    {
+        foreach ($this->getWidget()->getWidgets() as $widget) {
+            if ($widget->isHidden() === false && ! $widget->getHideCaption() && $widget->getCaption() !== null && $widget->getCaption() !== '') {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     /**
      * 
      * {@inheritDoc}
@@ -105,19 +117,35 @@ JS;
     {
         $js = '';
         $firstVisibleWidget = null;
+        $childrenHaveCaptions = $this->hasChildrenCaption();
         foreach ($this->getWidget()->getWidgets() as $widget) {
+            $element = $this->getFacade()->getElement($widget);
              
-            if ($widget->isHidden() === false) {
+            if ($widget->isHidden() === false && $useFormLayout === true) {
+                if (! $childrenHaveCaptions && $element instanceof UI5Value) {
+                    $element->setRemoveLabelIfNoCaption(true);
+                }
                 // Larger widgets need a Title before them to make SimpleForm generate a new FormContainer
-                if ($firstVisibleWidget !== null && $useFormLayout === true && (($widget instanceof iFillEntireContainer) || $widget->getWidth()->isMax())) {
+                if ($this->needsFormRowDelimiter($widget, ($firstVisibleWidget === null))) {
                     $js .= ($js ? ",\n" : '') . $this->buildJsFormRowDelimiter();
                 }
                 $firstVisibleWidget = $widget;
             }
-            $js .= ($js ? ",\n" : '') . $this->getFacade()->getElement($widget)->buildJsConstructor();
+            $js .= ($js ? ",\n" : '') . $element->buildJsConstructor();
         }
         
         return $js;
+    }
+    
+    public function needsFormRowDelimiter(WidgetInterface $widget, bool $isFirstInForm) : bool
+    {
+        switch (true) {
+            case $widget instanceof iFillEntireContainer && ! $isFirstInForm:
+            case $widget->getWidth()->isMax() && ! $isFirstInForm:
+            case $widget instanceof Message:
+                return true;
+        }
+        return false;
     }
     
     /**
