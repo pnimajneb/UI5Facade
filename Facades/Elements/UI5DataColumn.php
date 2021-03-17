@@ -167,6 +167,16 @@ JS;
                         
     protected function buildJsPropertyVisibile()
     {
+        $dataWidget = $this->getWidget()->getDataWidget();
+        
+        // Hide the column used for row grouping if its a sap.m.Table.
+        // The sap.ui.table.Table will hide the column automatically!
+        if ($dataWidget instanceof DataTable && $dataWidget->hasRowGroups()) {
+            if ($this->getWidget() === $dataWidget->getRowGrouper()->getGroupByColumn()) {
+                return 'visible: false,';
+            }
+        }
+        
         switch ($this->getWidget()->getVisibility()) {
             case EXF_WIDGET_VISIBILITY_OPTIONAL:
             case EXF_WIDGET_VISIBILITY_HIDDEN:

@@ -197,7 +197,7 @@ JS;
             }
         }
         
-        $caption = $this->escapeJsTextValue($grouper->getCaption());
+        $caption = $grouper->getHideCaption() ? '' : $this->escapeJsTextValue($grouper->getCaption());
         $caption .= $caption ? ': ' : '';
         
         return <<<JS
@@ -392,7 +392,7 @@ JS;
         $widget = $this->getWidget();
         
         // See if there are promoted columns. If not, make the first visible column promoted,
-        // because sap.m.table would otherwise have not column headers at all.
+        // because sap.m.table would otherwise have no column headers at all.
         $promotedFound = false;
         $first_col = null;
         foreach ($widget->getColumns() as $col) {
