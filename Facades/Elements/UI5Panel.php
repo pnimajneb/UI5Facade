@@ -22,6 +22,8 @@ class UI5Panel extends UI5Container
     use JqueryLayoutTrait;
     use UI5HelpButtonTrait;
     
+    private $gridClasses = [];
+    
     /**
      * 
      * {@inheritDoc}
@@ -37,7 +39,7 @@ class UI5Panel extends UI5Container
                         {$this->buildJsChildrenConstructors(false)}
                     ],
                     {$this->buildJsProperties()}
-                }).addStyleClass("sapUiNoContentPadding {$this->buildCssElementClass()}")
+                }).addStyleClass("sapUiNoContentPadding {$this->buildCssElementClass()} {$this->buildCssGridClass()}")
 
 JS;
         if ($this->hasPageWrapper() === true) {
@@ -142,7 +144,9 @@ JS;
         switch (true) {
             case $widget instanceof iFillEntireContainer && ! $isFirstInForm:
             case $widget->getWidth()->isMax() && ! $isFirstInForm:
+                return true;
             case $widget instanceof Message:
+                $this->addCssGridClass('exf-simpleform-hide-first-cell');
                 return true;
         }
         return false;
@@ -258,7 +262,7 @@ JS;
                     {$content}
                 ],
                 {$toolbar}
-            })
+            }).addStyleClass('{$this->buildCssElementClass()} {$this->buildCssGridClass()}')
             {$this->buildJsPseudoEventHandlers()}
             
 JS;
@@ -369,5 +373,16 @@ JS;
             }
         }
         return parent::buildJsPropertyHeight();
+    }
+    
+    protected function addCssGridClass(string $className) : UI5Panel
+    {
+        $this->gridClasses[] = $className;
+        return $this;
+    }
+    
+    protected function buildCssGridClass() : string
+    {
+        return implode(' ', array_unique($this->gridClasses));
     }
 }
