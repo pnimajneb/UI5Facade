@@ -60,6 +60,8 @@ class UI5Tile extends UI5Button
         } else {
             // If there is no content widget, see if we can create tile content from the subtitle and the icon
             $subtitle = $widget->getSubtitle();
+            // NOTE: tiles in UI5 don't have an icon by default! If multiple tiles have the same icon, it simply
+            // doesn't look good and that's exactly what happens in NavTiles.
             $icon = $widget->getShowIcon(false) ? $widget->getIcon() : null;
             if ($subtitle && ! $icon) {
                 // If we have a subtitle and no icon, use sap.m.FeedContent
