@@ -87,6 +87,11 @@ JS;
         } else {
             $bindingOptions = <<<JS
                 formatter: function(value){
+                    if (value === null || value === undefined) {
+                        this.setVisible(false);
+                        return null;
+                    }
+                    this.setVisible(true);
                     return parseFloat(value);
                 }
 
