@@ -317,14 +317,32 @@ JS;
                 type: "GET",
 				data: {$oParamsJs},
                 success: function(response, textStatus, jqXHR) {
+                    var oPrefillRow = {};
                     if (Object.keys({$oModelJs}.getData()).length !== 0) {
                         {$oModelJs}.setData({});
                     }
                     if (Array.isArray(response.rows) && response.rows.length > 0) {
-                        {$oModelJs}.setData(response.rows[0]);
                         if (response.rows.length > 1) {
-                            {$this->getElement()->buildJsShowMessageError('"Error prefilling view with data: received " + response.rows.length + " rows instead of 0 or 1! Only the first data row is visible."')};
+                            console.warn("Ambiguos view prefill: received " + response.rows.length + " rows instead of 0 or 1! Only the first data row is visible.");
+                            response.rows.forEach(function(oRow) {
+                                for (var sCol in oRow) {
+                                    switch (true) {
+                                        case oPrefillRow[sCol] == oRow[sCol]:
+                                            break;
+                                        case oPrefillRow[sCol] === undefined || oPrefillRow[sCol] === '':
+                                            oPrefillRow[sCol] = oRow[sCol];
+                                            break;
+                                        default: 
+                                            oPrefillRow[sCol] += ',' + oRow[sCol];
+                                    }
+                                }
+                            });
+                            
+                        } else {
+                            oPrefillRow = response.rows[0];
                         }
+
+                        {$oModelJs}.setData(oPrefillRow);
                     }
                     {$onModelLoadedJs}
                 },
