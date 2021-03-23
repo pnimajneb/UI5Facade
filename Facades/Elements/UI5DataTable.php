@@ -694,6 +694,31 @@ JS;
     
     /**
      * 
+     * @param string $oDomElementClickedJs
+     * @return string
+     */
+    protected function buildJsClickGetRowIndex(string $oDomElementClickedJs) : string
+    {
+        if ($this->isUiTable()) {
+            return "sap.ui.getCore().byId('{$this->getId()}').getFirstVisibleRow() + $({$oDomElementClickedJs}).parents('tr').index()";
+        } elseif ($this->isMTable()) {
+            return <<<JS
+(function(){
+    var jqTr = $({$oDomElementClickedJs}).parents('tr');
+    if (jqTr.siblings('.sapMListTblSubRow').length > 0) {
+        return Math.floor(jqTr.index() / 2);
+    } else {
+        return jqTr.index();
+    }
+})()
+JS;
+        } else {
+            return "$({$oDomElementClickedJs}).parents('tr').index()";
+        }
+    }
+    
+    /**
+     * 
      * {@inheritdoc}
      * @see UI5DataElementTrait::buildJsClickHandlerLeftClick()
      */
@@ -859,7 +884,7 @@ JS;
      * @param bool $deSelect
      * @return string
      */
-    public function buildJsSelectRowByIndex(string $oTableJs = 'oTable', string $iRowIdxJs = 'iRowIdx', bool $deSelect = false) : string
+    public function buildJsSelectRowByIndex(string $oTableJs = 'oTable', string $iRowIdxJs = 'iRowIdx', bool $deSelect = false, string $bScrollToJs = 'true') : string
     {
         if ($this->isMList() === true) {
             $setSelectJs = ($deSelect === true) ? 'false' : 'true';
@@ -876,8 +901,10 @@ JS;
         } else {
             return <<<JS
 
-                oTable.setFirstVisibleRow({$iRowIdxJs});
-                oTable.setSelectedIndex({$iRowIdxJs});
+                if ($bScrollToJs) {
+                    $oTableJs.setFirstVisibleRow({$iRowIdxJs});
+                }
+                $oTableJs.setSelectedIndex({$iRowIdxJs});
 
 JS;
         }

@@ -1608,7 +1608,12 @@ JS;
                 var oTargetDom = oEvent.target;
                 if(! ({$this->buildJsClickIsTargetRowCheck('oTargetDom')})) return;
                 
-        		{$this->getFacade()->getElement($dblclick_button)->buildJsClickEventHandlerCall($oControllerJsVar)};
+        		iRowIdx = {$this->buildJsClickGetRowIndex('oTargetDom')};
+                if (iRowIdx !== -1) {
+                    {$this->buildJsSelectRowByIndex("sap.ui.getCore().byId('{$this->getId()}')", 'iRowIdx', false, 'false')}
+                }
+                
+                {$this->getFacade()->getElement($dblclick_button)->buildJsClickEventHandlerCall($oControllerJsVar)};
             })
 JS;
         }
@@ -1635,15 +1640,32 @@ JS;
             
             .attachBrowserEvent("contextmenu", function(oEvent) {
                 var oTargetDom = oEvent.target;
+                var iRowIdx = -1;
                 if(! ({$this->buildJsClickIsTargetRowCheck('oTargetDom')})) return;
                 
                 oEvent.preventDefault();
+
+                iRowIdx = {$this->buildJsClickGetRowIndex('oTargetDom')};
+                if (iRowIdx !== -1) {
+                    {$this->buildJsSelectRowByIndex("sap.ui.getCore().byId('{$this->getId()}')", 'iRowIdx', false, 'false')}
+                }
+                
                 {$rightclick_script}
         	})
         	
 JS;
         }
         return '';
+    }
+    
+    public function buildJsSelectRowByIndex(string $oTableJs = 'oTable', string $iRowIdxJs = 'iRowIdx', bool $deSelect = false, string $bScrollToJs = 'true') : string
+    {
+        return '';
+    }
+    
+    protected function buildJsClickGetRowIndex(string $oDomElementClickedJs) : string
+    {
+        return "$({$oDomElementClickedJs}).parents('tr').index()";
     }
     
     /**
