@@ -23,6 +23,7 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\UI5DataTable;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
+use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -1469,7 +1470,7 @@ JS;
      */
     protected function buildJsMarkRowsAsDirty(string $oModelJs) : string
     {
-        if (! ($this->getServerAdapter() instanceof UI5FacadeServerAdapter)) {
+        if (! $this->hasDirtyColumn()) {
             return '';
         }
         
@@ -1525,7 +1526,8 @@ JS;
      */
     protected function hasDirtyColumn() : bool
     {
-        if (! ($this->getServerAdapter() instanceof UI5FacadeServerAdapter)) {
+        $adapter = $this->getServerAdapter();
+        if (! ($adapter instanceof UI5FacadeServerAdapter || $adapter instanceof PreloadServerAdapter)) {
             return false;
         }
         return $this->getWidget()->hasUidColumn();
