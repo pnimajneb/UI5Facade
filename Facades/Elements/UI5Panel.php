@@ -9,6 +9,7 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5HelpButtonTrait;
 use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Widgets\Message;
+use exface\Core\Interfaces\Widgets\iTakeInput;
 
 /**
  * 
@@ -240,12 +241,13 @@ JS;
             $toolbar = 'toolbar: ' . $toolbarConstructor;
         }
         
-        $phoneLabelSpan = $this->getWidget()->isReadonly() ? '5' : '12';
+        $phoneLabelSpan = $this->isEditable() ? '12' : '5';
+        $editable = $this->isEditable() ? 'true' : 'false';
         
         return <<<JS
         
             new sap.ui.layout.form.SimpleForm({$id} {
-                {$this->buildJsPropertyEditable()}
+                editable: $editable,
                 layout: "ResponsiveGridLayout",
                 adjustLabelSpan: false,
     			labelSpanXL: 5,
@@ -267,26 +269,27 @@ JS;
             
 JS;
     }
-            
+    
     /**
-     * Returns the editable property for the UI5-form with property name and tailing comma.
+     * Returns TRUE if the form/panel contains active inputs and FALSE otherwise
      * 
      * A UI5-form is marked editable if it contains at least one visible input widget.
      * Non-editable forms are more compact, so it is a good idea only to use editable
      * ones if really editing.
      * 
-     * @return string
+     * @return bool
      */
-    protected function buildJsPropertyEditable()
+    protected function isEditable() : bool
     {
-        $editable = 'false';
+        if ($this->getWidget()->isReadonly()) {
+            return false;
+        }
         foreach ($this->getWidget()->getInputWidgets() as $input){
-            if (! $input->isHidden()) {
-                $editable = 'true';
-                break;
+            if (! $input->isHidden() && ! $input->isReadOnly()) {
+                return true;
             }
         }
-        return 'editable: ' . $editable . ',';
+        return false;
     }
     
     /**
