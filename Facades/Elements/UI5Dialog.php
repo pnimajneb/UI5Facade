@@ -696,18 +696,8 @@ JS;
      */
     protected function buildJsDialogButtons()
     {
-        $js = '';
-        $buttons = array_reverse($this->getWidget()->getButtons());
-        foreach ($buttons as $btn) {
-            if ($btn instanceof MenuButton) {
-                foreach ($btn->getButtons() as $subbtn) {
-                    $js = $this->getFacade()->getElement($subbtn)->buildJsConstructor() . ",\n" . $js;
-                }
-                continue;
-            }
-            $js = $this->getFacade()->getElement($btn)->buildJsConstructor() . ",\n" . $js;
-        }
-        return $js;
+        $toolbarEl = $this->getFacade()->getElement($this->getWidget()->getToolbarMain());
+        return $toolbarEl->buildJsConstructorsForLeftButtons() . $toolbarEl->buildJsConstructorsForRightButtons();
     }
     
     /**
