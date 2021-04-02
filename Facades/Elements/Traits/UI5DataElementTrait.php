@@ -1530,7 +1530,7 @@ JS;
         if (! ($adapter instanceof UI5FacadeServerAdapter || $adapter instanceof PreloadServerAdapter)) {
             return false;
         }
-        return $this->getWidget()->hasUidColumn();
+        return $this->getDataWidget()->hasUidColumn();
     }
     
     /**
