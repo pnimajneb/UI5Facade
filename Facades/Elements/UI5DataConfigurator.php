@@ -106,6 +106,8 @@ JS;
         $controller->addOnEventScript($this, self::EVENT_BUTTON_CANCEL, 'oEvent.getSource().close();');
         $controller->addOnEventScript($this, self::EVENT_BUTTON_RESET, $this->buildJsResetter() . '; oEvent.getSource().setShowResetEnabled(true).close()');
         
+        $controller->addOnInitScript($this->buildJsRefreshOnActionEffect());
+        
         return <<<JS
 
         new sap.m.P13nDialog("{$this->getId()}", {

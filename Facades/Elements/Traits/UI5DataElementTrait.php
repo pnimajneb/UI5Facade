@@ -21,7 +21,6 @@ use exface\Core\Exceptions\Facades\FacadeLogicError;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
-use exface\UI5Facade\Facades\Elements\UI5DataTable;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
 

@@ -44,7 +44,6 @@ use exface\Core\Actions\SendToWidget;
 class UI5Button extends UI5AbstractElement
 {
     use JqueryButtonTrait {
-        buildJsInputRefresh as buildJsInputRefreshViaTrait;
         buildJsNavigateToPage as buildJsNavigateToPageViaTrait;
         buildJsClickSendToWidget as buildJsClickSendToWidgetViaTrait;
         buildJsRequestDataCollector as buildJsRequestDataCollectorViaTrait;
@@ -254,9 +253,6 @@ JS;
             // All the onShow/Hide events need to be triggered manually too.
             // Basic idea taken from here: https://stackoverflow.com/questions/36792358/access-model-in-js-view-to-render-programmatically
 
-            // TODO add {$this->buildJsRefreshCascade($widget)} right after {$this->buildJsInputRefresh($widget)}
-            // below. However, this produces controller-not-initialized errors in nested dialogs like
-            // BDE(DRS) in the MES demo.
             $output .= <<<JS
                         var sViewName = this.getViewName('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$targetWidget->getId()}'); 
                         var sViewId = this.getViewId(sViewName);
@@ -338,7 +334,9 @@ JS;
                                         			oView._handleEvent(oEvent);
                                                 })
                                                 .attachAfterClose(function() {
-                                                    {$this->buildJsInputRefresh($widget)}
+                                                    if (sap.ui.getCore().byId("{$this->getId()}") !== undefined) {
+                                                        {$this->buildJsTriggerActionEffects($action)}
+                                                    }
                                                     var oEvent = jQuery.Event("AfterHide", oNavInfoClose);
                                         			oEvent.srcControl = oApp;
                                         			oEvent.data = {};
@@ -447,22 +445,6 @@ JS;
 
 JS;
     }
-    
-    /**
-     * 
-     * @param Button $widget
-     * @param UI5AbstractElement $input_element
-     * @return string
-     */
-    protected function buildJsInputRefresh(Button $widget)
-    {
-        return <<<JS
-    if (sap.ui.getCore().byId("{$this->getId()}") !== undefined) {
-        {$this->buildJsInputRefreshViaTrait($widget)}
-    }
-
-JS;
-    }
 
     /**
      * Returns javascript code with global variables and functions needed for certain button types
@@ -527,11 +509,11 @@ JS;
 
 								
 								{$this->buildJsBusyIconHide()}
-                                {$this->buildJsCloseDialog($widget, $input_element)}
-								{$this->buildJsInputRefresh($widget)}
+                                if (sap.ui.getCore().byId("{$this->getId()}") !== undefined) {
+                                    {$this->buildJsCloseDialog($widget, $input_element)}
+								    {$this->buildJsTriggerActionEffects($action)}
+                                }
 		                       	{$this->buildJsBusyIconHide()}
-		                       	$('#{$this->getId()}').trigger('{$action->getAliasWithNamespace()}.action.performed', [requestData, '{$input_element->getId()}']);
-								{$this->buildJsOnSuccessScript()}
 
                                 if (oResultModel.getProperty('/success') !== undefined || oResultModel.getProperty('/undoURL')){
 		                       		{$this->buildJsShowMessageSuccess("oResultModel.getProperty('/success') + (response.undoable ? ' <a href=\"" . $this->buildJsUndoUrl($action, $input_element) . "\" style=\"display:block; float:right;\">UNDO</a>' : '')")}
