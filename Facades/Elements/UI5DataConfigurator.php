@@ -2,15 +2,13 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataConfiguratorTrait;
-use exface\Core\Widgets\DataConfigurator;
 use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 use exface\Core\Interfaces\Actions\ActionInterface;
-use exface\Core\Interfaces\Widgets\iHaveColumns;
 
 /**
  * 
- * @method DataConfigurator getWidget()
+ * @method \exface\Core\Widgets\DataConfigurator getWidget()
  * 
  * @author Andrej Kabachnik
  *
@@ -151,12 +149,12 @@ JS;
         return <<<JS
 function(){
             var oModel = new sap.ui.model.json.JSONModel();
-            var columns = {$this->buildJsonColumnData()};
-            var sortables = {$this->buildJsonSorterData()};
+            var columns = {$this->buildJsonModelForColumns()};
+            var sortables = {$this->buildJsonModelForSortables()};
             var data = {
                 "columns": columns,
                 "sortables": sortables,
-                "sorters": [{$this->buildJsInitialSortItems()}]
+                "sorters": [{$this->buildJsonModelForInitialSorters()}]
             }
             oModel.setData(data);
             return oModel;        
@@ -168,7 +166,7 @@ JS;
      * 
      * @return string
      */
-    public function buildJsInitialSortItems() : string
+    protected function buildJsonModelForInitialSorters() : string
     {
         $js = '';
         $operations = [SortingDirectionsDataType::ASC => 'Ascending', SortingDirectionsDataType::DESC => 'Descending'];
@@ -401,7 +399,7 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsonColumnData() : string
+    protected function buildJsonModelForColumns() : string
     {
         $data = [];
         if ($this->hasTabColumns() === true) {
@@ -423,7 +421,7 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsonSorterData() : string
+    protected function buildJsonModelForSortables() : string
     {
         $data = [];
         $sorters = [];
