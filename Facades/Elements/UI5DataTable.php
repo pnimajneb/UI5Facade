@@ -983,7 +983,13 @@ JS;
                         var aColumnsNew = [];
                         var bOrderChanged = false;
                         aColsConfig.forEach(function(oColConfig, iConfIdx) {
+                            var iConfOffset = 0;
                             aColumns.forEach(function(oColumn, iColIdx) {
+                                if (oColumn.getId() === "{$this->getDirtyFlagAlias()}") {
+                                    iConfOffset += 1;
+                                    aColumnsNew.push(oColumn);  
+                                    return;
+                                }
                                 if (oColumn.getId() === oColConfig.column_id) {
                                     if (iColIdx !== iConfIdx) bOrderChanged = true;
                                     oColumn.setVisible(oColConfig.visible);
@@ -1011,8 +1017,15 @@ JS;
                         var bOrderChanged = false;
                         var aOrderChanges = new Array;
                         aColsConfig.forEach(function(oColConfig, iConfIdx) {
+                            var iConfOffset = 0;
                             aColumns.forEach(function(oColumn, iColIdx) {
+                                if (oColumn.getId() === "{$this->getDirtyFlagAlias()}") {
+                                    iConfOffset += 1;
+                                    aColumnsNew.push(oColumn);  
+                                    return;
+                                }
                                 if (oColumn.getId() === oColConfig.column_id) {
+                                    iConfIdx += iConfOffset;
                                     if (oColumn.getVisible() !== oColConfig.visible) {
                                         oColumn.setVisible(oColConfig.visible);
                                     }
@@ -1028,15 +1041,14 @@ JS;
 
                         if (bOrderChanged === true) {
 
+                            var aCellBuffer = new Array;
+                            var aRemovableCells = new Array;
+                            var aCells = oTable.getBindingInfo("items").template.getCells();
+
                             oTable.removeAllColumns();
                             aColumnsNew.forEach(oColumn => {
                                 oTable.addColumn(oColumn);
                             });
-
-                            var aCellBuffer = new Array;
-                            var aRemovableCells = new Array;
-                            
-                            var aCells = oTable.getBindingInfo("items").template.getCells();
 
                             aOrderChanges.forEach(function(oOrderChange, oOrderChangeIdx){
 
