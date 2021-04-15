@@ -5,6 +5,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataConfiguratorTrait;
 use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 use exface\Core\Interfaces\Actions\ActionInterface;
+use exface\Core\Widgets\Dialog;
 
 /**
  * 
@@ -104,7 +105,11 @@ JS;
         $controller->addOnEventScript($this, self::EVENT_BUTTON_CANCEL, 'oEvent.getSource().close();');
         $controller->addOnEventScript($this, self::EVENT_BUTTON_RESET, $this->buildJsResetter() . '; oEvent.getSource().setShowResetEnabled(true).close()');
         
-        $controller->addOnInitScript($this->buildJsRefreshOnActionEffect());
+        $onActionEffectJs = $this->getFacade()->getElement($this->getWidget()->getWidgetConfigured())->buildJsRefresh(true, $oControllerJs);
+        if ($dialog = $this->getWidget()->getParentByClass(Dialog::class)) {
+            $onActionEffectJs = "if ({$this->getFacade()->getElement($dialog)->buildJsCheckDialogClosed()} !== true) { {$onActionEffectJs} }";
+        }
+        $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed($onActionEffectJs));
         
         return <<<JS
 

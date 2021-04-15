@@ -68,11 +68,15 @@ class UI5Dialog extends UI5Form
         
         $this->registerSubmitOnEnter($oControllerJs);
         
+        $controller = $this->getController();
+        $controller->addOnShowViewScript("{$controller->getView()->buildJsViewGetter($this)}.getModel('view').setProperty('/_closed', false);");
         if ($this->isMaximized() === false) {
-            $this->getController()->addMethod('closeDialog', $this, 'oEvent', <<<JS
+            $controller->addMethod('closeDialog', $this, 'oEvent', <<<JS
 
                 try { 
-                    this.getView().getModel('view').setProperty('/_prefill/current_data_hash', null); 
+                    var oViewModel = this.getView().getModel('view');
+                    oViewModel.setProperty('/_prefill/current_data_hash', null); 
+                    oViewModel.setProperty('/_closed', true);
                     sap.ui.getCore().byId('{$this->getFacade()->getElement($widget)->getId()}').close(); 
                 } catch (e) { 
                     console.error('Could not close dialog: ' + e); 
@@ -81,9 +85,10 @@ JS
             );
             return $this->buildJsDialog();
         } else {
-            $this->getController()->addMethod('closeDialog', $this, 'oEvent', <<<JS
-
-                this.getView().getModel('view').setProperty('/_prefill/current_data_hash', null); 
+            $controller->addMethod('closeDialog', $this, 'oEvent', <<<JS
+                var oViewModel = this.getView().getModel('view');
+                oViewModel.setProperty('/_prefill/current_data_hash', null); 
+                oViewModel.setProperty('/_closed', true);
                 this.onNavBack(oEvent);
 JS
             );
@@ -96,6 +101,16 @@ JS
                 return $this->buildJsPage($this->buildJsObjectPageLayout($oControllerJs), $oControllerJs);
             }
         }
+    }
+    
+    /**
+     * Returns an inline JS snippet, that returns `true` if the dialog is currently closed and `false`/`undefined` otherwise.
+     * 
+     * @return string
+     */
+    public function buildJsCheckDialogClosed() : string
+    {
+        return "{$this->getController()->getView()->buildJsViewGetter($this)}.getModel('view').getProperty('/_closed')";
     }
     
     /**

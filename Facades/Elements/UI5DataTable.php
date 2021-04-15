@@ -538,7 +538,7 @@ JS;
      *
      * @return UI5DataTable
      */
-    public function buildJsRefresh($keepPagingPos = false, string $oControllerJsVar = null)
+    public function buildJsRefresh(bool $keepPagingPos = false, string $oControllerJsVar = null)
     {
         $params = "undefined, " . ($keepPagingPos ? 'true' : 'false');
         if ($oControllerJsVar === null) {

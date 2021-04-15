@@ -487,9 +487,13 @@ JS;
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsRefresh()
      */
-    public function buildJsRefresh()
+    public function buildJsRefresh(bool $keepPagingPosition = false)
     {
-        return $this->getController()->buildJsMethodCallFromController('onLoadData', $this, '');
+        if ($keepPagingPosition === false) {
+            return $this->getController()->buildJsMethodCallFromController('onLoadData', $this, '');
+        } else {
+            return $this->getController()->buildJsMethodCallFromController('onLoadData', $this, 'undefined, true');
+        }
     }
     
     /**

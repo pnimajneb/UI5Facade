@@ -199,7 +199,7 @@ JS;
      * {@inheritDoc}
      * @see exface\Core\Facades\AbstractAjaxFacade\Elements\LeafletTrait::buildJsRefresh()
      */
-    public function buildJsRefresh() : string
+    public function buildJsRefresh(bool $keepPagingPosition = false) : string
     {
         return $this->buildJsLeafletRefresh();
     }

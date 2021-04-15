@@ -129,7 +129,7 @@ JS;
      * {@inheritDoc}
      * @see exface\Core\Facades\AbstractAjaxFacade\Elements\EChartsTrait::buildJsRefresh()
      */
-    public function buildJsRefresh() : string
+    public function buildJsRefresh(bool $keepPagingPosition = false) : string
     {
         return $this->getController()->buildJsMethodCallFromController($this->buildJsDataLoadFunctionName(), $this, '');
     }
