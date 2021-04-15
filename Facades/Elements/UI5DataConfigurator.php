@@ -109,7 +109,7 @@ JS;
         if ($dialog = $this->getWidget()->getParentByClass(Dialog::class)) {
             $onActionEffectJs = "if ({$this->getFacade()->getElement($dialog)->buildJsCheckDialogClosed()} !== true) { {$onActionEffectJs} }";
         }
-        $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed($onActionEffectJs));
+        $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed($onActionEffectJs, false));
         
         return <<<JS
 

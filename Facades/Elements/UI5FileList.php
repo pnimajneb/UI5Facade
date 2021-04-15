@@ -161,6 +161,7 @@ JS;
     {
         $widget = $this->getWidget();
         $uploadAction = $widget->getInstantUploadAction();
+        $uploadButtonEl = $this->getFacade()->getElement($widget->getInstantUploadButton());
         
         $fileModificationColumnJs = '';
         if ($widget->hasFileModificationTimeColumn()) {
@@ -190,10 +191,10 @@ JS;
             if (oResponseModel.getProperty('/success') !== undefined){
            		{$this->buildJsShowMessageSuccess("oResponseModel.getProperty('/success')")}
 			}
-
-            {$this->buildJsBusyIconHide()}
-            {$this->buildJsRefresh()};
-
+            
+            {$this->buildJsBusyIconHide()};
+            {$uploadButtonEl->buildJsTriggerActionEffects($uploadAction)};
+            
 JS;
             
         return <<<JS
@@ -286,8 +287,8 @@ JS;
                 
                 oUploadSet.removeItem(oItem);
                 oItem.destroy();
-                {$this->buildJsBusyIconHide()}
-                {$this->buildJsRefresh()};
+                {$this->buildJsBusyIconHide()};
+                {$this->getFacade()->getElement($deleteButton)->buildJsTriggerActionEffects($deleteAction)};
                 if (oResponseModel.getProperty('/success') !== undefined){
                		{$this->buildJsShowMessageSuccess("oResponseModel.getProperty('/success')")}
 				}

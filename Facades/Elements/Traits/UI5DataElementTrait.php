@@ -170,7 +170,25 @@ trait UI5DataElementTrait {
         // otherwise the refresh would run before the view finished initializing, before the prefill
         // is started and will probably be empty.
         if ($widget->hasAutoloadData()) {
-            $controller->addOnShowViewScript("try { {$this->buildJsDataResetter()} } catch (e) {} setTimeout(function(){ {$this->buildJsRefresh()} }, 0);");
+            $autoloadJs = <<<JS
+
+                (function() {
+                    var bIsBack = false;
+                    if (oEvent && (oEvent.isBack || oEvent.isBackToPage || oEvent.isBackToTop)) {
+                        bIsBack = true;
+                    }
+                    if (bIsBack === false) {
+                        try { 
+                            {$this->buildJsDataResetter()} 
+                        } catch (e) {} 
+                        setTimeout(function(){ 
+                            {$this->buildJsRefresh()} 
+                        }, 0);
+                    }
+                })();
+
+JS;
+            $controller->addOnShowViewScript($autoloadJs);
         } else {
             $controller->addOnShowViewScript($this->buildJsShowMessageOverlay($widget->getAutoloadDisabledHint()));
         }

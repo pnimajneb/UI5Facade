@@ -283,7 +283,7 @@ JS;
                 				isTo: false,
                 				isBack: false,
                 				isBackToTop: false,
-                				isBackToPage: false,
+                				isBackToPage: true,
                 				direction: "initial"
                 			};
                      
