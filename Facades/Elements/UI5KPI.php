@@ -170,7 +170,7 @@ JS;
                 var oParams = {
                     action: "{$dataWidget->getLazyLoadingActionAlias()}",
                     resource: "{$this->getPageId()}",
-                    element: "{$widget->getId()}",
+                    element: "{$widget->getData()->getId()}",
                     object: "{$widget->getMetaObject()->getId()}",
                     data: {$configuratorElement->buildJsDataGetter($dataWidget->getLazyLoadingAction(), true)}
                 };
