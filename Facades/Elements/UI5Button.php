@@ -194,6 +194,14 @@ JS;
     }
 
     /**
+     * Returns the JS to open the dialogs UI5 view.
+     * 
+     * If the dialog is maximized, it is simply a navigation to another view. For non-maximized
+     * dialogs a `sap.m.Dialog` is opened and the view is appended to it manually. In this case
+     * all navigation events are triggered manually too.
+     * 
+     * **NOTE:** if custom effects are set for the ShowDialog actions, they are handled by the
+     * UI5Dialog itself as they need to be triggered when the dialog is closed!
      * 
      * @param ActionInterface $action
      * @param AbstractJqueryElement $input_element
@@ -223,7 +231,7 @@ JS;
 								{$prefill}
 							},
                             success: function(data, textStatus, jqXHR) {
-                                {$this->buildJsCloseDialog($widget, $input_element)}
+                                {$this->buildJsCloseDialog($widget, $input_element)}                                                    
                             },
                             complete: function() {
                                 {$this->buildJsBusyIconHide()}
@@ -334,9 +342,6 @@ JS;
                                         			oView._handleEvent(oEvent);
                                                 })
                                                 .attachAfterClose(function() {
-                                                    if (sap.ui.getCore().byId("{$this->getId()}") !== undefined) {
-                                                        {$this->buildJsTriggerActionEffects($action)}
-                                                    }
                                                     var oEvent = jQuery.Event("AfterHide", oNavInfoClose);
                                         			oEvent.srcControl = oApp;
                                         			oEvent.data = {};

@@ -1,12 +1,9 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\Dialog;
-use exface\Core\Factories\DataSheetFactory;
 use exface\Core\Widgets\Tabs;
 use exface\Core\Widgets\Tab;
 use exface\Core\Widgets\Image;
-use exface\Core\Widgets\MenuButton;
 use exface\Core\Interfaces\Widgets\iTriggerAction;
 use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\Interfaces\Actions\iShowWidget;
@@ -16,6 +13,7 @@ use exface\Core\CommonLogic\UxonObject;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Factories\ActionFactory;
+use exface\Core\Interfaces\Actions\iShowDialog;
 
 /**
  * In OpenUI5 dialog widgets are either rendered as sap.m.Page (if maximized) or as sap.m.Dialog.
@@ -37,7 +35,7 @@ use exface\Core\Factories\ActionFactory;
  *  subsection of the `sap.uxap.ObjectPageLayout` - this might look strange, but it seems the only
  *  way, to make the header look similar to multi-widget dialogs.
  * 
- * @method Dialog getWidget()
+ * @method \exface\Core\Widgets\Dialog getWidget()
  *        
  * @author Andrej Kabachnik
  *        
@@ -67,7 +65,8 @@ class UI5Dialog extends UI5Form
         }
         
         $this->registerSubmitOnEnter($oControllerJs);
-        
+        $triggerElement = $this->getFacade()->getElement($this->getDialogOpenButton());
+        $triggerAction = $this->getDialogOpenAction();
         $controller = $this->getController();
         $controller->addOnShowViewScript("{$controller->getView()->buildJsViewGetter($this)}.getModel('view').setProperty('/_closed', false);");
         if ($this->isMaximized() === false) {
@@ -81,15 +80,18 @@ class UI5Dialog extends UI5Form
                 } catch (e) { 
                     console.error('Could not close dialog: ' + e); 
                 }
+                {$triggerElement->buildJsTriggerActionEffects($triggerAction)}
 JS
             );
             return $this->buildJsDialog();
         } else {
             $controller->addMethod('closeDialog', $this, 'oEvent', <<<JS
+
                 var oViewModel = this.getView().getModel('view');
                 oViewModel.setProperty('/_prefill/current_data_hash', null); 
                 oViewModel.setProperty('/_closed', true);
                 this.onNavBack(oEvent);
+                {$triggerElement->buildJsTriggerActionEffects($triggerAction)}
 JS
             );
             $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget){
@@ -132,8 +134,7 @@ JS
             if ($width->isPercentual() && $width->getValue() === '100%') {
                 return true;
             }
-            if ($widget->hasParent() && $widget->getParent() instanceof iTriggerAction) {
-                $action = $widget->getParent()->getAction();
+            if ($action = $this->getDialogOpenAction()) {
                 $action_setting = $this->getFacade()->getConfigMaximizeDialogByDefault($action);
                 return $action_setting;
             }
@@ -440,18 +441,14 @@ JS;
      */
     protected function needsPrefill(string $prefillType = self::PREFILL_WITH_ANY) : bool
     {
-        $widget = $this->getWidget();
-        if ($widget->getParent() instanceof iTriggerAction) {
-            $action = $widget->getParent()->getAction();
-            if ($action instanceof iShowWidget) {
-                switch (true) {
-                    case $action->getPrefillWithInputData() && ($prefillType === self::PREFILL_WITH_ANY || $prefillType === self::PREFILL_WITH_INPUT):
-                        return true;
-                    case $action->getPrefillWithPrefillData() && ($prefillType === self::PREFILL_WITH_ANY || $prefillType === self::PREFILL_WITH_PREFILL):
-                        return true;
-                }
+        if (($action = $this->getDialogOpenAction()) instanceof iShowWidget) {
+            switch (true) {
+                case $action->getPrefillWithInputData() && ($prefillType === self::PREFILL_WITH_ANY || $prefillType === self::PREFILL_WITH_INPUT):
+                    return true;
+                case $action->getPrefillWithPrefillData() && ($prefillType === self::PREFILL_WITH_ANY || $prefillType === self::PREFILL_WITH_PREFILL):
+                    return true;
             }
-        } 
+        }
         
         return false;
     }
@@ -467,7 +464,7 @@ JS;
     protected function buildJsPrefillLoader(string $oViewJs = 'oView') : string
     {
         $widget = $this->getWidget();
-        $triggerWidget = $widget->getParent() instanceof iTriggerAction ? $widget->getParent() : $widget;
+        $triggerWidget = $this->getDialogOpenButton() ?? $widget;
         
         // FIXME #DataPreloader this will force the form to use any preload - regardless of the columns.
         if ($widget->isPreloadDataEnabled() === true) {
@@ -752,5 +749,36 @@ JS;
     public function hasButtonBack() : bool
     {
         return true;
+    }
+    
+    /**
+     * Returns the button that opened the dialog or NULL if not available
+     * 
+     * @return iTriggerAction|NULL
+     */
+    protected function getDialogOpenButton() : ?iTriggerAction
+    {
+        if ($this->getWidget()->hasParent()) {
+            $parent = $this->getWidget()->getParent();
+            if ($parent instanceof iTriggerAction) {
+                return $parent;
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * Returns the action that opened the dialog or NULL if not available
+     * 
+     * @return iShowDialog|NULL
+     */
+    protected function getDialogOpenAction() : ?iShowDialog
+    {
+        if ($button = $this->getDialogOpenButton()) {
+            if ($button->hasAction()) {
+                return $button->getAction();
+            }
+        }
+        return null;
     }
 }
