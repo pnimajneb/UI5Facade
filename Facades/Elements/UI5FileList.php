@@ -143,7 +143,7 @@ JS;
     {
         $types = $this->getWidget()->getUploader()->getAllowedFileExtensions();
         if (! empty($types)) {
-            return 'fileTypes: "' . mb_strtolower(implode(',', $types)) . '",';
+            return 'fileTypes: "' . mb_strtolower(implode(',', array_unique($types))) . '",';
         }
         return '';
     }
@@ -152,7 +152,7 @@ JS;
     {
         $types = $this->getWidget()->getUploader()->getAllowedMimeTypes();
         if (! empty($types)) {
-            return 'mediaTypes: "' . mb_strtolower(implode(',', $types)) . '",';
+            return 'mediaTypes: "' . mb_strtolower(implode(',', array_unique($types))) . '",';
         }
         return '';
     }
@@ -209,7 +209,7 @@ JS;
                 var sError;
                 var aFileTypes = oUploadSet.getFileTypes();
                 if (aFileTypes && aFileTypes.length > 0) {
-                    var fileExt = (/(?:\.([^.]+))?$/).exec(file.name)[1];
+                    var fileExt = (/(?:\.([^.]+))?$/).exec((file.name || '').toLowerCase())[1];
                     if (! aFileTypes.includes(fileExt)) {
                         sError = "{$this->translate('WIDGET.FILELIST.ERROR_EXTENSION_NOT_ALLOWED', ['%ext%' => ' +"\"" + fileExt  + "\"" + '])}";
                     }
@@ -217,7 +217,7 @@ JS;
                 // Check mime type
                 var aMediaTypes = oUploadSet.getMediaTypes();
                 if (aMediaTypes && aMediaTypes.length > 0) {
-                    if (! aMediaTypes.includes(file.type)) {
+                    if (! aMediaTypes.includes((file.type || '').toLowerCase())) {
                         sError = "{$this->translate('WIDGET.FILELIST.ERROR_MIMETYPE_NOT_ALLOWED', ['%type%' => ' +"\"" + file.type  + "\"" + '])}";
                     }
                 }
