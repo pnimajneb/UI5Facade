@@ -31,7 +31,7 @@ use exface\Core\CommonLogic\Security\Authorization\UiPageAuthorizationPoint;
 use exface\Core\Widgets\LoginPrompt;
 use exface\Core\Exceptions\Security\AuthenticationFailedError;
 use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
-use exface\Core\Events\Widget\OnBeforePrefillEvent;
+use exface\Core\Events\Widget\OnPrefillDataLoadedEvent;
 use exface\Core\Events\Action\OnActionInputValidatedEvent;
 
 class Webapp implements WorkbenchDependantInterface
@@ -141,8 +141,9 @@ class Webapp implements WorkbenchDependantInterface
                 // to make sure there are no hard-coded values! This is important because we added a dummy
                 // UID value above and also because filter contexts will add values directly to the sheet.
                 $widget = $action->getWidget();
-                $this->getWorkbench()->eventManager()->addListener(OnBeforePrefillEvent::getEventName(), function(OnBeforePrefillEvent $event) use ($widget) {
+                $this->getWorkbench()->eventManager()->addListener(OnPrefillDataLoadedEvent::getEventName(), function(OnPrefillDataLoadedEvent $event) use ($widget) {
                     if ($event->getWidget() === $widget) {
+                        $event->addExplanation('- Removing all values from the prefill data rows and filters to make sure there are no hard-coded values in the UI5 view. The real values will be loaded via `ReadPrefill` action later on.' . PHP_EOL);
                         // Empty all values
                         foreach ($event->getDataSheet()->getColumns() as $col) {
                             $col->setValueOnAllRows('');
