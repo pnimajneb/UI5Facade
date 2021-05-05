@@ -9,6 +9,7 @@ use exface\Core\Interfaces\Widgets\iShowDataColumn;
 use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
+use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 
 /**
  * Generates sap.m.Input with tabular autosuggest and value help.
@@ -824,5 +825,19 @@ JS;
             
 JS;
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerExternalModules()
+     */
+    public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
+    {
+        $f = $this->getFacade();
+        
+        foreach ($this->getWidget()->getTable()->getColumns() as $col) {
+            $f->getElement($col)->registerExternalModules($controller);
+        }
+        return $this;
+    }
 }
-?>
