@@ -109,6 +109,8 @@
     "LIBS.ECHARTS.ECHARTS_JS": "exface/Core/Facades/AbstractAjaxFacade/js/echarts/echarts.custom.min.js",    
     "LIBS.ECHARTS.THEME_JS": "exface/UI5Facade/Facades/js/echarts/ui5theme.js",
     "LIBS.ECHARTS.THEME_NAME": "ui5theme",
+	"LIBS.TINYCOLOR.JS": "npm-asset/tinycolor2/dist/tinycolor-min.js",
+	"LIBS.TINYGRADIENT.JS": "npm-asset/tinygradient/browser.js",
     
     "LIBS.MOMENT.JS": "npm-asset/moment/min/moment.min.js",
     "LIBS.MOMENT.LOCALES": "npm-asset/moment/locale",
