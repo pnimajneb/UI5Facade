@@ -29,7 +29,9 @@
 		"npm-asset/leaflet-fullscreen" : "^1.0",
 		"npm-asset/leaflet.locatecontrol" : "~0.72",
 		"npm-asset/esri-leaflet" : "^3.0",
-		"npm-asset/leaflet.markercluster" : "^1.4"
+		"npm-asset/leaflet.markercluster" : "^1.4",
+		"npm-asset/tinycolor2": "^1.4.2",
+		"npm-asset/tinygradient": "^1.1.4"
 	},
 	"autoload" : {
 		"psr-4" : {
