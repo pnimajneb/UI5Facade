@@ -103,6 +103,8 @@ JS;
         $f = $this->getFacade();
         $controller->addExternalModule('libs.exface.charts.ECharts', $f->buildUrlToSource('LIBS.ECHARTS.ECHARTS_JS'), null, 'echarts');
         $controller->addExternalModule('libs.exface.charts.Theme', $f->buildUrlToSource('LIBS.ECHARTS.THEME_JS'), null);        
+        $controller->addExternalModule('libs.exface.TinyColor', $f->buildUrlToSource('LIBS.TINYCOLOR.JS'), null, 'tinycolor');
+        $controller->addExternalModule('libs.exface.TinyGradient', $f->buildUrlToSource('LIBS.TINYGRADIENT.JS'), null, 'tinygradient');
         
         foreach ($this->getWidget()->getData()->getColumns() as $col) {
             $f->getElement($col)->registerExternalModules($controller);
