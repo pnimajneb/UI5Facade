@@ -701,7 +701,9 @@ JS;
     {
         if ($this->isUiTable()) {
             return "sap.ui.getCore().byId('{$this->getId()}').getFirstVisibleRow() + $({$oDomElementClickedJs}).parents('tr').index()";
-        } elseif ($this->isMTable()) {
+        } 
+        
+        if ($this->isMTable()) {
             return <<<JS
 (function(){
     var jqTr = $({$oDomElementClickedJs}).parents('tr');
@@ -712,9 +714,13 @@ JS;
     }
 })()
 JS;
-        } else {
-            return "$({$oDomElementClickedJs}).parents('tr').index()";
         }
+           
+        if ($this->isMList()) {
+            return "$({$oDomElementClickedJs}).parents('li.sapMSLI').length";
+        }
+        
+        return "-1";
     }
     
     /**

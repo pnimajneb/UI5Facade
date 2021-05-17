@@ -1629,6 +1629,7 @@ JS;
             
             .attachBrowserEvent("dblclick", function(oEvent) {
                 var oTargetDom = oEvent.target;
+                var iRowIdx = -1;
                 if(! ({$this->buildJsClickIsTargetRowCheck('oTargetDom')})) return;
                 
         		iRowIdx = {$this->buildJsClickGetRowIndex('oTargetDom')};
