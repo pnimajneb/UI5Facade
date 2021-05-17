@@ -160,6 +160,9 @@ JS;
     protected function buildJsEventHandlerUpload(string $oEventJs) : string
     {
         $widget = $this->getWidget();
+        if (! $widget->isUploadEnabled()) {
+            return '';
+        }
         $uploadAction = $widget->getInstantUploadAction();
         $uploadButtonEl = $this->getFacade()->getElement($widget->getInstantUploadButton());
         
@@ -278,6 +281,9 @@ JS;
     protected function buildJsEventHandlerDelete(string $oEventJs) : string
     {
         $widget = $this->getWidget();
+        if (! $widget->isDeleteEnabled()) {
+            return '';
+        }
         $deleteButton = $widget->getDeleteButton();
         $deleteAction = $deleteButton->getAction();
         
@@ -477,7 +483,7 @@ JS;
                 var oUploader = sap.ui.getCore().byId('{$this->getId()}-uploader');
                 if (oUploader) {
                     oUploader.setIcon('sap-icon://open-folder');
-                    oUploader.setButtonText("{$btnText}");
+                    // oUploader.setButtonText("{$btnText}");
                 }
             })();
 
