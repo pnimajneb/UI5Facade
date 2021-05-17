@@ -16,6 +16,8 @@ class UI5DialogHeader extends UI5Container
 {
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $js = '';
+        
         foreach ($this->getWidget()->getWidgets() as $widget) {
             if ($widget instanceof iHaveValue) {
                 $js .= $this->buildJsObjectStatus($widget) . ',';
