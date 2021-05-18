@@ -337,8 +337,19 @@ JS;
     {
         $height = '';
         
-        if ($this->isLargeDialog()) {
-            $height = '"70%"';
+        $dim = $this->getWidget()->getHeight();
+        switch (true) {
+            case $dim->isPercentual():
+            case $dim->isFacadeSpecific() && strtolower($dim->getValue()) !== 'auto':
+                $height = json_encode($dim->getValue());
+                break;
+            case $dim->isRelative():
+                $height = json_encode(($dim * $this->getHeightRelativeUnit()) . 'px');
+                break;
+            default:
+                if ($this->isLargeDialog()) {
+                    $height = '"70%"';
+                }
         }
         
         return $height ? 'contentHeight: ' . $height . ',' : '';
@@ -352,8 +363,19 @@ JS;
     {
         $width = '';
         
-        if ($this->isLargeDialog()) {
-            $width = '"65rem"'; // This is the size of a P13nDialog used for data configurator
+        $dim = $this->getWidget()->getWidth();
+        switch (true) {
+            case $dim->isPercentual():
+            case $dim->isFacadeSpecific():
+                $width = json_encode($dim->getValue());
+                break;
+            case $dim->isRelative():
+                $width = json_encode(($dim * $this->getHeightRelativeUnit()) . 'px');
+                break;
+            default:
+                if ($this->isLargeDialog()) {
+                    $width = '"65rem"'; // This is the size of a P13nDialog used for data configurator
+                }
         }
         
         return $width ? 'contentWidth: ' . $width . ',' : '';
