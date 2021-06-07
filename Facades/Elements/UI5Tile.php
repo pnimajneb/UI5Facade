@@ -83,6 +83,8 @@ JS;
             $visible = 'visible: false,';
         }
         
+        $footerText = $widget->getFooterText() !== null ? $this->escapeString($widget->getFooterText()) : '';
+        
         return <<<JS
 
 new sap.m.GenericTile("{$this->getId()}", {
@@ -92,6 +94,7 @@ new sap.m.GenericTile("{$this->getId()}", {
     {$visible}
     tileContent: [
         new sap.m.TileContent({
+            footer: "{$footerText}",
             content: [
                 {$tileContentConstructor}
             ]
