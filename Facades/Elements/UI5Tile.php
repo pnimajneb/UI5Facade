@@ -83,7 +83,7 @@ JS;
             $visible = 'visible: false,';
         }
         
-        $footerText = $widget->getFooterText() !== null ? $this->escapeString($widget->getFooterText()) : '';
+        $footerText = $widget->getFooterText() !== null ? $this->escapeJsTextValue($widget->getFooterText()) : '';
         
         return <<<JS
 

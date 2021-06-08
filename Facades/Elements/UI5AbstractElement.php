@@ -168,11 +168,6 @@ JS;
         }());
 JS;
     }
-
-    public function escapeString($string)
-    {
-        return htmlentities($string, ENT_QUOTES);
-    }
     
     /**
      * Returns the SAP icon URI (e.g. "sap-icon://edit") for the given icon name
