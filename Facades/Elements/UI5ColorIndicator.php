@@ -25,9 +25,6 @@ class UI5ColorIndicator extends UI5Display
         $widget = $this->getWidget();
         $colorOnly = true;
         if ($widget instanceof ColorIndicator) {
-            if ($widget->hasColorConditions() === true) {
-                $this->getWorkbench()->getLogger()->logException(new FacadeUnsupportedWidgetPropertyWarning('Property color_conditions currently not supported for widget ' . $widget->getWidgetType() . ' in the UI5 facade.'));
-            }
             // See if the user forced to not use color-only mode
             $colorOnly = $widget->getColorOnly($colorOnly);
         }
