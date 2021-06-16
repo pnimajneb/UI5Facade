@@ -10,6 +10,10 @@ use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Widgets\Message;
 use exface\Core\Interfaces\Widgets\iTakeInput;
+use exface\Core\DataTypes\StringDataType;
+use exface\Core\DataTypes\StringEnumDataType;
+use exface\Core\Widgets\WidgetGroup;
+use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 
 /**
  * 
@@ -84,21 +88,32 @@ JS;
                 
     /**
      * 
-     * @param string $content
+     * @param array $widgets
      * @param bool $useFormLayout
      * @return string
      */
-    public function buildJsLayoutConstructor(string $content = null, bool $useFormLayout = true) : string
+    public function buildJsLayoutConstructor(array $widgets = null, bool $useFormLayout = true) : string
     {
-        $widget = $this->getWidget();
-        $content = $content ?? $this->buildJsChildrenConstructors($useFormLayout);
-        if ($widget->countWidgetsVisible() === 1 && ($widget->getWidgetFirst() instanceof iFillEntireContainer)) {
+        //$widget = $this->getWidget();        
+        $widgets = $widgets ?? $this->getWidget()->getWidgets();
+        //$content = $content ?? $this->buildJsChildrenConstructors($useFormLayout);
+        if ($this->isLayoutRequired()) {
+            $content = $this->buildJsChildrenConstructors();            
             return $content;
         } elseif ($useFormLayout) {
-            return $this->buildJsLayoutForm($content);
+            return $this->buildJsLayoutForm($widgets);
         } else {
             return $this->buildJsLayoutGrid($content);
         }
+    }
+    
+    protected function isLayoutRequired() : bool
+    {
+        $widget = $this->getWidget();        
+        if ($widget->isFilledBySingleWidget()) {
+            return false;
+        }
+        return true;
     }
     
     protected function hasChildrenCaption() : bool
@@ -124,7 +139,7 @@ JS;
         foreach ($this->getWidget()->getWidgets() as $widget) {
             $element = $this->getFacade()->getElement($widget);
              
-            if ($widget->isHidden() === false && $useFormLayout === true) {
+            /*if ($widget->isHidden() === false && $useFormLayout === true) {
                 if (! $childrenHaveCaptions && $element instanceof UI5Value) {
                     $element->setRemoveLabelIfNoCaption(true);
                 }
@@ -133,7 +148,7 @@ JS;
                     $js .= ($js ? ",\n" : '') . $this->buildJsFormRowDelimiter();
                 }
                 $firstVisibleWidget = $widget;
-            }
+            }*/
             $js .= ($js ? ",\n" : '') . $element->buildJsConstructor();
         }
         
@@ -196,12 +211,12 @@ JS;
     
     /**
      * 
-     * @param string $content
+     * @param array $widgets
      * @param string $toolbarConstructor
      * @param string $id
      * @return string
      */
-    protected function buildJsLayoutForm($content, string $toolbarConstructor = null, string $id = null)
+    protected function buildJsLayoutForm(array $widgets, string $toolbarConstructor = null, string $id = null)
     {
         $this->buildJsLayoutFormFixes();
         
@@ -243,24 +258,26 @@ JS;
         
         $phoneLabelSpan = $this->isEditable() ? '12' : '5';
         $editable = $this->isEditable() ? 'true' : 'false';
+        $content = $this->buildJsLayoutFormContent($widgets);
         
         return <<<JS
         
-            new sap.ui.layout.form.SimpleForm({$id} {
+            new sap.ui.layout.form.Form({$id} {
                 editable: $editable,
-                layout: "ResponsiveGridLayout",
-                adjustLabelSpan: false,
-    			labelSpanXL: 5,
-    			labelSpanL: 4,
-    			labelSpanM: 4,
-    			labelSpanS: {$phoneLabelSpan},
-    			emptySpanXL: 0,
-    			emptySpanL: 0,
-    			emptySpanM: 0,
-    			emptySpanS: 0,
-                {$properties}
-    			singleContainerFullSize: true,
-                content: [
+                layout: new sap.ui.layout.form.ResponsiveGridLayout('', {
+                    adjustLabelSpan: false,
+        			labelSpanXL: 5,
+        			labelSpanL: 4,
+        			labelSpanM: 4,
+        			labelSpanS: {$phoneLabelSpan},
+        			emptySpanXL: 0,
+        			emptySpanL: 0,
+        			emptySpanM: 0,
+        			emptySpanS: 0,
+                    {$properties}
+        			singleContainerFullSize: true
+                }),
+                formContainers: [
                     {$content}
                 ],
                 {$toolbar}
@@ -268,6 +285,78 @@ JS;
             {$this->buildJsPseudoEventHandlers()}
             
 JS;
+    }
+    
+    protected function buildJsConstructorFormGroup(array $widgets, WidgetInterface $groupWidget = null) : string
+    {
+        $js = '';
+        $nonGroupWidgets = [];
+        foreach ($widgets as $widget) {
+            if ($widget instanceof WidgetGroup) {
+                if ($js !== '') {
+                    $js .= ",\n";
+                }
+                $js .= $this->buildJsConstructorFormGroup($widget->getWidgets(), $widget);
+            } else {
+                $nonGroupWidgets[] = $widget;
+            }            
+        }
+        $title = '';
+        $id = '';
+        if ($groupWidget) {
+            $id = $groupWidget->getId() ?? $id;
+            $title = $groupWidget->getCaption() ? 'text: "' . $groupWidget->getCaption() . '",' : '';;
+        }
+        if ($js !== '') {
+            $js .= ",\n";
+        }
+        $js .= <<<JS
+    new sap.ui.layout.form.FormContainer('{$id}', {
+        title: new sap.ui.core.Title({{$title}}),
+        formElements: [
+            {$this->buildJsConstructorFormElement($nonGroupWidgets)}
+        ]})
+
+JS;
+        return $js;
+    }
+    
+    protected function buildJsConstructorFormElement(array $widgets) : string
+    {
+        $js = '';
+        foreach ($widgets as $widget) {
+            $label = '';
+            $fields = '';
+            $element = $this->getFacade()->getElement($widget);
+            if ($element instanceof UI5CompoundControlInterface) {
+                $label = 'label: ' . $element->buildJsLabel();
+                $fields = $element->buildJsConstructorForMainControl();
+            } else {
+                $fields= $element->buildJsConstructor();
+            }
+            $id = $widget->getId() ?? '';
+            if ($js !== '') {
+                $js .= ",\n";
+            }
+            $js .= <<<JS
+            new sap.ui.layout.form.FormElement('{$id}', {
+                {$label}
+                fields: [
+                    {$fields}
+                ]
+            })
+JS;
+        } 
+        return $js;
+    }
+    
+    protected function buildJsLayoutFormContent (array $widgets) : string
+    {
+        if (empty($widgets)) {
+            return '';
+        }
+        $js = $this->buildJsConstructorFormGroup($widgets, $this->getWidget());
+        return $js;
     }
     
     /**

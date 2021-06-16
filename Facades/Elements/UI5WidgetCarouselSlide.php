@@ -32,7 +32,7 @@ class UI5WidgetCarouselSlide extends UI5Tab
     new sap.m.Page("{$this->getId()}", {
         title: "{$caption}",
         content: [
-            {$this->buildJsLayoutConstructor($this->buildJsChildrenConstructors())}
+            {$this->buildJsLayoutConstructor()}
         ]
     })
 

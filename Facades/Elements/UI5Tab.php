@@ -26,7 +26,7 @@ class UI5Tab extends UI5Panel
     new sap.m.IconTabFilter("{$this->getId()}", {
         text: {$caption},
         content: [
-            {$this->buildJsLayoutConstructor($this->buildJsChildrenConstructors())}
+            {$this->buildJsLayoutConstructor()}
         ]
     })
 JS;

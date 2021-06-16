@@ -109,14 +109,14 @@ JS;
      */
     protected function buildJsLabelWrapper($element_constructor)
     {
-        $widget = $this->getWidget();
+        /*$widget = $this->getWidget();
         $caption = $this->getCaption();
         
         if ($this->getRemoveLabelIfNoCaption() && $caption === '') {
             return $element_constructor;
         }
         
-        $caption = $this->escapeJsTextValue($caption);
+        /*$caption = $this->escapeJsTextValue($caption);
         $labelAppearance = '';
         if ($widget->getHideCaption() === true) {
             $labelAppearance .= 'visible: false,';
@@ -135,9 +135,38 @@ JS;
             {$labelAppearance}
         }),
 
-JS;
+JS;*/
         
-        return $label . $element_constructor;
+        return $this->buildJsLabel() . $element_constructor;
+    }
+    
+    public function buildJsLabel() : string
+    {
+        $widget = $this->getWidget();
+        $caption = $this->getCaption();
+        if ($this->getRemoveLabelIfNoCaption() && $caption === '') {
+            return '';
+        }        
+        $caption = $this->escapeJsTextValue($caption);
+        $labelAppearance = '';
+        if ($widget->getHideCaption() === true) {
+            $labelAppearance .= 'visible: false,';
+        } else {
+            if ($widget instanceof iTakeInput) {
+                if ($widget->isRequired()) {
+                    $labelAppearance .= 'required: true,';
+                }
+            }
+        }
+        
+        return <<<JS
+        new sap.m.Label({
+            text: "{$caption}",
+            {$this->buildJsPropertyTooltip()}
+            {$labelAppearance}
+        }),
+        
+JS;
     }
     
     /**

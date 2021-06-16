@@ -136,16 +136,34 @@ JS;
      */
     protected function buildJsDialogContentChildren() : string
     {
-        $widget = $this->getWidget();
+        /*$widget = $this->getWidget();
         $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget){
             return $widget->isHidden() === false;
-        });
-            if (count($visibleChildren) === 1 && $visibleChildren[0] instanceof iFillEntireContainer) {
-                $childrenJs = $this->buildJsChildrenConstructors(false);
-            } else {
-                $childrenJs = $this->buildJsLayoutForm($this->buildJsChildrenConstructors(true));
-            }
+        });*/
+        $this->attachEventHandlersToElements();
+        /*if (count($visibleChildren) === 1 && $visibleChildren[0] instanceof iFillEntireContainer) {
+            $childrenJs = $this->buildJsChildrenConstructors(false);
+        } else {
+            $childrenJs = $this->buildJsLayoutForm($this->getWidget()->getWidgets());
+        }*/
+        $childrenJs = $this->buildJsLayoutConstructor();
         return $childrenJs;
+    }
+    
+    protected function attachEventHandlersToElements() : UI5DataLookupDialog
+    {
+        foreach ($this->getWidget()->getWidgets() as $widget) {
+            
+            // if the widget is the DataTable, and it uses Multiselect attatch the handlers for the SelectedITems panel
+            if ($widget instanceof iSupportMultiSelect && $this->getWidget()->getMultiSelect() === true){
+                $this->getFacade()->getElement($widget)->addOnChangeScript($this->buildJsSelectionChangeHandler());
+                $this->getController()->addOnEventScript($this, self::EVENT_NAME_TOKEN_UPDATE, $this->buildJsTokenChangeHandler('oEvent'));
+            }
+            $tableElement = $this->getFacade()->getElement($widget);
+            $tableElement->setDynamicPageHeaderCollapsed(true);
+            $tableElement->setDynamicPageShowToolbar(true);
+        }
+        return $this;
     }
     
     /**
@@ -294,7 +312,7 @@ JS;
      */
     public function buildJsChildrenConstructors(bool $useFormLayout = true) : string
     {
-        $js = '';
+        /*$js = '';
         $firstVisibleWidget = null;
         foreach ($this->getWidget()->getWidgets() as $widget) {
             
@@ -317,7 +335,8 @@ JS;
             $js .= ($js ? ",\n" : '') . $tableElement->buildJsConstructor();
         }
         
-        return $js;
+        return $js;*/
+        return parent::buildJsChildrenConstructors();
     }
     
     protected function buildJsTokenChangeHandler(string $oEventJs) : string
