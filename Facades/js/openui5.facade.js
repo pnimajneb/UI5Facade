@@ -51,6 +51,11 @@ const exfLauncher = {};
 	var _oShell = {};
 	var _oAppMenu;
 	var _oLauncher = this;
+	var _oConfig = {
+		contextBar: {
+			refreshWaitSeconds: 5
+		}
+	};
 	
 	this.getShell = function() {
 		return _oShell;
@@ -153,8 +158,7 @@ const exfLauncher = {};
 					}
 					if (extras && extras.ContextBar){
 						_oContextBar.refresh(extras.ContextBar);
-					} else if (_oContextBar.lastContextRefresh === null || (Math.abs((new Date()) - _oContextBar.lastContextRefresh)) > 3000) {
-						_oContextBar.lastContextRefresh = new Date();
+					} else {
 						_oContextBar.load();
 					}
 				});
@@ -167,7 +171,14 @@ const exfLauncher = {};
 			},
 
 			load : function(delay){
-				if (delay == undefined) delay = 100;
+				if (delay === undefined) delay = 100;
+				
+				// Don't refresh if configured wait-time not passed yet
+				if (_oContextBar.lastContextRefresh !== null && (Math.abs((new Date()) - _oContextBar.lastContextRefresh)) < _oConfig.contextBar.refreshWaitSeconds * 1000) {
+					return;
+				}
+				_oContextBar.lastContextRefresh = new Date();
+				
 				setTimeout(function(){
 					// IDEA had to disable adding context bar extras to every request due to
 					// performance issues. This will be needed for asynchronous contexts like
@@ -198,8 +209,6 @@ const exfLauncher = {};
 				var iItemsIndex = 5;
 				var oControl = {};
 				
-				_oContextBar.lastContextRefresh = new Date();
-				
 				oToolbar.removeAllContent();
 				
 				for (var i=0; i<aItemsOld.length; i++) {
@@ -211,7 +220,7 @@ const exfLauncher = {};
 					}
 				}
 				
-				for (var id in data){
+				for (var id in data) {
 					var sColor = data[id].color ? 'background-color:'+data[id].color+' !important;' : '';
 					oToolbar.insertContent(
 							new sap.m.Button(id, { 
