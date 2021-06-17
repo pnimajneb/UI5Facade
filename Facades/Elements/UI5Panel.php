@@ -14,6 +14,7 @@ use exface\Core\DataTypes\StringDataType;
 use exface\Core\DataTypes\StringEnumDataType;
 use exface\Core\Widgets\WidgetGroup;
 use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
+use exface\Core\CommonLogic\WidgetDimension;
 
 /**
  * 
@@ -28,6 +29,8 @@ class UI5Panel extends UI5Container
     use UI5HelpButtonTrait;
     
     private $gridClasses = [];
+    
+    const FORM_MAX_CELLS = 12;
     
     /**
      * 
@@ -103,7 +106,7 @@ JS;
         } elseif ($useFormLayout) {
             return $this->buildJsLayoutForm($widgets);
         } else {
-            return $this->buildJsLayoutGrid($content);
+            return $this->buildJsLayoutGrid($widgets);
         }
     }
     
@@ -265,7 +268,7 @@ JS;
             new sap.ui.layout.form.Form({$id} {
                 editable: $editable,
                 layout: new sap.ui.layout.form.ResponsiveGridLayout('', {
-                    adjustLabelSpan: false,
+                    adjustLabelSpan: true,
         			labelSpanXL: 5,
         			labelSpanL: 4,
         			labelSpanM: 4,
@@ -303,16 +306,37 @@ JS;
         }
         $title = '';
         $id = '';
-        if ($groupWidget) {
-            $id = $groupWidget->getId() ?? $id;
-            $title = $groupWidget->getCaption() ? 'text: "' . $groupWidget->getCaption() . '",' : '';;
+        $widthWidget = null;
+        $layout = '';
+        
+        if ($groupWidget && ! $groupWidget->getWidth()->isUndefined()) {
+            $widthWidget = $groupWidget;            
+        } else {
+            foreach ($nonGroupWidgets as $widget) {
+                if (! $widget->getWidth()->isUndefined()) {
+                    $widthWidget = $widget;
+                    break;
+                }
+            }
         }
+        if ($widthWidget) {            
+            $span = $this->buildJsFormGroupSpan($widthWidget);
+            if ($span) {
+                $layout = "layoutData: new sap.ui.layout.GridData('', {span: '{$span}'}),";
+            }
+        }
+        
+        $id = $groupWidget->getId() ?? $id;
+        $title = $groupWidget->getCaption() ? 'text: "' . $groupWidget->getCaption() . '",' : '';
+        $title = "title: new sap.ui.core.Title({{$title}}),";
+        
         if ($js !== '') {
             $js .= ",\n";
         }
         $js .= <<<JS
     new sap.ui.layout.form.FormContainer('{$id}', {
-        title: new sap.ui.core.Title({{$title}}),
+        {$title}
+        {$layout}        
         formElements: [
             {$this->buildJsConstructorFormElement($nonGroupWidgets)}
         ]})
@@ -329,8 +353,12 @@ JS;
             $fields = '';
             $element = $this->getFacade()->getElement($widget);
             if ($element instanceof UI5CompoundControlInterface) {
-                $label = 'label: ' . $element->buildJsLabel();
-                $fields = $element->buildJsConstructorForMainControl();
+                if ($widget->getHideCaption() !== true) {
+                    $label = 'label: ' . $element->buildJsLabel();
+                }
+                $element->setRenderCaptionAsLabel(false);
+                $fields = $element->buildJsConstructor();
+                $element->setRenderCaptionAsLabel(true);
             } else {
                 $fields= $element->buildJsConstructor();
             }
@@ -359,6 +387,53 @@ JS;
         return $js;
     }
     
+    protected function buildJsFormGroupSpan (WidgetInterface $widget) : ?string
+    {
+        $widthDimension = $widget->getWidth();
+        switch (true) {
+            case $widthDimension->isMax():
+                $width = self::FORM_MAX_CELLS;
+                return "XL{$width} L{$width} M{$width}";
+            case $widthDimension->isPercentual():
+                $width = StringDataType::substringBefore($widthDimension->getValue(), '%');
+                $width = round(self::FORM_MAX_CELLS/100*$width);
+                return "XL{$width} L{$width} M{$width}";
+            case $widthDimension->isRelative():
+                $columns = $this->getNumberOfColumns();
+                switch($columns) {
+                    case $columns > 3:
+                        $colXL = $columns;
+                        $colL = 3;
+                        $colM = 2;
+                        break;
+                    case 3:
+                        $colXL = $columns;
+                        $colL = $columns;
+                        $colM = 2;
+                        break;
+                    default:
+                        $colXL = $columns;
+                        $colL = $columns;
+                        $colM = $columns;
+                }
+                $widthXL = round(self::FORM_MAX_CELLS/$colXL * $widthDimension->getValue());
+                if ($widthXL > self::FORM_MAX_CELLS) {
+                    $widthXL = self::FORM_MAX_CELLS;
+                }
+                $widthL = round(self::FORM_MAX_CELLS/$colL * $widthDimension->getValue());
+                if ($widthL > self::FORM_MAX_CELLS) {
+                    $widthL = self::FORM_MAX_CELLS;
+                }
+                $widthM = round(self::FORM_MAX_CELLS/$colM * $widthDimension->getValue());
+                if ($widthM > self::FORM_MAX_CELLS) {
+                    $widthM = self::FORM_MAX_CELLS;
+                }
+                return "XL{$widthXL} L{$widthL} M{$widthM}";
+            default:
+                return null;
+        }
+    }
+    
     /**
      * Returns TRUE if the form/panel contains active inputs and FALSE otherwise
      * 
@@ -383,11 +458,18 @@ JS;
     
     /**
      * 
-     * @param string $content
+     * @param array $widgets
      * @return string
      */
-    protected function buildJsLayoutGrid(string $content)
+    protected function buildJsLayoutGrid(array $widgets)
     {
+        $content = '';
+        foreach ($widgets as $widget) {
+            if ($content !== '') {
+                $content .= ",\n";
+            }
+            $content .= $this->getFacade()->getElement($widget)->buildJsConstructor();
+        }
         return <<<JS
 
             new sap.ui.layout.Grid({

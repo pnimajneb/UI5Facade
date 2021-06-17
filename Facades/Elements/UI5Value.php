@@ -30,7 +30,7 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
     
     private $valueBoundToModel = null;
     
-    private $removeLabelIfNoCaption = false;
+    private $renderCaptionAsLabel = true;
     
     /**
      * 
@@ -144,7 +144,7 @@ JS;*/
     {
         $widget = $this->getWidget();
         $caption = $this->getCaption();
-        if ($this->getRemoveLabelIfNoCaption() && $caption === '') {
+        if ($this->getRenderCaptionAsLabel() === false) {
             return '';
         }        
         $caption = $this->escapeJsTextValue($caption);
@@ -475,9 +475,9 @@ JS;
      * 
      * @return bool
      */
-    protected function getRemoveLabelIfNoCaption() : bool
+    protected function getRenderCaptionAsLabel() : bool
     {
-        return $this->removeLabelIfNoCaption;
+        return $this->renderCaptionAsLabel;
     }
     
     /**
@@ -485,9 +485,9 @@ JS;
      * @param bool $value
      * @return UI5Value
      */
-    public function setRemoveLabelIfNoCaption(bool $value) : UI5Value
+    public function setRenderCaptionAsLabel(bool $value) : UI5Value
     {
-        $this->removeLabelIfNoCaption = $value;
+        $this->renderCaptionAsLabel = $value;
         return $this;
     }
 }
