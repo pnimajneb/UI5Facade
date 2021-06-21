@@ -109,37 +109,15 @@ JS;
      */
     protected function buildJsLabelWrapper($element_constructor)
     {
-        /*$widget = $this->getWidget();
-        $caption = $this->getCaption();
-        
-        if ($this->getRemoveLabelIfNoCaption() && $caption === '') {
-            return $element_constructor;
-        }
-        
-        /*$caption = $this->escapeJsTextValue($caption);
-        $labelAppearance = '';
-        if ($widget->getHideCaption() === true) {
-            $labelAppearance .= 'visible: false,';
-        } else {
-            if ($widget instanceof iTakeInput) {
-                if ($widget->isRequired()) {
-                    $labelAppearance .= 'required: true,';
-                }
-            }
-        }
-        
-        $label = <<<JS
-        new sap.m.Label({
-            text: "{$caption}",
-            {$this->buildJsPropertyTooltip()}
-            {$labelAppearance}
-        }),
-
-JS;*/
-        
         return $this->buildJsLabel() . $element_constructor;
     }
     
+    /**
+     * Builds the label for the element.
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface::buildJsLabel()
+     */
     public function buildJsLabel() : string
     {
         $widget = $this->getWidget();
