@@ -20,6 +20,7 @@ class UI5Image extends UI5Display
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {      
+        $this->registerExternalModules($this->getController());
         $alignment = $this->getWidget()->getAlign();
         $classes = '';
         switch ($alignment) {

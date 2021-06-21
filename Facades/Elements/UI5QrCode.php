@@ -49,16 +49,6 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsConstructor()
-     */
-    public function buildJsConstructor($oControllerJs = 'oController') : string
-    {
-        return $this->buildJsConstructorForMainControl($oControllerJs);
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildCssHeightDefaultValue()
      */
     protected function buildCssHeightDefaultValue()
@@ -84,10 +74,5 @@ JS;
     public function buildJsValueBindingPropertyName() : string
     {
         return 'code';
-    }
-    
-    public function getCaption() : string
-    {
-        return '';
     }
 }

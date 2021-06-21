@@ -34,7 +34,6 @@ class UI5Display extends UI5Value
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerExternalModules($this->getController());
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
     
@@ -45,6 +44,7 @@ class UI5Display extends UI5Value
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         $widget = $this->getWidget();
         if ($widget->getValueDataType() instanceof BooleanDataType) {
             if ($this->getWidget()->isInTable() === true) {

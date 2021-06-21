@@ -69,9 +69,33 @@ JS;
     
 JS;
         $confirmInputElement->addOnChangeScript($onConfirmInputChangeScript);
-        $output = parent::buildJsConstructorForMainControl($oControllerJs) . ',';
-        $output .= $confirmInputElement->buildJsLabelWrapper($confirmInputElement->buildJsConstructorForMainControl($oControllerJs));
-        return $output;
+        $outputParent = parent::buildJsConstructorForMainControl($oControllerJs) . ',';
+        $outputChild = $confirmInputElement->buildJsConstructorForMainControl($oControllerJs);
+        $outputChildLabel = <<<JS
+            new sap.m.Text('',{
+                text: '{$this->getConfirmationInput()->getCaption()}',
+                textAlign: "End",
+                maxLines: 1,
+                layoutData: new sap.m.FlexItemData({
+                    growFactor: 0,                    
+                    styleClass: 'sapUiTinyMarginBeginEnd'
+                })
+            }),
+
+JS;
+        $js = <<<JS
+        new sap.m.HBox({
+            width: "100%",
+            direction: "RowReverse",
+            items: [
+                {$outputParent}
+                {$outputChildLabel}
+                {$outputChild}
+            ]
+        })
+
+JS;
+        return $js;
     }
     
     /**

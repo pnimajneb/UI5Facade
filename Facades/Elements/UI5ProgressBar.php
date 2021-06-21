@@ -22,6 +22,7 @@ class UI5ProgressBar extends UI5Display
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         // NOTE: displayOnly:true makes the progressbar look nice inside responsive table 
         // cells! Otherwise it has top and bottom margins and is displayed uneven with the
         // caption.
