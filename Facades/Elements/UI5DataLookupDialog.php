@@ -136,16 +136,7 @@ JS;
      */
     protected function buildJsDialogContentChildren() : string
     {
-        /*$widget = $this->getWidget();
-        $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget){
-            return $widget->isHidden() === false;
-        });*/
         $this->attachEventHandlersToElements();
-        /*if (count($visibleChildren) === 1 && $visibleChildren[0] instanceof iFillEntireContainer) {
-            $childrenJs = $this->buildJsChildrenConstructors(false);
-        } else {
-            $childrenJs = $this->buildJsLayoutForm($this->getWidget()->getWidgets());
-        }*/
         $childrenJs = $this->buildJsLayoutConstructor();
         return $childrenJs;
     }
@@ -310,10 +301,9 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsChildrenConstructors()
      */
-    public function buildJsChildrenConstructors(bool $useFormLayout = true) : string
+    public function buildJsChildrenConstructors() : string
     {
-        /*$js = '';
-        $firstVisibleWidget = null;
+        $js = '';
         foreach ($this->getWidget()->getWidgets() as $widget) {
             
             // if the widget is the DataTable, and it uses Multiselect attatch the handlers for the SelectedITems panel
@@ -321,22 +311,12 @@ JS;
                 $this->getFacade()->getElement($widget)->addOnChangeScript($this->buildJsSelectionChangeHandler());
                 $this->getController()->addOnEventScript($this, self::EVENT_NAME_TOKEN_UPDATE, $this->buildJsTokenChangeHandler('oEvent'));
             }
-            
-            if ($widget->isHidden() === false) {
-                // Larger widgets need a Title before them to make SimpleForm generate a new FormContainer
-                if ($firstVisibleWidget !== null && $useFormLayout === true && (($widget instanceof iFillEntireContainer) || $widget->getWidth()->isMax())) {
-                    $js .= ($js ? ",\n" : '') . $this->buildJsFormRowDelimiter();
-                }
-                $firstVisibleWidget = $widget;
-            }
             $tableElement = $this->getFacade()->getElement($widget);
             $tableElement->setDynamicPageHeaderCollapsed(true);
             $tableElement->setDynamicPageShowToolbar(true);
             $js .= ($js ? ",\n" : '') . $tableElement->buildJsConstructor();
-        }
-        
-        return $js;*/
-        return parent::buildJsChildrenConstructors();
+        }        
+        return $js;
     }
     
     protected function buildJsTokenChangeHandler(string $oEventJs) : string

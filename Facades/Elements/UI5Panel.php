@@ -41,7 +41,7 @@ class UI5Panel extends UI5Container
                 new sap.m.Panel("{$this->getId()}", {
                     {$this->buildJsPropertyHeight()}
                     content: [
-                        {$this->buildJsChildrenConstructors(false)}
+                        {$this->buildJsChildrenConstructors()}
                     ],
                     {$this->buildJsProperties()}
                 }).addStyleClass("sapUiNoContentPadding {$this->buildCssElementClass()} {$this->buildCssGridClass()}")
@@ -94,9 +94,7 @@ JS;
      */
     public function buildJsLayoutConstructor(array $widgets = null, bool $useFormLayout = true) : string
     {
-        //$widget = $this->getWidget();        
         $widgets = $widgets ?? $this->getWidget()->getWidgets();
-        //$content = $content ?? $this->buildJsChildrenConstructors($useFormLayout);
         if (! $this->isLayoutRequired()) {
             $content = $this->buildJsChildrenConstructors();            
             return $content;
@@ -124,44 +122,6 @@ JS;
             }
         }
         return false;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsChildrenConstructors()
-     */
-    public function buildJsChildrenConstructors(bool $useFormLayout = true) : string
-    {
-        $js = '';
-        foreach ($this->getWidget()->getWidgets() as $widget) {
-            $element = $this->getFacade()->getElement($widget);
-            $js .= ($js ? ",\n" : '') . $element->buildJsConstructor();
-        }
-        
-        return $js;
-    }
-    
-    public function needsFormRowDelimiter(WidgetInterface $widget, bool $isFirstInForm) : bool
-    {
-        switch (true) {
-            case $widget instanceof iFillEntireContainer && ! $isFirstInForm:
-            case $widget->getWidth()->isMax() && ! $isFirstInForm:
-                return true;
-            case $widget instanceof Message:
-                $this->addCssGridClass('exf-simpleform-hide-first-cell');
-                return true;
-        }
-        return false;
-    }
-    
-    /**
-     * 
-     * @return string
-     */
-    protected function buildJsFormRowDelimiter() : string
-    {
-        return 'new sap.ui.core.Title()';
     }
     
     /**
@@ -205,7 +165,7 @@ JS;
      */
     protected function buildJsLayoutForm(array $widgets, string $toolbarConstructor = null, string $id = null)
     {
-        $this->buildJsLayoutFormFixes();
+        //$this->buildJsLayoutFormFixes();
         
         $cols = $this->getNumberOfColumns();
         $id = $id === null ? '' : "'{$id}',";

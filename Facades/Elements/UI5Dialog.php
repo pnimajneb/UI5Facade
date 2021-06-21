@@ -95,7 +95,7 @@ JS
 JS
             );
             if ($this->isObjectPageLayout()) {
-                return $this->buildJsPage($this->buildJsChildrenConstructors(false));
+                return $this->buildJsPage($this->buildJsChildrenConstructors());
             } else {
                 return $this->buildJsPage($this->buildJsObjectPageLayout($oControllerJs), $oControllerJs);
             }
