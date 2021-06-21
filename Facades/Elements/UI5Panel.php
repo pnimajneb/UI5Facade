@@ -9,12 +9,9 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5HelpButtonTrait;
 use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Widgets\Message;
-use exface\Core\Interfaces\Widgets\iTakeInput;
 use exface\Core\DataTypes\StringDataType;
-use exface\Core\DataTypes\StringEnumDataType;
 use exface\Core\Widgets\WidgetGroup;
 use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
-use exface\Core\CommonLogic\WidgetDimension;
 
 /**
  * 
@@ -100,7 +97,7 @@ JS;
         //$widget = $this->getWidget();        
         $widgets = $widgets ?? $this->getWidget()->getWidgets();
         //$content = $content ?? $this->buildJsChildrenConstructors($useFormLayout);
-        if ($this->isLayoutRequired()) {
+        if (! $this->isLayoutRequired()) {
             $content = $this->buildJsChildrenConstructors();            
             return $content;
         } elseif ($useFormLayout) {
@@ -137,21 +134,8 @@ JS;
     public function buildJsChildrenConstructors(bool $useFormLayout = true) : string
     {
         $js = '';
-        $firstVisibleWidget = null;
-        $childrenHaveCaptions = $this->hasChildrenCaption();
         foreach ($this->getWidget()->getWidgets() as $widget) {
             $element = $this->getFacade()->getElement($widget);
-             
-            /*if ($widget->isHidden() === false && $useFormLayout === true) {
-                if (! $childrenHaveCaptions && $element instanceof UI5Value) {
-                    $element->setRemoveLabelIfNoCaption(true);
-                }
-                // Larger widgets need a Title before them to make SimpleForm generate a new FormContainer
-                if ($this->needsFormRowDelimiter($widget, ($firstVisibleWidget === null))) {
-                    $js .= ($js ? ",\n" : '') . $this->buildJsFormRowDelimiter();
-                }
-                $firstVisibleWidget = $widget;
-            }*/
             $js .= ($js ? ",\n" : '') . $element->buildJsConstructor();
         }
         
@@ -294,8 +278,21 @@ JS;
     {
         $js = '';
         $nonGroupWidgets = [];
+        $nonGroupContainerCounter = 0;
         foreach ($widgets as $widget) {
             if ($widget instanceof WidgetGroup) {
+                if (! empty($nonGroupWidgets)) {
+                    $id = 'NongroupContainer_' . $nonGroupContainerCounter;
+                    if ($groupWidget) {
+                        $id = $groupWidget->getId() ? $groupWidget->getId() . '_' . $id : $id;
+                    }
+                    if ($js !== '') {
+                        $js .= ",\n";
+                    }
+                    $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, $id);
+                    $nonGroupWidgets = [];
+                    $nonGroupContainerCounter++;
+                }
                 if ($js !== '') {
                     $js .= ",\n";
                 }
@@ -304,43 +301,49 @@ JS;
                 $nonGroupWidgets[] = $widget;
             }            
         }
+        if ($js !== '') {
+            $js .= ",\n";
+        }
+        return $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, null, $groupWidget);
+        
+    }
+    
+    protected function buildJsConstructorFormContainer(array $widgets, $id = null, WidgetInterface $groupWidget = null) : string
+    {
         $title = '';
-        $id = '';
         $widthWidget = null;
         $layout = '';
         
         if ($groupWidget && ! $groupWidget->getWidth()->isUndefined()) {
-            $widthWidget = $groupWidget;            
+            $widthWidget = $groupWidget;
+            $title = $groupWidget->getCaption() ? 'text: "' . $groupWidget->getCaption() . '",' : '';
         } else {
-            foreach ($nonGroupWidgets as $widget) {
+            foreach ($widgets as $widget) {
                 if (! $widget->getWidth()->isUndefined()) {
                     $widthWidget = $widget;
                     break;
                 }
             }
         }
-        if ($widthWidget) {            
+        if ($widthWidget) {
             $span = $this->buildJsFormGroupSpan($widthWidget);
             if ($span) {
                 $layout = "layoutData: new sap.ui.layout.GridData('', {span: '{$span}'}),";
             }
         }
-        
-        $id = $groupWidget->getId() ?? $id;
-        $title = $groupWidget->getCaption() ? 'text: "' . $groupWidget->getCaption() . '",' : '';
-        $title = "title: new sap.ui.core.Title({{$title}}),";
-        
-        if ($js !== '') {
-            $js .= ",\n";
+        if ($id === null && $groupWidget) {
+            $id = $groupWidget->getId() ?? '';
         }
+        $title = "title: new sap.ui.core.Title({{$title}}),";
         $js .= <<<JS
     new sap.ui.layout.form.FormContainer('{$id}', {
         {$title}
-        {$layout}        
+        {$layout}
         formElements: [
-            {$this->buildJsConstructorFormElement($nonGroupWidgets)}
-        ]})
-
+            {$this->buildJsConstructorFormElement($widgets)}
+        ]
+    })
+        
 JS;
         return $js;
     }
