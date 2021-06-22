@@ -1,6 +1,8 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
+use exface\Core\Widgets\Display;
+
 class UI5DataCards extends UI5DataTable
 {
     /**
@@ -71,8 +73,19 @@ JS;
         $cells = '';
         foreach ($this->getWidget()->getColumns() as $column) {
             $class = '';
-            if ($column->getVisibility() === EXF_WIDGET_VISIBILITY_PROMOTED) {
-                $class .= ' exf-promoted';
+            // TODO add support for optional cells (hiding them here will not allow to make
+            // them visible per JS!)
+            switch ($column->getVisibility()) {
+                case EXF_WIDGET_VISIBILITY_PROMOTED:
+                    $class .= ' exf-promoted';
+                    break;
+                case EXF_WIDGET_VISIBILITY_HIDDEN:
+                    $column->getCellWidget()->setHidden(true);
+            }
+            // Force left align even for dates and numbers - they don't look good with right alignment
+            // in cards!
+            if (! $column->isAlignSet()) {
+                $column->setAlign(EXF_ALIGN_DEFAULT);
             }
             $cells .= ($cells ? ", " : '') . $this->getFacade()->getElement($column)->buildJsConstructorForCell(null, false) . ($class !== '' ? '.addStyleClass("' . $class . '")' : '');
         }
