@@ -21,6 +21,7 @@ class UI5InputDateTime extends UI5InputDate
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         return <<<JS
 
         new sap.m.DateTimePicker("{$this->getId()}", {

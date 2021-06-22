@@ -26,21 +26,11 @@ class UI5ObjectStatus extends UI5Display
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsConstructor()
-     */
-    public function buildJsConstructor($oControllerJs = 'oController') : string
-    {
-        $this->registerExternalModules($this->getController());
-        return $this->buildJsConstructorForMainControl($oControllerJs);
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsConstructorForMainControl()
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         return <<<JS
         
         new sap.m.ObjectStatus("{$this->getId()}", {
@@ -53,6 +43,15 @@ class UI5ObjectStatus extends UI5Display
         {$this->buildJsPseudoEventHandlers()}
         
 JS;
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsLabelWrapper()
+     */
+    protected function buildJsLabelWrapper($element_constructor) {
+        return $element_constructor;
     }
         
     /**

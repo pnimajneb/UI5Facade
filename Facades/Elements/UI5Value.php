@@ -30,7 +30,7 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
     
     private $valueBoundToModel = null;
     
-    private $removeLabelIfNoCaption = false;
+    private $renderCaptionAsLabel = true;
     
     /**
      * 
@@ -109,13 +109,22 @@ JS;
      */
     protected function buildJsLabelWrapper($element_constructor)
     {
+        return $this->buildJsLabel() . $element_constructor;
+    }
+    
+    /**
+     * Builds the label for the element.
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface::buildJsLabel()
+     */
+    public function buildJsLabel() : string
+    {
         $widget = $this->getWidget();
         $caption = $this->getCaption();
-        
-        if ($this->getRemoveLabelIfNoCaption() && $caption === '') {
-            return $element_constructor;
-        }
-        
+        if ($this->getRenderCaptionAsLabel() === false) {
+            return '';
+        }        
         $caption = $this->escapeJsTextValue($caption);
         $labelAppearance = '';
         if ($widget->getHideCaption() === true) {
@@ -128,16 +137,14 @@ JS;
             }
         }
         
-        $label = <<<JS
+        return <<<JS
         new sap.m.Label({
             text: "{$caption}",
             {$this->buildJsPropertyTooltip()}
             {$labelAppearance}
         }),
-
-JS;
         
-        return $label . $element_constructor;
+JS;
     }
     
     /**
@@ -446,9 +453,9 @@ JS;
      * 
      * @return bool
      */
-    protected function getRemoveLabelIfNoCaption() : bool
+    protected function getRenderCaptionAsLabel() : bool
     {
-        return $this->removeLabelIfNoCaption;
+        return $this->renderCaptionAsLabel;
     }
     
     /**
@@ -456,9 +463,9 @@ JS;
      * @param bool $value
      * @return UI5Value
      */
-    public function setRemoveLabelIfNoCaption(bool $value) : UI5Value
+    public function setRenderCaptionAsLabel(bool $value) : UI5Value
     {
-        $this->removeLabelIfNoCaption = $value;
+        $this->renderCaptionAsLabel = $value;
         return $this;
     }
 }

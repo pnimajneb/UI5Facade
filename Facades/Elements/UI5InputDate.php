@@ -29,11 +29,6 @@ class UI5InputDate extends UI5Input
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalBehaviors();
-        $this->registerOnChangeValidation();
-        
-        $this->registerExternalModules($this->getController());
-        
         $onAfterRendering = <<<JS
         
         sap.ui.getCore().byId("{$this->getId()}").$().find('.sapMInputBaseInner').on('keypress', function(e){
@@ -42,7 +37,7 @@ class UI5InputDate extends UI5Input
 		});
 JS;
         $this->addPseudoEventHandler('onAfterRendering', $onAfterRendering);
-        return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
+        return parent::buildJsConstructor($oControllerJs);
     }
     /**
      *
@@ -51,6 +46,7 @@ JS;
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         return <<<JS
         
         new sap.m.DatePicker("{$this->getId()}", {

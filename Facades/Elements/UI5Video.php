@@ -80,7 +80,7 @@ JS;
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        return $this->buildJsConstructorForMainControl($oControllerJs);
+        return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
     
     /**
@@ -111,15 +111,5 @@ JS;
     public function buildJsValueBindingPropertyName() : string
     {
         return 'src';
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::getCaption()
-     */
-    public function getCaption() : string
-    {
-        return '';
     }
 }

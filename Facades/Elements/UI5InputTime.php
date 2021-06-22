@@ -23,11 +23,6 @@ class UI5InputTime extends UI5InputDate
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalBehaviors();
-        $this->registerOnChangeValidation();
-        
-        $this->registerExternalModules($this->getController());
-        
         $onChangeScript = <<<JS
 
             var oTimePicker = oEvent.getSource();
@@ -41,7 +36,7 @@ class UI5InputTime extends UI5InputDate
 JS;
         
         $this->addOnChangeScript($onChangeScript);       
-        return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
+        return parent::buildJsConstructor($oControllerJs);
     }
     
     /**
@@ -71,6 +66,7 @@ JS;
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         return <<<JS
         
         new sap.m.TimePicker("{$this->getId()}", {

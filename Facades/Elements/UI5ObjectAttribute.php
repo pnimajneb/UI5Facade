@@ -17,15 +17,13 @@ namespace exface\UI5Facade\Facades\Elements;
  */
 class UI5ObjectAttribute extends UI5Display
 {
-    
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsConstructor()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsLabelWrapper()
      */
-    public function buildJsConstructor($oControllerJs = 'oController') : string
-    {
-        return $this->buildJsConstructorForMainControl($oControllerJs);
+    protected function buildJsLabelWrapper($element_constructor) {
+        return $element_constructor;
     }
     
     /**
@@ -35,6 +33,7 @@ class UI5ObjectAttribute extends UI5Display
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         return <<<JS
         
         new sap.m.ObjectAttribute({

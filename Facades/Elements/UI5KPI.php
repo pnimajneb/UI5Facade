@@ -25,6 +25,7 @@ class UI5KPI extends UI5Display
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         if ($this->isLazyLoading() === true) {
             $controller = $this->getController();
             $this->setValueBoundToModel(true);

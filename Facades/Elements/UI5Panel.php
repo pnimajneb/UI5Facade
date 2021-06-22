@@ -9,7 +9,9 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5HelpButtonTrait;
 use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Widgets\Message;
-use exface\Core\Interfaces\Widgets\iTakeInput;
+use exface\Core\DataTypes\StringDataType;
+use exface\Core\Widgets\WidgetGroup;
+use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 
 /**
  * 
@@ -25,6 +27,8 @@ class UI5Panel extends UI5Container
     
     private $gridClasses = [];
     
+    const FORM_MAX_CELLS = 12;
+    
     /**
      * 
      * {@inheritDoc}
@@ -37,7 +41,7 @@ class UI5Panel extends UI5Container
                 new sap.m.Panel("{$this->getId()}", {
                     {$this->buildJsPropertyHeight()}
                     content: [
-                        {$this->buildJsChildrenConstructors(false)}
+                        {$this->buildJsChildrenConstructors()}
                     ],
                     {$this->buildJsProperties()}
                 }).addStyleClass("sapUiNoContentPadding {$this->buildCssElementClass()} {$this->buildCssGridClass()}")
@@ -84,21 +88,30 @@ JS;
                 
     /**
      * 
-     * @param string $content
+     * @param array $widgets
      * @param bool $useFormLayout
      * @return string
      */
-    public function buildJsLayoutConstructor(string $content = null, bool $useFormLayout = true) : string
+    public function buildJsLayoutConstructor(array $widgets = null, bool $useFormLayout = true) : string
     {
-        $widget = $this->getWidget();
-        $content = $content ?? $this->buildJsChildrenConstructors($useFormLayout);
-        if ($widget->countWidgetsVisible() === 1 && ($widget->getWidgetFirst() instanceof iFillEntireContainer)) {
+        $widgets = $widgets ?? $this->getWidget()->getWidgets();
+        if (! $this->isLayoutRequired()) {
+            $content = $this->buildJsChildrenConstructors();            
             return $content;
         } elseif ($useFormLayout) {
-            return $this->buildJsLayoutForm($content);
+            return $this->buildJsLayoutForm($widgets);
         } else {
-            return $this->buildJsLayoutGrid($content);
+            return $this->buildJsLayoutGrid($widgets);
         }
+    }
+    
+    protected function isLayoutRequired() : bool
+    {
+        $widget = $this->getWidget();        
+        if ($widget->isFilledBySingleWidget()) {
+            return false;
+        }
+        return true;
     }
     
     protected function hasChildrenCaption() : bool
@@ -109,57 +122,6 @@ JS;
             }
         }
         return false;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsChildrenConstructors()
-     */
-    public function buildJsChildrenConstructors(bool $useFormLayout = true) : string
-    {
-        $js = '';
-        $firstVisibleWidget = null;
-        $childrenHaveCaptions = $this->hasChildrenCaption();
-        foreach ($this->getWidget()->getWidgets() as $widget) {
-            $element = $this->getFacade()->getElement($widget);
-             
-            if ($widget->isHidden() === false && $useFormLayout === true) {
-                if (! $childrenHaveCaptions && $element instanceof UI5Value) {
-                    $element->setRemoveLabelIfNoCaption(true);
-                }
-                // Larger widgets need a Title before them to make SimpleForm generate a new FormContainer
-                if ($this->needsFormRowDelimiter($widget, ($firstVisibleWidget === null))) {
-                    $js .= ($js ? ",\n" : '') . $this->buildJsFormRowDelimiter();
-                }
-                $firstVisibleWidget = $widget;
-            }
-            $js .= ($js ? ",\n" : '') . $element->buildJsConstructor();
-        }
-        
-        return $js;
-    }
-    
-    public function needsFormRowDelimiter(WidgetInterface $widget, bool $isFirstInForm) : bool
-    {
-        switch (true) {
-            case $widget instanceof iFillEntireContainer && ! $isFirstInForm:
-            case $widget->getWidth()->isMax() && ! $isFirstInForm:
-                return true;
-            case $widget instanceof Message:
-                $this->addCssGridClass('exf-simpleform-hide-first-cell');
-                return true;
-        }
-        return false;
-    }
-    
-    /**
-     * 
-     * @return string
-     */
-    protected function buildJsFormRowDelimiter() : string
-    {
-        return 'new sap.ui.core.Title()';
     }
     
     /**
@@ -196,14 +158,14 @@ JS;
     
     /**
      * 
-     * @param string $content
+     * @param array $widgets
      * @param string $toolbarConstructor
      * @param string $id
      * @return string
      */
-    protected function buildJsLayoutForm($content, string $toolbarConstructor = null, string $id = null)
+    protected function buildJsLayoutForm(array $widgets, string $toolbarConstructor = null, string $id = null)
     {
-        $this->buildJsLayoutFormFixes();
+        //$this->buildJsLayoutFormFixes();
         
         $cols = $this->getNumberOfColumns();
         $id = $id === null ? '' : "'{$id}',";
@@ -243,24 +205,26 @@ JS;
         
         $phoneLabelSpan = $this->isEditable() ? '12' : '5';
         $editable = $this->isEditable() ? 'true' : 'false';
+        $content = $this->buildJsLayoutFormContent($widgets);
         
         return <<<JS
         
-            new sap.ui.layout.form.SimpleForm({$id} {
+            new sap.ui.layout.form.Form({$id} {
                 editable: $editable,
-                layout: "ResponsiveGridLayout",
-                adjustLabelSpan: false,
-    			labelSpanXL: 5,
-    			labelSpanL: 4,
-    			labelSpanM: 4,
-    			labelSpanS: {$phoneLabelSpan},
-    			emptySpanXL: 0,
-    			emptySpanL: 0,
-    			emptySpanM: 0,
-    			emptySpanS: 0,
-                {$properties}
-    			singleContainerFullSize: true,
-                content: [
+                layout: new sap.ui.layout.form.ResponsiveGridLayout('', {
+                    adjustLabelSpan: true,
+        			labelSpanXL: 5,
+        			labelSpanL: 4,
+        			labelSpanM: 4,
+        			labelSpanS: {$phoneLabelSpan},
+        			emptySpanXL: 0,
+        			emptySpanL: 0,
+        			emptySpanM: 0,
+        			emptySpanS: 0,
+                    {$properties}
+        			singleContainerFullSize: true
+                }),
+                formContainers: [
                     {$content}
                 ],
                 {$toolbar}
@@ -268,6 +232,169 @@ JS;
             {$this->buildJsPseudoEventHandlers()}
             
 JS;
+    }
+    
+    protected function buildJsConstructorFormGroup(array $widgets, WidgetInterface $groupWidget = null) : string
+    {
+        $js = '';
+        $nonGroupWidgets = [];
+        $nonGroupContainerCounter = 0;
+        foreach ($widgets as $widget) {
+            if ($widget instanceof WidgetGroup) {
+                if (! empty($nonGroupWidgets)) {
+                    $id = 'NongroupContainer_' . $nonGroupContainerCounter;
+                    if ($groupWidget) {
+                        $id = $groupWidget->getId() ? $groupWidget->getId() . '_' . $id : $id;
+                    }
+                    if ($js !== '') {
+                        $js .= ",\n";
+                    }
+                    $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, $id);
+                    $nonGroupWidgets = [];
+                    $nonGroupContainerCounter++;
+                }
+                if ($js !== '') {
+                    $js .= ",\n";
+                }
+                $js .= $this->buildJsConstructorFormGroup($widget->getWidgets(), $widget);
+            } else {
+                $nonGroupWidgets[] = $widget;
+            }            
+        }
+        if ($js !== '') {
+            $js .= ",\n";
+        }
+        return $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, null, $groupWidget);
+        
+    }
+    
+    protected function buildJsConstructorFormContainer(array $widgets, $id = null, WidgetInterface $groupWidget = null) : string
+    {
+        $title = '';
+        $widthWidget = null;
+        $layout = '';
+        
+        if ($groupWidget && ! $groupWidget->getWidth()->isUndefined()) {
+            $widthWidget = $groupWidget;
+            $title = $groupWidget->getCaption() ? 'text: "' . $groupWidget->getCaption() . '",' : '';
+        } else {
+            foreach ($widgets as $widget) {
+                if (! $widget->getWidth()->isUndefined()) {
+                    $widthWidget = $widget;
+                    break;
+                }
+            }
+        }
+        if ($widthWidget) {
+            $span = $this->buildJsFormGroupSpan($widthWidget);
+            if ($span) {
+                $layout = "layoutData: new sap.ui.layout.GridData('', {span: '{$span}'}),";
+            }
+        }
+        if ($id === null && $groupWidget) {
+            $id = $groupWidget->getId() ?? '';
+        }
+        $title = "title: new sap.ui.core.Title({{$title}}),";
+        $js .= <<<JS
+    new sap.ui.layout.form.FormContainer('{$id}', {
+        {$title}
+        {$layout}
+        formElements: [
+            {$this->buildJsConstructorFormElement($widgets)}
+        ]
+    })
+        
+JS;
+        return $js;
+    }
+    
+    protected function buildJsConstructorFormElement(array $widgets) : string
+    {
+        $js = '';
+        foreach ($widgets as $widget) {
+            $label = '';
+            $fields = '';
+            $element = $this->getFacade()->getElement($widget);
+            if ($element instanceof UI5CompoundControlInterface) {
+                if ($widget->getHideCaption() !== true) {
+                    $label = 'label: ' . $element->buildJsLabel();
+                }
+                $element->setRenderCaptionAsLabel(false);
+                $fields = $element->buildJsConstructor();
+                $element->setRenderCaptionAsLabel(true);
+            } else {
+                $fields= $element->buildJsConstructor();
+            }
+            $id = $widget->getId() ?? '';
+            if ($js !== '') {
+                $js .= ",\n";
+            }
+            $js .= <<<JS
+            new sap.ui.layout.form.FormElement('{$id}', {
+                {$label}
+                fields: [
+                    {$fields}
+                ]
+            })
+JS;
+        } 
+        return $js;
+    }
+    
+    protected function buildJsLayoutFormContent (array $widgets) : string
+    {
+        if (empty($widgets)) {
+            return '';
+        }
+        $js = $this->buildJsConstructorFormGroup($widgets, $this->getWidget());
+        return $js;
+    }
+    
+    protected function buildJsFormGroupSpan (WidgetInterface $widget) : ?string
+    {
+        $widthDimension = $widget->getWidth();
+        switch (true) {
+            case $widthDimension->isMax():
+                $width = self::FORM_MAX_CELLS;
+                return "XL{$width} L{$width} M{$width}";
+            case $widthDimension->isPercentual():
+                $width = StringDataType::substringBefore($widthDimension->getValue(), '%');
+                $width = round(self::FORM_MAX_CELLS/100*$width);
+                return "XL{$width} L{$width} M{$width}";
+            case $widthDimension->isRelative():
+                $columns = $this->getNumberOfColumns();
+                switch($columns) {
+                    case $columns > 3:
+                        $colXL = $columns;
+                        $colL = 3;
+                        $colM = 2;
+                        break;
+                    case 3:
+                        $colXL = $columns;
+                        $colL = $columns;
+                        $colM = 2;
+                        break;
+                    default:
+                        $colXL = $columns;
+                        $colL = $columns;
+                        $colM = $columns;
+                }
+                $widthXL = round(self::FORM_MAX_CELLS/$colXL * $widthDimension->getValue());
+                if ($widthXL > self::FORM_MAX_CELLS) {
+                    $widthXL = self::FORM_MAX_CELLS;
+                }
+                $widthL = round(self::FORM_MAX_CELLS/$colL * $widthDimension->getValue());
+                if ($widthL > self::FORM_MAX_CELLS) {
+                    $widthL = self::FORM_MAX_CELLS;
+                }
+                $widthM = round(self::FORM_MAX_CELLS/$colM * $widthDimension->getValue());
+                if ($widthM > self::FORM_MAX_CELLS) {
+                    $widthM = self::FORM_MAX_CELLS;
+                }
+                return "XL{$widthXL} L{$widthL} M{$widthM}";
+            default:
+                return null;
+        }
     }
     
     /**
@@ -294,11 +421,18 @@ JS;
     
     /**
      * 
-     * @param string $content
+     * @param array $widgets
      * @return string
      */
-    protected function buildJsLayoutGrid(string $content)
+    protected function buildJsLayoutGrid(array $widgets)
     {
+        $content = '';
+        foreach ($widgets as $widget) {
+            if ($content !== '') {
+                $content .= ",\n";
+            }
+            $content .= $this->getFacade()->getElement($widget)->buildJsConstructor();
+        }
         return <<<JS
 
             new sap.ui.layout.Grid({

@@ -20,6 +20,7 @@ class UI5Icon extends UI5Display
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController') : string
     {
+        $this->registerExternalModules($this->getController());
         $icon = $this->buildJsConstructorForIcon();
         
         if ($this->getWidget()->hasValueWidget() === true) {

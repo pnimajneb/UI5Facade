@@ -19,4 +19,10 @@ interface UI5CompoundControlInterface {
      * @return string
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController');
+    
+    /**
+     * 
+     * @return string
+     */
+    public function buildJsLabel() : string;
 }

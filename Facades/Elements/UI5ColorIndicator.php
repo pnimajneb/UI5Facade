@@ -22,6 +22,7 @@ class UI5ColorIndicator extends UI5Display
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $this->registerExternalModules($this->getController());
         $widget = $this->getWidget();
         $colorOnly = true;
         if ($widget instanceof ColorIndicator) {

@@ -26,7 +26,7 @@ use exface\Core\Widgets\Card;
  *
  * @method Dashboard getWidget()
  */
-class UI5Dashboard extends UI5Panel
+class UI5Dashboard extends UI5Container
 {
     /**
      * 

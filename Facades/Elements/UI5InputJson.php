@@ -23,6 +23,7 @@ class UI5InputJson extends UI5InputText
         // TODO create own control instead of using the HTML control in order to be able to destroy the JSONeditor
         // properly. The way the whole thing works now, the JS variable {$this->getId()}_JSONeditor lives even
         // after the control or it's view had been destroyed.
+        $this->registerExternalModules($this->getController());
         $styles = $this::buildCssModalStyles();
         return <<<JS
 
