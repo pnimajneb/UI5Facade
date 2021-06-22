@@ -96,13 +96,27 @@ JS;
     {
         $widgets = $widgets ?? $this->getWidget()->getWidgets();
         if (! $this->isLayoutRequired()) {
-            $content = $this->buildJsChildrenConstructors();            
+            $content = $this->buildJsChildrenConstructors($widgets);            
             return $content;
         } elseif ($useFormLayout) {
             return $this->buildJsLayoutForm($widgets);
         } else {
             return $this->buildJsLayoutGrid($widgets);
         }
+    }
+    
+    /**
+     *
+     * @return string
+     */
+    public function buildJsChildrenConstructors(array $widgets = null) : string
+    {
+        $js = '';
+        $widgets = $widgets ?? $this->getWidget()->getWidgets();
+        foreach ($widgets as $widget) {
+            $js .= ($js ? ",\n" : '') . $this->getFacade()->getElement($widget)->buildJsConstructor();
+        }        
+        return $js;
     }
     
     protected function isLayoutRequired() : bool
@@ -234,7 +248,7 @@ JS;
 JS;
     }
     
-    protected function buildJsConstructorFormGroup(array $widgets, WidgetInterface $groupWidget = null) : string
+    protected function buildJsConstructorFormGroup(array $widgets, WidgetInterface $parentWidget = null) : string
     {
         $js = '';
         $nonGroupWidgets = [];
@@ -242,9 +256,9 @@ JS;
         foreach ($widgets as $widget) {
             if ($widget instanceof WidgetGroup) {
                 if (! empty($nonGroupWidgets)) {
-                    $id = 'NongroupContainer_' . $nonGroupContainerCounter;
-                    if ($groupWidget) {
-                        $id = $groupWidget->getId() ? $groupWidget->getId() . '_' . $id : $id;
+                    $id = 'NonGroupContainer_' . $nonGroupContainerCounter;
+                    if ($parentWidget) {
+                        $id = $parentWidget->getId() ? $parentWidget->getId() . '_' . $id : $id;
                     }
                     if ($js !== '') {
                         $js .= ",\n";
@@ -264,19 +278,19 @@ JS;
         if ($js !== '') {
             $js .= ",\n";
         }
-        return $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, null, $groupWidget);
+        return $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, null, $parentWidget);
         
     }
     
-    protected function buildJsConstructorFormContainer(array $widgets, $id = null, WidgetInterface $groupWidget = null) : string
+    protected function buildJsConstructorFormContainer(array $widgets, $id = null, WidgetInterface $parentWidget = null) : string
     {
         $title = '';
         $widthWidget = null;
         $layout = '';
         
-        if ($groupWidget && ! $groupWidget->getWidth()->isUndefined()) {
-            $widthWidget = $groupWidget;
-            $title = $groupWidget->getCaption() ? 'text: "' . $groupWidget->getCaption() . '",' : '';
+        if ($parentWidget && ! $parentWidget->getWidth()->isUndefined()) {
+            $widthWidget = $parentWidget;            
+            
         } else {
             foreach ($widgets as $widget) {
                 if (! $widget->getWidth()->isUndefined()) {
@@ -291,8 +305,13 @@ JS;
                 $layout = "layoutData: new sap.ui.layout.GridData('', {span: '{$span}'}),";
             }
         }
-        if ($id === null && $groupWidget) {
-            $id = $groupWidget->getId() ?? '';
+        if ($parentWidget instanceof WidgetGroup) {
+            $title = $parentWidget->getCaption() ? 'text: "' . $parentWidget->getCaption() . '",' : '';
+        }
+        if ($id === null && $parentWidget) {
+            $id = $parentWidget->getId() ?? '';
+        } else {
+            $id = '';
         }
         $title = "title: new sap.ui.core.Title({{$title}}),";
         $js .= <<<JS
@@ -316,7 +335,7 @@ JS;
             $fields = '';
             $element = $this->getFacade()->getElement($widget);
             if ($element instanceof UI5CompoundControlInterface) {
-                if ($widget->getHideCaption() !== true) {
+                if ($widget->getHideCaption() !== true  && ! $widget->isHidden()) {
                     $label = 'label: ' . $element->buildJsLabel();
                 }
                 $element->setRenderCaptionAsLabel(false);
