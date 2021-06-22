@@ -252,6 +252,7 @@ JS;
     {
         $js = '';
         $nonGroupWidgets = [];
+        $hiddenWidgets = [];
         $nonGroupContainerCounter = 0;
         foreach ($widgets as $widget) {
             if ($widget instanceof WidgetGroup) {
@@ -272,12 +273,17 @@ JS;
                 }
                 $js .= $this->buildJsConstructorFormGroup($widget->getWidgets(), $widget);
             } else {
-                $nonGroupWidgets[] = $widget;
+                if ($widget->isHidden()) {
+                    $hiddenWidgets[] = $widget;
+                } else {
+                    $nonGroupWidgets[] = $widget;
+                }
             }            
         }
         if ($js !== '') {
             $js .= ",\n";
         }
+        $nonGroupWidgets = array_merge($nonGroupWidgets, $hiddenWidgets);
         return $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, null, $parentWidget);
         
     }
