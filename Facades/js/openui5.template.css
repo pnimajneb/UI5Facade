@@ -88,9 +88,6 @@ body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > s
 .sapUiSimpleForm .exf-html h3 {font-size: 1.075rem; font-weight: normal;}
 .sapUiSimpleForm .exf-html h4 {font-size: 1.0rem; font-weight: normal;}
 
-/* Flot */
-.exf-flot-wrapper .error {display: none;}
-
 /* QRCode */
 .qrcode > img {margin: 0 auto 10px auto;}
 
