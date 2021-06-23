@@ -71,11 +71,13 @@ JS;
         
         // If this widget is NOT a nested split, wrap the PaneContainer in a ResponsiveSplitter
         if (! $widget->hasParent() || ! ($widget->getParent() instanceof SplitPanel) && ! ($widget->getParent() instanceof Split)) {
+            $height = $widget->getHeight()->isUndefined() ? '100%' : $this->buildCssHeight();
+            $width = $widget->getWidth()->isUndefined() ? '100%' : $this->buildCssWidth();
             $splitter = <<<JS
         
     new sap.ui.layout.ResponsiveSplitter("{$this->getId()}", {
-        height: "100%",
-        width: "100%",
+        height: "$height",
+        width: "$width",
         rootPaneContainer: [
             $splitter
         ]

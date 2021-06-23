@@ -14,6 +14,7 @@ use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Interfaces\Actions\iShowDialog;
+use exface\Core\Widgets\Split;
 
 /**
  * In OpenUI5 dialog widgets are either rendered as sap.m.Page (if maximized) or as sap.m.Dialog.
@@ -707,6 +708,15 @@ JS;
     {
         if ($tab->isFilledBySingleWidget()) {
             $cssClass = 'sapUiNoContentPadding';
+            // Some controls do not play nice with object page sections, so we need to set custom height
+            // for them if it is not done by the user.
+            $fillerWidget = $tab->getFillerWidget();
+            switch (true) {
+                case $fillerWidget instanceof Split:
+                    if ($fillerWidget->getHeight()->isUndefined() || $fillerWidget->getHeight()->isMax()) {
+                        $fillerWidget->setHeight('70vh');
+                    }
+            }
         }
         $tabElement = $this->getFacade()->getElement($tab);
         return <<<JS
