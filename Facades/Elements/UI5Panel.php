@@ -359,12 +359,9 @@ JS;
             } else {
                 $fields= $element->buildJsConstructor();
             }
-            $id = $widget->getId() ?? '';
-            if ($js !== '') {
-                $js .= ",\n";
-            }
+            $js .= $js !== '' ? ",\n" : '';
             $js .= <<<JS
-            new sap.ui.layout.form.FormElement('{$id}', {
+            new sap.ui.layout.form.FormElement( {
                 {$label}
                 fields: [
                     {$fields}
