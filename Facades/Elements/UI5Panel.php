@@ -254,11 +254,8 @@ JS;
     {
         $js = '';
         $nonGroupWidgets = [];
-<<<<<<< HEAD
-=======
         $hiddenWidgets = [];
-        $nonGroupContainerCounter = 0;
->>>>>>> branch '1.x-dev' of https://github.com/ExFace/UI5Facade.git
+
         foreach ($widgets as $widget) {
             if ($widget instanceof WidgetGroup || $widget instanceof iFillEntireContainer) {
                 
@@ -282,15 +279,8 @@ JS;
                 }
             }            
         }
-<<<<<<< HEAD
         $js .= $js !== '' ? ",\n" : '';
-=======
-        if ($js !== '') {
-            $js .= ",\n";
-        }
         $nonGroupWidgets = array_merge($nonGroupWidgets, $hiddenWidgets);
-        return $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, null, $parentWidget);
->>>>>>> branch '1.x-dev' of https://github.com/ExFace/UI5Facade.git
         
         if (! empty($nonGroupWidgets)) {
             $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, $containerWidget);
@@ -338,11 +328,9 @@ JS;
             $title = $containerWidget->getCaption() ? 'text: "' . $containerWidget->getCaption() . '",' : '';
         }
         
-        $idJs = $id !== null ? 'id: "' . $id . '", ' : '';
-        
         $title = "title: new sap.ui.core.Title({{$title}}),";
         $js .= <<<JS
-    new sap.ui.layout.form.FormContainer({$idJs}{
+    new sap.ui.layout.form.FormContainer({
         {$title}
         {$layout}
         formElements: [
