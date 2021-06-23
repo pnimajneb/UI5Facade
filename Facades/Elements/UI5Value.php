@@ -30,7 +30,7 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
     
     private $valueBoundToModel = null;
     
-    private $renderCaptionAsLabel = true;
+    private $renderCaptionAsLabel = null;
     
     /**
      * 
@@ -109,16 +109,16 @@ JS;
      */
     protected function buildJsLabelWrapper($element_constructor)
     {
-        return $this->buildJsLabel() . $element_constructor;
+        return $this->buildJsConstructorForLabel() . $element_constructor;
     }
     
     /**
      * Builds the label for the element.
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface::buildJsLabel()
+     * @see \exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface::buildJsConstructorForLabel()
      */
-    public function buildJsLabel() : string
+    public function buildJsConstructorForLabel() : string
     {
         $widget = $this->getWidget();
         $caption = $this->getCaption();
@@ -127,7 +127,7 @@ JS;
         }        
         $caption = $this->escapeJsTextValue($caption);
         $labelAppearance = '';
-        if ($widget->getHideCaption() === true) {
+        if ($widget->getHideCaption() === true || $widget->isHidden()) {
             $labelAppearance .= 'visible: false,';
         } else {
             if ($widget instanceof iTakeInput) {
@@ -453,9 +453,9 @@ JS;
      * 
      * @return bool
      */
-    protected function getRenderCaptionAsLabel() : bool
+    protected function getRenderCaptionAsLabel(bool $default = true) : bool
     {
-        return $this->renderCaptionAsLabel;
+        return $this->renderCaptionAsLabel ?? $default;
     }
     
     /**

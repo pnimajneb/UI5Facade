@@ -117,4 +117,14 @@ JS;
     {
         return 'text';
     }
+    
+    /**
+     * No label required, as the caption is already part of the message!
+     * 
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::getRenderCaptionAsLabel()
+     */
+    protected function getRenderCaptionAsLabel() : bool
+    {
+        return false;
+    }
 }

@@ -12,6 +12,8 @@ use exface\Core\Widgets\Message;
 use exface\Core\DataTypes\StringDataType;
 use exface\Core\Widgets\WidgetGroup;
 use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
+use exface\Core\CommonLogic\WidgetDimension;
+use exface\Core\Factories\WidgetDimensionFactory;
 
 /**
  * 
@@ -179,7 +181,7 @@ JS;
      */
     protected function buildJsLayoutForm(array $widgets, string $toolbarConstructor = null, string $id = null)
     {
-        //$this->buildJsLayoutFormFixes();
+        $this->buildJsLayoutFormFixes();
         
         $cols = $this->getNumberOfColumns();
         $id = $id === null ? '' : "'{$id}',";
@@ -248,74 +250,82 @@ JS;
 JS;
     }
     
-    protected function buildJsConstructorFormGroup(array $widgets, WidgetInterface $parentWidget = null) : string
+    protected function buildJsConstructorFormGroup(array $widgets, WidgetInterface $containerWidget = null) : string
     {
         $js = '';
         $nonGroupWidgets = [];
-        $nonGroupContainerCounter = 0;
         foreach ($widgets as $widget) {
-            if ($widget instanceof WidgetGroup) {
+            if ($widget instanceof WidgetGroup || $widget instanceof iFillEntireContainer) {
+                
                 if (! empty($nonGroupWidgets)) {
-                    $id = 'NonGroupContainer_' . $nonGroupContainerCounter;
-                    if ($parentWidget) {
-                        $id = $parentWidget->getId() ? $parentWidget->getId() . '_' . $id : $id;
-                    }
-                    if ($js !== '') {
-                        $js .= ",\n";
-                    }
-                    $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, $id);
+                    $js .= $js !== '' ? ",\n" : '';
+                    $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, $containerWidget);
                     $nonGroupWidgets = [];
-                    $nonGroupContainerCounter++;
                 }
-                if ($js !== '') {
-                    $js .= ",\n";
+                
+                $js .= $js !== '' ? ",\n" : '';
+                if ($widget instanceof WidgetGroup) {
+                    $js .= $this->buildJsConstructorFormGroup($widget->getWidgets(), $widget);
+                } else {
+                    $js .= $this->buildJsConstructorFormContainer([$widget], $containerWidget);
                 }
-                $js .= $this->buildJsConstructorFormGroup($widget->getWidgets(), $widget);
             } else {
                 $nonGroupWidgets[] = $widget;
             }            
         }
-        if ($js !== '') {
-            $js .= ",\n";
-        }
-        return $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, null, $parentWidget);
+        $js .= $js !== '' ? ",\n" : '';
         
+        if (! empty($nonGroupWidgets)) {
+            $js .= $this->buildJsConstructorFormContainer($nonGroupWidgets, $containerWidget);
+        }
+        
+        return $js;
     }
     
-    protected function buildJsConstructorFormContainer(array $widgets, $id = null, WidgetInterface $parentWidget = null) : string
+    protected function buildJsConstructorFormContainer(array $widgets, WidgetInterface $containerWidget = null) : string
     {
         $title = '';
-        $widthWidget = null;
         $layout = '';
+        $width = null;
         
-        if ($parentWidget && ! $parentWidget->getWidth()->isUndefined()) {
-            $widthWidget = $parentWidget;            
-            
+        if ($containerWidget !== null && ! $containerWidget->getWidth()->isUndefined()) {
+            $width = $containerWidget->getWidth(); 
+        } elseif ($containerWidget instanceof WidgetGroup && $containerWidget->getWidth()->isUndefined()) {
+            $width = WidgetDimensionFactory::createFromString($this->getWorkbench(), '1');
         } else {
             foreach ($widgets as $widget) {
                 if (! $widget->getWidth()->isUndefined()) {
-                    $widthWidget = $widget;
+                    $width = $widget->getWidth();
                     break;
                 }
             }
         }
-        if ($widthWidget) {
-            $span = $this->buildJsFormGroupSpan($widthWidget);
+        if ($width) {
+            $span = $this->buildJsFormGroupSpan($width);
             if ($span) {
                 $layout = "layoutData: new sap.ui.layout.GridData('', {span: '{$span}'}),";
             }
         }
-        if ($parentWidget instanceof WidgetGroup) {
-            $title = $parentWidget->getCaption() ? 'text: "' . $parentWidget->getCaption() . '",' : '';
+        
+        // If we have inherited the width from the only inner widget, it should now be
+        // full-width relative to the FormContainer
+        if (count($widgets) === 1 && $width) {
+            $widgets[0]->setWidth('100%');
         }
-        if ($id === null && $parentWidget) {
-            $id = $parentWidget->getId() ?? '';
-        } else {
-            $id = '';
+        
+        if (count($widgets) === 1 && $widgets[0] instanceof iFillEntireContainer) {
+            $this->addPseudoEventHandler('onAfterRendering', "$('#{$this->getFacade()->getElement($widgets[0])->getId()}').closest('.sapUiRGLContainer').parent().addClass('exf-formcontainer-invisible');");
         }
+        
+        if ($containerWidget instanceof WidgetGroup) {
+            $title = $containerWidget->getCaption() ? 'text: "' . $containerWidget->getCaption() . '",' : '';
+        }
+        
+        $idJs = $id !== null ? 'id: "' . $id . '", ' : '';
+        
         $title = "title: new sap.ui.core.Title({{$title}}),";
         $js .= <<<JS
-    new sap.ui.layout.form.FormContainer('{$id}', {
+    new sap.ui.layout.form.FormContainer({$idJs}{
         {$title}
         {$layout}
         formElements: [
@@ -335,8 +345,8 @@ JS;
             $fields = '';
             $element = $this->getFacade()->getElement($widget);
             if ($element instanceof UI5CompoundControlInterface) {
-                if ($widget->getHideCaption() !== true  && ! $widget->isHidden()) {
-                    $label = 'label: ' . $element->buildJsLabel();
+                if ($widget->getHideCaption() !== true  && ! $widget->isHidden() && $labelConstructor = $element->buildJsConstructorForLabel()) {
+                    $label = 'label: ' . $labelConstructor;
                 }
                 $element->setRenderCaptionAsLabel(false);
                 $fields = $element->buildJsConstructor();
@@ -369,18 +379,17 @@ JS;
         return $js;
     }
     
-    protected function buildJsFormGroupSpan (WidgetInterface $widget) : ?string
+    protected function buildJsFormGroupSpan(WidgetDimension $width) : ?string
     {
-        $widthDimension = $widget->getWidth();
         switch (true) {
-            case $widthDimension->isMax():
+            case $width->isMax():
                 $width = self::FORM_MAX_CELLS;
                 return "XL{$width} L{$width} M{$width}";
-            case $widthDimension->isPercentual():
-                $width = StringDataType::substringBefore($widthDimension->getValue(), '%');
+            case $width->isPercentual():
+                $width = StringDataType::substringBefore($width->getValue(), '%');
                 $width = round(self::FORM_MAX_CELLS/100*$width);
                 return "XL{$width} L{$width} M{$width}";
-            case $widthDimension->isRelative():
+            case $width->isRelative():
                 $columns = $this->getNumberOfColumns();
                 switch($columns) {
                     case $columns > 3:
@@ -398,15 +407,15 @@ JS;
                         $colL = $columns;
                         $colM = $columns;
                 }
-                $widthXL = round(self::FORM_MAX_CELLS/$colXL * $widthDimension->getValue());
+                $widthXL = round(self::FORM_MAX_CELLS/$colXL * $width->getValue());
                 if ($widthXL > self::FORM_MAX_CELLS) {
                     $widthXL = self::FORM_MAX_CELLS;
                 }
-                $widthL = round(self::FORM_MAX_CELLS/$colL * $widthDimension->getValue());
+                $widthL = round(self::FORM_MAX_CELLS/$colL * $width->getValue());
                 if ($widthL > self::FORM_MAX_CELLS) {
                     $widthL = self::FORM_MAX_CELLS;
                 }
-                $widthM = round(self::FORM_MAX_CELLS/$colM * $widthDimension->getValue());
+                $widthM = round(self::FORM_MAX_CELLS/$colM * $width->getValue());
                 if ($widthM > self::FORM_MAX_CELLS) {
                     $widthM = self::FORM_MAX_CELLS;
                 }

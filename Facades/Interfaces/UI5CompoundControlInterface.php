@@ -24,5 +24,5 @@ interface UI5CompoundControlInterface {
      * 
      * @return string
      */
-    public function buildJsLabel() : string;
+    public function buildJsConstructorForLabel() : string;
 }

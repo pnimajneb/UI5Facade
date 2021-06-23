@@ -915,7 +915,7 @@ JS;
     {
         $widget = $this->getWidget();
         if ($widget->getHideHeader() === null) {
-            return $widget->hasParent() === false || $widget->getParent() instanceof Dialog;
+            return $widget->hasParent() === false || ($widget->getParent() instanceof Dialog && $widget->getParent()->isFilledBySingleWidget());
         } else {
             return $widget->getHideHeader() === false;
         }

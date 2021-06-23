@@ -78,8 +78,8 @@ body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > s
 
 /* Forms */
 .sapUiFormTitle:empty {display: none;}
-/* FIX hide empty first cell in SimpleFrom grid if requested */
-.sapUiSimpleForm.exf-simpleform-hide-first-cell .sapUiRespGrid > div:first-child > .sapUiRespGridHSpace0 {display: none;}
+.sapUiFormResGridCont {padding-bottom: 1rem !important}
+.exf-formcontainer-invisible {padding: 0 !important}
 
 /* HTML widgets */
 .exf-html {font-size: 0.875rem;}
