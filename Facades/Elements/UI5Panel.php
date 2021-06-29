@@ -158,7 +158,7 @@ JS;
     {
         $fixContainerQueryJs = <<<JS
         
-                    var oGrid = sap.ui.getCore().byId($("#{$this->getId()}--Layout > .sapUiRespGrid").attr("id"));
+                    var oGrid = sap.ui.getCore().byId($("#{$this->getId()} > .sapUiFormResGrid > .sapUiRGLContainer > .sapUiRGLContainerCont > .sapUiRespGrid").attr("id"));
                     if (oGrid !== undefined) {
                         oGrid.setContainerQuery(false);
                     }
