@@ -78,8 +78,9 @@ body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > s
 
 /* Forms */
 .sapUiFormTitle:empty {display: none;}
-.sapUiFormResGridCont {padding-bottom: 1rem !important}
 .exf-formcontainer-invisible {padding: 0 !important}
+.exf-panel.exf-form-mixed-width .sapUiRespGridMedia-Std-Tablet.sapUiRespGridHSpace0>.sapUiRespGridSpanM12 {padding: 0 0.75rem; box-sizing: border-box;}
+.exf-panel.exf-form-mixed-width .sapUiRespGrid {padding-right: 0; padding-left: 0;}
 
 /* HTML widgets */
 .exf-html {font-size: 0.875rem;}

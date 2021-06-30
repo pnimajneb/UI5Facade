@@ -49,9 +49,10 @@ class UI5Dashboard extends UI5Container
      * A dashboard is getting wrapped in a `sap.m.ScrollContainer` to allow scrolling through the elements of
      * a dashboard.
      * 
-     * @see UI5Panel::buildJsLayoutConstructor()
+     * @param string $content
+     * @return string
      */
-    public function buildJsLayoutConstructor(string $content = null, bool $useFormLayout = true) : string
+    public function buildJsLayoutConstructor(string $content = null) : string
     {
         
         if ($this->getWidget()->getHeight()->isUndefined() === false){
