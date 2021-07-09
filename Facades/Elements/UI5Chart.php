@@ -101,7 +101,11 @@ JS;
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
     {
         $f = $this->getFacade();
-        $controller->addExternalModule('libs.exface.charts.ECharts', $f->buildUrlToSource('LIBS.ECHARTS.ECHARTS_JS'), null, 'echarts');
+        if ($this->getChartType() === $this->chartTypes[CHART_TYPE_HEATMAP]) {
+            $controller->addExternalModule('libs.exface.charts.ECharts', $f->buildUrlToSource('LIBS.ECHARTS.ECHARTSHEATMAP_JS'), null, 'echarts');
+        } else {
+            $controller->addExternalModule('libs.exface.charts.ECharts', $f->buildUrlToSource('LIBS.ECHARTS.ECHARTS_JS'), null, 'echarts');
+        }
         $controller->addExternalModule('libs.exface.charts.Theme', $f->buildUrlToSource('LIBS.ECHARTS.THEME_JS'), null);        
         $controller->addExternalModule('libs.exface.TinyColor', $f->buildUrlToSource('LIBS.TINYCOLOR.JS'), null, 'tinycolor');
         $controller->addExternalModule('libs.exface.TinyGradient', $f->buildUrlToSource('LIBS.TINYGRADIENT.JS'), null, 'tinygradient');
