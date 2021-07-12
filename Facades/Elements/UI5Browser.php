@@ -33,4 +33,37 @@ JS;
     {
         return 'width: 100%; height: calc(100% - 5px); border: 0;';
     }
+    
+    /**
+     * Wraps the given content in a sap.m.Page with back-button, that works with the iFrame.
+     *
+     * @param string $contentJs
+     * @param string $footerConstructor
+     * @param string $headerContentJs
+     *
+     * @return string
+     */
+    protected function buildJsPageWrapper(string $contentJs) : string
+    {
+        $caption = $this->getCaption();
+        if ($caption === '' && $this->getWidget()->hasParent() === false) {
+            $caption = $this->getWidget()->getPage()->getName();
+        }
+        
+        return <<<JS
+        
+        new sap.m.Page({
+            title: "{$caption}",
+            showNavButton: true,
+            navButtonPress: function(){window.history.go(-1);},
+            content: [
+                {$contentJs}
+            ],
+            headerContent: [
+            
+            ]
+        })
+        
+JS;
+    }
 }
