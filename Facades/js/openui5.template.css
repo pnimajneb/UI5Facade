@@ -42,7 +42,7 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 .sapFGridListDefault {padding: 0 0.5rem}
 
 /* sap.f.DynamicPage */
-.exf-page-heading {margin-top: -0.219rem;}
+.exf-page-heading {margin-top: -3.5px;}
 .exf-page-heading-btn {margin-right: 0.2rem;}
 body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > span {line-height: 2.375rem}
 /* Fix page header collaps button icon shifted to the right */
