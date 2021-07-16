@@ -1072,20 +1072,16 @@ JS;
     
     protected function buildJsTitleHeading(string $title, string $backButton) : string
     {
-        $style = '';
-        //if there is no back button, the style class is not needed as it leads to the title being moved to high
-        if ($backButton !== '') {
-            $style = ".addStyleClass('exf-page-heading')";
-        }
         return <<<JS
                             new sap.m.HBox({
+                                height: "23px",
                                 renderType: 'Bare',
                                 alignItems: 'Center',
                                 items: [
                                     {$backButton}
                                     {$title}
                                 ]
-                            }){$style}
+                            })
 JS;
     }
     
