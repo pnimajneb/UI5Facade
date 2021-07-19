@@ -1074,7 +1074,7 @@ JS;
     {
         return <<<JS
                             new sap.m.HBox({
-                                height: "23px",
+                                height: "1.625rem",
                                 renderType: 'Bare',
                                 alignItems: 'Center',
                                 items: [
