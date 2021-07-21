@@ -23,6 +23,7 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -854,6 +855,13 @@ JS;
                 
                                 oRow["{$col->getDataColumnName()}"] = {$linkedEl->buildJsValueGetter()};
 JS;
+            } elseif ($valueExpr->isConstant()) {
+                $addLocalValuesJs .= <<<JS
+                
+                                oRow["{$col->getDataColumnName()}"] = {$valueExpr->toString()};
+JS;
+            } else {
+                throw new FacadeRuntimeError('Cannot use expression "' . $valueExpr->toString() . '" as `value` of a data column - only widget links and scalar values (strings and numbers) are supported by the UI5 facade!');
             }
         }
         if ($addLocalValuesJs) {
