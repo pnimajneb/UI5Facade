@@ -982,31 +982,33 @@ JS;
         
                             new sap.m.Title({
                                 text: "{$this->escapeJsTextValue($caption)}"
-                            })
+                            }),
                             
 JS;
         
         // Place the back-button next to the title if we need one
-        if ($this->getDynamicPageShowBackButton() === false) {
-            if ($this->getWidget()->getHideCaption() === true) {
-                $title = '';
-            }
-        } else {
-            $title = <<<JS
-            
-                            new sap.m.HBox({
-                                items: [
+        $backButton = <<<JS
                                     new sap.m.Button({
                                         icon: "sap-icon://nav-back",
                                         press: [oController.onNavBack, oController],
                                         type: sap.m.ButtonType.Transparent
                                     }).addStyleClass('exf-page-heading-btn'),
-                                    {$title}
-                                ]
-                            })
-                            
 JS;
+        if ($this->getWidget()->getHideCaption() === true) {
+            $title = '';
         }
+        if ($this->getDynamicPageShowBackButton() === false) {
+            $backButton = '';
+        }
+        $titleExpanded = $this->buildJsTitleHeading($title, $backButton);
+        $textSnapped = <<<JS
+                                    new sap.m.Text({
+                                        text: "{{$this->getModelNameForConfigurator()}>/filterDescription}"
+                                    }),
+JS;
+        $titleSnapped = $this->buildJsTitleHeading($textSnapped, $backButton);
+        
+        
         
         // Build the top toolbar with title, actions, etc.
         $titleAreaShrinkRatio = '';
@@ -1014,15 +1016,12 @@ JS;
             if ($qsEl = $this->getQuickSearchElement()) {
                 $qsEl->setWidthCollapsed('200px');
             }
-            $titleCollapsed  = $this->buildJsQuickSearchConstructor($oControllerJs);
-            $toolbar = $this->buildJsToolbar($oControllerJs, $titleCollapsed, $top_buttons);
+            $toolbar = $this->buildJsToolbar($oControllerJs, $this->buildJsQuickSearchConstructor($oControllerJs), $top_buttons);
 
             // due to the SearchField being right aligned, set the shrinkfactor so that the right side shrink the least
             $titleAreaShrinkRatio = 'areaShrinkRatio: "1.6:1.6:1"';
         } else {
             $toolbar = $top_buttons;
-            $titleCollapsed = $title;
-            $titleExpanded = $title;
         }
         
         // Make sure, the filters in the header of the page use the same model as the filters
@@ -1051,13 +1050,7 @@ JS;
                     {$titleExpanded}
 				],
                 snappedHeading: [
-                    new sap.m.VBox({
-                        items: [
-                            new sap.m.Text({
-                                text: "{{$this->getModelNameForConfigurator()}>/filterDescription}"
-                            })
-                        ]
-                    })
+                    {$titleSnapped}
 				],
 				actions: [
 				    {$toolbar}
@@ -1082,6 +1075,21 @@ JS;
                 {$content}
             ]
         })
+JS;
+    }
+    
+    protected function buildJsTitleHeading(string $title, string $backButton) : string
+    {
+        return <<<JS
+                            new sap.m.HBox({
+                                height: "1.625rem",
+                                renderType: 'Bare',
+                                alignItems: 'Center',
+                                items: [
+                                    {$backButton}
+                                    {$title}
+                                ]
+                            })
 JS;
     }
     
