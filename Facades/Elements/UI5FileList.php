@@ -3,13 +3,10 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataTableTrait;
-use exface\Core\DataTypes\BinaryDataType;
+use exface\Core\Facades\AbstractAjaxFacade\Elements\JsUploaderTrait;
 use exface\Core\DataTypes\WidgetVisibilityDataType;
-use exface\Core\Interfaces\Actions\ActionInterface;
-use exface\Core\Interfaces\Actions\iReadData;
-use exface\Core\Interfaces\DataTypes\DataTypeInterface;
-use exface\Core\DataTypes\HexadecimalNumberDataType;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
+use exface\Core\Widgets\Parts\Uploader;
 
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
@@ -32,6 +29,17 @@ class UI5FileList extends UI5AbstractElement
     }
     
     use JqueryDataTableTrait;
+    
+    use JsUploaderTrait;
+    
+    /**
+     * 
+     * @see JsUploaderTrait::getUploader()
+     */
+    protected function getUploader() : Uploader
+    {
+        return $this->getWidget()->getUploader();
+    }
     
     /**
      * 
@@ -251,7 +259,7 @@ JS;
                 }
 
                 fileReader.onload = function () { 
-                    var sContent = {$this->buildJsFileContentEncoder($widget->getFileContentAttribute()->getDataType(), 'fileReader.result')};
+                    var sContent = {$this->buildJsFileContentEncoder($widget->getFileContentAttribute()->getDataType(), 'fileReader.result', 'file.type')};
                     var oResponseModel = new sap.ui.model.json.JSONModel({
                         oId: "{$widget->getMetaObject()->getId()}",
                         rows: [
@@ -364,36 +372,19 @@ JS;
 JS;
     }
     
-    protected function buildJsFileContentEncoder(DataTypeInterface $contentDataType, string $fileContentJs) : string
-    {
-        switch (true) {
-            case $contentDataType instanceof BinaryDataType && $contentDataType->getEncoding() === BinaryDataType::ENCODING_BASE64:
-                return "btoa($fileContentJs)";
-            case $contentDataType instanceof BinaryDataType && $contentDataType->getEncoding() === BinaryDataType::ENCODING_HEX:
-                $prefix0x = HexadecimalNumberDataType::HEX_PREFIX;
-                return <<<JS
-
-                    function (s){
-                        var v,i, f = 0, a = [];  
-                        s += '';  
-                        f = s.length;  
-                          
-                        for (i = 0; i<f; i++) {  
-                            a[i] = s.charCodeAt(i).toString(16).replace(/^([\da-f])$/,"0$1");  
-                        }  
-                          
-                        return '{$prefix0x}' + a.join('');  
-                    }($fileContentJs); 
-JS;
-        }
-        return $fileContentJs;
-    }
-    
+    /**
+     * 
+     * @see JqueryDataTableTrait::isEditable()
+     */
     protected function isEditable() : bool
     {
         return false;
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsItemPropertyThumbnail() : string
     {
         $widget = $this->getWidget();
@@ -403,6 +394,10 @@ JS;
         return '';
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsItemPropertyUrl() : string
     {
         $widget = $this->getWidget();
@@ -412,6 +407,11 @@ JS;
         return '';
     }
     
+    /**
+     * 
+     * @param string $oModelJs
+     * @return string
+     */
     protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
     {
         $widget = $this->getWidget();
@@ -461,6 +461,10 @@ JS;
 JS;
     }
     
+    /**
+     * 
+     * @return UI5Button|NULL
+     */
     protected function getButtonUploadElement() : ?UI5Button
     {
         if ($btn = $this->getWidget()->getButtonUpload()) {
@@ -483,6 +487,9 @@ JS;
                 var oUploader = sap.ui.getCore().byId('{$this->getId()}-uploader');
                 if (oUploader) {
                     oUploader.setIcon('sap-icon://open-folder');
+                    if (sap.ui.getCore().byId('{$this->getId()}').getUploadEnabled() === false) {
+                        oUploader.setVisible(false);
+                    }
                     // oUploader.setButtonText("{$btnText}");
                 }
             })();
