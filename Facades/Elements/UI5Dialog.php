@@ -717,7 +717,10 @@ JS;
                         $fillerWidget->setHeight('70vh');
                     }
             }
+        } elseif ($tab->countWidgets() === 1 && $this->getFacade()->getElement($tab->getWidgetFirst())->getNeedsContainerContentPadding() === false) {
+            $cssClass = 'sapUiNoContentPadding';
         }
+        
         $tabElement = $this->getFacade()->getElement($tab);
         return <<<JS
 

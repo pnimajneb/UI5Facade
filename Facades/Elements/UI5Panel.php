@@ -3,17 +3,16 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\UI5Facade\Facades\Interfaces\UI5ControlWithToolbarInterface;
-use exface\Core\Widgets\Panel;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryLayoutTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5HelpButtonTrait;
 use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\WidgetInterface;
-use exface\Core\Widgets\Message;
 use exface\Core\DataTypes\StringDataType;
 use exface\Core\Widgets\WidgetGroup;
 use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 use exface\Core\CommonLogic\WidgetDimension;
 use exface\Core\Factories\WidgetDimensionFactory;
+use exface\Core\Widgets\ImageGallery;
 
 /**
  * Generates a `sap.m.Panel` with a `sap.ui.layout.form.Form` inside for a Panel widget.
@@ -171,13 +170,19 @@ JS;
     }
     
     /**
+     * The inner layout (e.g. Form) is required if the panel has multiple widgets to layout.
+     * 
+     * However, we still need to distinguish between smaller and larger widgets because the inner layout
+     * has significant effect on the look&feel: padding, positioning, etc. Thus, we can only skip the
+     * layout if the panel is filled out completely. On the other hand, if it has a single input widget,
+     * it should still have a layout!
      * 
      * @return bool
      */
     protected function isLayoutRequired() : bool
     {
         $widget = $this->getWidget();        
-        if ($widget->isFilledBySingleWidget()) {
+        if ($widget->isFilledBySingleWidget() || ($widget->countWidgets() === 1 && $this->getFacade()->getElement($widget->getWidgetFirst())->getNeedsContainerContentPadding() === false)) {
             return false;
         }
         return true;
