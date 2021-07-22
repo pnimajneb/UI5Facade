@@ -182,10 +182,17 @@ JS;
     protected function isLayoutRequired() : bool
     {
         $widget = $this->getWidget();        
-        if ($widget->isFilledBySingleWidget() || ($widget->countWidgets() === 1 && $this->getFacade()->getElement($widget->getWidgetFirst())->getNeedsContainerContentPadding() === false)) {
+        if ($widget->isFilledBySingleWidget()) {
             return false;
         }
-        return true;
+        
+        foreach ($widget->getWidgets() as $child) {
+            if ($this->getFacade()->getElement($child)->getNeedsContainerContentPadding() === true) {
+                return true;
+            }
+        }
+        
+        return false;
     }
     
     /**

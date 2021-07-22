@@ -617,6 +617,7 @@ JS;
         $nonTabHiddenWidgets = [];
         $nonTabChildrenWidgets = [];
         $hasSingleVisibleChild = false;
+        $paddingNeeded = false;
         
         foreach ($widget->getWidgets() as $child) {
             switch (true) {
@@ -643,6 +644,7 @@ JS;
                     $nonTabChildrenWidgets[] = $child;
                     break;
                 default:
+                    $paddingNeeded = true;
                     $nonTabChildrenWidgets[] = $child;
             }
         }
@@ -655,7 +657,7 @@ JS;
         // Build an ObjectPageSection for the non-tab elements
         if (! empty($nonTabChildrenWidgets)) {
             $sectionContent = '';
-            if ($hasSingleVisibleChild) {
+            if ($hasSingleVisibleChild || $paddingNeeded === false) {
                 foreach ($nonTabChildrenWidgets as $child) {
                     $sectionContent .= $this->getFacade()->getElement($child)->buildJsConstructor() . ',';
                 }
@@ -717,8 +719,17 @@ JS;
                         $fillerWidget->setHeight('70vh');
                     }
             }
-        } elseif ($tab->countWidgets() === 1 && $this->getFacade()->getElement($tab->getWidgetFirst())->getNeedsContainerContentPadding() === false) {
-            $cssClass = 'sapUiNoContentPadding';
+        } else {
+            $cssClass = null;
+            foreach ($tab->getWidgets() as $child) {
+                if ($this->getFacade()->getElement($child)->getNeedsContainerContentPadding() === true) {
+                    $cssClass = '';
+                    break;
+                }
+            }
+            if ($cssClass === null) {
+                $cssClass = 'sapUiNoContentPadding';
+            }
         }
         
         $tabElement = $this->getFacade()->getElement($tab);
