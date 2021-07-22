@@ -116,6 +116,12 @@
     "LIBS.MOMENT.JS": "npm-asset/moment/min/moment.min.js",
     "LIBS.MOMENT.LOCALES": "npm-asset/moment/locale",
 	
+	"LIBS.SLICK.SLICK_JS": "npm-asset/slick-carousel/slick/slick.min.js",
+	"LIBS.SLICK.SLICK_CSS": "npm-asset/slick-carousel/slick/slick.css",
+	"LIBS.SLICK.THEME_CSS": "npm-asset/slick-carousel/slick/slick-theme.css",
+	"LIBS.SLICK.LIGHTBOX_JS": "npm-asset/slick-lightbox/dist/slick-lightbox.min.js",
+	"LIBS.SLICK.LIGHTBOX_CSS": "npm-asset/slick-lightbox/dist/slick-lightbox.css",
+	
 	"PWA.ENABLED": true,
     "PWA.DEFAULT_STYLE.THEME_COLOR": "#3367D6",
     "PWA.DEFAULT_STYLE.BACKGROUND_COLOR": "#3367D6",

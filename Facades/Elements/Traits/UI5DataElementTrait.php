@@ -275,7 +275,7 @@ JS;
         if (! $hDim->isUndefined()) {
             $height = $this->getHeight();
         } else {
-            $height = '100%';
+            $height = $this->buildCssHeightDefaultValue();
         }
         return <<<JS
         new sap.m.Panel({
@@ -2039,5 +2039,10 @@ JS;
     public function hasButtonBack() : bool
     {
         return $this->isWrappedInDynamicPage() && $this->getDynamicPageShowBackButton();
+    }
+    
+    protected function buildCssHeightDefaultValue()
+    {
+        return '100%';
     }
 }
