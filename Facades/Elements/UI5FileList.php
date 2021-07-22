@@ -168,15 +168,21 @@ JS;
     protected function buildJsEventHandlerUpload(string $oEventJs) : string
     {
         $widget = $this->getWidget();
+        $uploader = $this->getUploader();
         if (! $widget->isUploadEnabled()) {
             return '';
         }
-        $uploadAction = $widget->getInstantUploadAction();
-        $uploadButtonEl = $this->getFacade()->getElement($widget->getInstantUploadButton());
+        $uploadAction = $uploader->getInstantUploadAction();
+        $uploadButtonEl = $this->getFacade()->getElement($uploader->getInstantUploadButton());
         
         $fileModificationColumnJs = '';
         if ($widget->hasFileModificationTimeColumn()) {
             $fileModificationColumnJs = "{$widget->getMimeTypeColumn()->getDataColumnName()}: file.lastModified,";
+        }
+        
+        $mimeTypeColumnJs = '';
+        if ($uploader->hasFileMimeTypeAttribute()) {
+            $mimeTypeColumnJs = "{$widget->getMimeTypeColumn()->getDataColumnName()}: file.type,";
         }
         
         // When the upload action succeeds, we need to refresh the list to ensure, that
@@ -265,9 +271,9 @@ JS;
                         rows: [
                             {
                                 {$widget->getFilenameColumn()->getDataColumnName()}: file.name,
-                                {$widget->getMimeTypeColumn()->getDataColumnName()}: file.type,
-                                {$widget->getFileContentColumnName()}: sContent,
                                 {$fileModificationColumnJs}
+                                {$mimeTypeColumnJs}
+                                {$widget->getFileContentColumnName()}: sContent,
                             }
                         ] 
                     });
