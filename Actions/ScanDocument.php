@@ -118,7 +118,7 @@ fileUploader.attachChange(function (e) {
 })
 fileUploader.addStyleClass('docScannerUploader')
 dialog.addContent(fileUploader);
-dialog.setContentHeight('70%').setContentWidth('45rem');
+dialog.setContentHeight('80vh').setContentWidth('calc(80vh / 1.4)');
 dialog.setVerticalScrolling(false);
 dialog.addStyleClass('docScannerDialog');
 
