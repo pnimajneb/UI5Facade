@@ -23,6 +23,7 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -274,7 +275,7 @@ JS;
         if (! $hDim->isUndefined()) {
             $height = $this->getHeight();
         } else {
-            $height = '100%';
+            $height = $this->buildCssHeightDefaultValue();
         }
         return <<<JS
         new sap.m.Panel({
@@ -853,6 +854,11 @@ JS;
                 $addLocalValuesJs .= <<<JS
                 
                                 oRow["{$col->getDataColumnName()}"] = {$linkedEl->buildJsValueGetter()};
+JS;
+            } elseif ($valueExpr->isConstant()) {
+                $addLocalValuesJs .= <<<JS
+                
+                                oRow["{$col->getDataColumnName()}"] = {$valueExpr->toString()};
 JS;
             }
         }
@@ -2031,5 +2037,10 @@ JS;
     public function hasButtonBack() : bool
     {
         return $this->isWrappedInDynamicPage() && $this->getDynamicPageShowBackButton();
+    }
+    
+    protected function buildCssHeightDefaultValue()
+    {
+        return '100%';
     }
 }
