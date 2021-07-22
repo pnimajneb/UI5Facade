@@ -165,3 +165,8 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .exf-map .marker-cluster {background-clip: padding-box; border-radius: 20px;}
 .exf-map .marker-cluster div {width: 30px; height: 30px; margin-left: 5px; margin-top: 5px; color: white; text-align: center; border-radius: 15px;}
 .exf-map .marker-cluster i {line-height: 30px;}
+
+/* DocScanner */
+.docScanner {height: calc( 100% - 20px); width: calc(100% - 20px); border: 1px solid #0854a0; box-sizing: border-box; margin: 10px; background-color: white;}
+.docScannerUploader {display: none;}
+.docScannerDialog .sapMDialogSection {background-color: lightgrey;}
