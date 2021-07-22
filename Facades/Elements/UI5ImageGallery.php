@@ -44,21 +44,16 @@ class UI5ImageGallery extends UI5AbstractElement
         $controller = $this->getController(); 
         $this->registerExternalModules($controller);
         
-        // **IMPORTANT:** it seems, an outer div with the id of the control is required because
-        // otherwise the map is not rendered at all after navigating to a view via routing. The map
-        // gets rendered even before the view is shown, but once the view is visible, the leaflet-div
-        // is empty while the leaflet-var is initialized, which is very strange.
-        // I guess, this has something to do with the so-called "preserved content" of sap.ui.core.HTML 
-        // (see for an explanation for possible causes: https://github.com/SAP/openui5/issues/1162).
+        // **IMPORTANT:** double-check that slick is not initialized yet. For some reason afterRendering()
+        // is called multiple times sometimes!
         $chart = <<<JS
 
                 new sap.ui.core.HTML("{$this->getId()}", {
                     content: "<div id=\"{$this->getId()}\" style=\"height: calc({$this->getHeight()} - 2.75rem - 2px);\"><div id=\"{$this->getIdOfSlick()}\" class=\"slick-carousel horizontal\" style=\"height: 100%\"></div></div>",
                     afterRendering: function(oEvent) { 
-
-                        sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}').getParent(), function(){
-                            //TODO
-                        });
+                        if ($('#{$this->getIdOfSlick()}').hasClass('slick-initialized')) {
+                            return;
+                        }
 
                         {$this->buildJsSlickInit()}
 
