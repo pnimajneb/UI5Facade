@@ -51,6 +51,7 @@ class UI5KPI extends UI5Display
         
                 new sap.m.NumericContent("{$this->getId()}", {
                     nullifyValue: false,
+                    withMargin: false,
                     {$this->buildJsPropertyIcon()}
                     {$this->buildJsPropertyValue()}
                     {$this->buildJsPropertyValueColor()}
