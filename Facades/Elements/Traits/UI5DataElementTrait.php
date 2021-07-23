@@ -1201,6 +1201,8 @@ JS;
 
                     new sap.m.OverflowToolbarButton({
                         icon: "sap-icon://refresh",
+                        text: '{$this->getWorkbench()->getCoreApp()->getTranslator()->translate('ACTION.REFRESHWIDGET.NAME')}',
+                        tooltip: '{$this->getWorkbench()->getCoreApp()->getTranslator()->translate('ACTION.REFRESHWIDGET.NAME')}',
                         press: function(oEvent){
                             {$this->buildJsRefresh()}
                         }
