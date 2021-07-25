@@ -682,7 +682,7 @@ JS;
         }
         
         if ($this->isMTable()) {
-            return "{$oTargetDomJs} !== undefined && $({$oTargetDomJs}).parents('tr.sapMListTblRow:not(.sapMListTblHeader)').length > 0";
+            return "{$oTargetDomJs} !== undefined && ($({$oTargetDomJs}).parents('tr.sapMListTblRow:not(.sapMListTblHeader)').length > 0 || $({$oTargetDomJs}).parents('tr.sapMListTblSubRow').length > 0)";
         }
         
         if ($this->isMList()) {
@@ -707,11 +707,19 @@ JS;
             return <<<JS
 (function(){
     var jqTr = $({$oDomElementClickedJs}).parents('tr');
-    if (jqTr.siblings('.sapMListTblSubRow').length > 0) {
-        return Math.floor(jqTr.index() / 2);
-    } else {
-        return jqTr.index();
+    var oItem;
+
+    if (jqTr.hasClass('sapMListTblSubRow')) {
+        jqTr = jqTr.prev();
     }
+
+    oItem = sap.ui.getCore().byId(jqTr[0].id);
+
+    if (oItem) {
+        return sap.ui.getCore().byId('{$this->getId()}').indexOfItem(oItem);
+    }
+    
+    return -1;
 })()
 JS;
         }
