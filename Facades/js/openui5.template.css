@@ -189,3 +189,6 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .docScanner {aspect-ratio: 210 / 297; max-height: 100%; max-width: 100%; border: 1px solid #0854a0; box-sizing: border-box; margin: 10px; background-color: white;}
 .docScannerUploader {display: none;}
 .docScannerDialog .sapMDialogSection {background-color: lightgrey;}
+
+/* Pad */
+.exf-pad > .sapMPanelContent {border-bottom: 0 !important}
