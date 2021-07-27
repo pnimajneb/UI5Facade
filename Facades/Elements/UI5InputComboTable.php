@@ -380,14 +380,16 @@ JS;
         // method not to rely on the explicitly!!!
         $onSuggestLoadedJs = <<<JS
                             
+                var bAutoSelectSingle = {$widget->getAutoselectSingleSuggestion()} ? true : false;
+                var data = oModel.getProperty('/rows');
+                var curKey = oInput.{$this->buildJsValueGetterMethod(false)};
+                var curKeys = curKey.split({$delim});
+                var iRowsCnt = parseInt(oModel.getProperty("/recordsTotal"));
+                var aFoundKeys = [];
+                var bNewKeysAllowed = {$allowNewValues};
+                var aNewKeys = [];
+
                 if (silent) {
-                    var data = oModel.getProperty('/rows');
-                    var curKey = oInput.{$this->buildJsValueGetterMethod(false)};
-                    var curKeys = curKey.split({$delim});
-                    var iRowsCnt = parseInt(oModel.getProperty("/recordsTotal"));
-                    var aFoundKeys = [];
-                    var bNewKeysAllowed = {$allowNewValues};
-                    var aNewKeys = [];
                     if (iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
                         oInput.{$this->buildJsSetSelectedKeyMethod("data[0]['{$widget->getValueColumn()->getDataColumnName()}']", "data[0]['{$widget->getTextColumn()->getDataColumnName()}']")}
                         oInput.closeSuggestions();
@@ -435,6 +437,15 @@ JS;
 
                 if (oSuggestTable) {
                     oSuggestTable.setBusy(false);
+                }
+
+                if (bAutoSelectSingle && iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
+                    oInput.{$this->buildJsSetSelectedKeyMethod("data[0]['{$widget->getValueColumn()->getDataColumnName()}']", "data[0]['{$widget->getTextColumn()->getDataColumnName()}']")}
+                    oInput.setValueState(sap.ui.core.ValueState.None);
+                    setTimeout(function(){
+                        oInput.closeSuggestions();
+                        oInput.fireChange();
+                    }, 1);
                 }
                 
 JS;
@@ -552,11 +563,11 @@ function(){
     var oInput = sap.ui.getCore().byId('{$this->getId()}');
     var oModel = oInput.getModel('{$this->getModelNameForAutosuggest()}');
     
-    var oItem = oModel.getData().rows.find(function(element, index, array){
+    var oItem = (oModel.getData().rows || []).find(function(element, index, array){
         return element['{$this->getWidget()->getValueAttributeAlias()}'] == sSelectedKey;
     });
 
-    return oItem['$column'];
+    return oItem === undefined ? undefined : oItem['$column'];
 }()
 
 JS;
