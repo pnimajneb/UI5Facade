@@ -13,6 +13,7 @@ use exface\Core\CommonLogic\Constants\Icons;
 use exface\Core\CommonLogic\Constants\Colors;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\Core\Actions\SendToWidget;
+use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 
 /**
  * Generates sap.m.Button for Button widgets.
@@ -56,36 +57,11 @@ class UI5Button extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        // Get the java script required for the action itself
-        $action = $this->getAction();
-        if ($action) {
-            // Actions with facade scripts may contain some helper functions or global variables.
-            // Print the here first.
-            if ($action && $action instanceof iRunFacadeScript) {
-                $this->getController()->addOnInitScript($action->buildScriptHelperFunctions($this->getFacade()));
-                foreach ($action->getIncludes($this->getFacade()) as $includePath) {
-                    if (mb_stripos($includePath, '.css') !== false) {
-                        if (StringDataType::startsWith($includePath, '<link')) {
-                            $matches = [];
-                            preg_match('/(<link.*href=[\"\'])(.*css)([\"\'].[^>]*)/i', $includePath, $matches);
-                            if ($matches[2]) {
-                                $includePath = $matches[2];
-                            }
-                        }
-                        $this->getController()->addExternalCss($includePath);                        
-                    } else {
-                        $moduleName = str_replace([':', '-'], '', $includePath);
-                        $moduleName = str_replace('/', '.', $moduleName);
-                        $varName = StringDataType::convertCaseUnderscoreToPascal(str_replace(['/', '.', '-', ':'], '_', $includePath));
-                        $this->getController()->addExternalModule($moduleName, $includePath, $varName);
-                    }
-                }
-            }
-        }
-        
+        $this->registerExternalModules($this->getController());        
         // Register conditional reactions
         $this->registerDisableConditionAtLinkedElement();
         $this->getController()->addOnInitScript($this->buildJsDisableConditionInitializer());
+        $this->getController()->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
         
         return <<<JS
 
@@ -96,6 +72,42 @@ class UI5Button extends UI5AbstractElement
         {$this->buildJsPseudoEventHandlers()}
 
 JS;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerExternalModules()
+     */
+    public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
+    {
+        // Get the java script required for the action itself
+        $action = $this->getAction();
+        if ($action) {
+            // Actions with facade scripts may contain some helper functions or global variables.
+            // Print the here first.
+            if ($action && $action instanceof iRunFacadeScript) {
+                $controller->addOnInitScript($action->buildScriptHelperFunctions($this->getFacade()));
+                foreach ($action->getIncludes($this->getFacade()) as $includePath) {
+                    if (mb_stripos($includePath, '.css') !== false) {
+                        if (StringDataType::startsWith($includePath, '<link')) {
+                            $matches = [];
+                            preg_match('/(<link.*href=[\"\'])(.*css)([\"\'].[^>]*)/i', $includePath, $matches);
+                            if ($matches[2]) {
+                                $includePath = $matches[2];
+                            }
+                        }
+                        $controller->addExternalCss($includePath);
+                    } else {
+                        $moduleName = str_replace([':', '-'], '', $includePath);
+                        $moduleName = str_replace('/', '.', $moduleName);
+                        $varName = StringDataType::convertCaseUnderscoreToPascal(str_replace(['/', '.', '-', ':'], '_', $includePath));
+                        $controller->addExternalModule($moduleName, $includePath, $varName);
+                    }
+                }
+            }
+        }
+        return parent::registerExternalModules($controller);
     }
     
     public function buildJsProperties()
