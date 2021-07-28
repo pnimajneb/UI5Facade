@@ -26,6 +26,12 @@ class UI5Tile extends UI5Button
     {
         $widget = $this->getWidget();
         
+        $this->registerExternalModules($this->getController());
+        // Register conditional reactions
+        $this->registerDisableConditionAtLinkedElement();
+        $this->getController()->addOnInitScript($this->buildJsDisableConditionInitializer());
+        $this->getController()->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
+        
         $header = $this->getCaption() ? 'header: "' . $widget->getTitle() . '",' : '';
         $handler = $this->buildJsClickViewEventHandlerCall();
         $press = $handler !== '' ? 'press: ' . $handler . ',' : '';
