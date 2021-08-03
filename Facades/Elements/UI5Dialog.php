@@ -320,12 +320,30 @@ JS;
             {$this->buildJsPropertyContentWidth()}
             stretch: jQuery.device.is.phone,
             title: "{$this->getCaption()}",
-			buttons : [ {$this->buildJsDialogButtons()} ],
 			content : [ {$content} ],
+            buttons : [new sap.m.Button()],
             beforeOpen: function(oEvent) {
                 var oDialog = oEvent.getSource();
                 var oView = {$this->getController()->getView()->buildJsViewGetter($this)};
-                {$prefill}
+                {$prefill}                    
+            },
+            afterOpen: function(oEvent) {
+                var oDialog = oEvent.getSource();
+                var oToolbar = oDialog._getToolbar();
+                var aContent = oToolbar.getContent();
+                oToolbar.removeAllContent();
+                var aContent = [{$this->buildJsDialogButtons()}];
+                aContent.forEach(function(oElem) {                
+                    oToolbar.addContent(oElem);
+                });
+            },
+            afterClose: function(oEvent) { 
+                var oDialog = oEvent.getSource();
+                var oToolbar = oDialog._getToolbar();
+                var aContent = oToolbar.getContent();
+                aContent.forEach(function(oElem) {
+                    oElem.destroy();
+                });
             }
 		})
         {$this->buildJsPseudoEventHandlers()}
@@ -758,7 +776,7 @@ JS;
     protected function buildJsDialogButtons()
     {
         $toolbarEl = $this->getFacade()->getElement($this->getWidget()->getToolbarMain());
-        return $toolbarEl->buildJsConstructorsForLeftButtons() . $toolbarEl->buildJsConstructorsForRightButtons();
+        return $toolbarEl->buildJsConstructorsForLeftButtons() . 'new sap.m.ToolbarSpacer(),' . $toolbarEl->buildJsConstructorsForRightButtons();
     }
     
     /**

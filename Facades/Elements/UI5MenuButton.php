@@ -79,7 +79,7 @@ JS;
 
                         new sap.m.MenuItem({
                             {$properties}
-                            text: "{$btnElement->getCaption()}",
+                            text: "{$b->getCaption()}",
                             icon: "{$btnElement->getIconSrc($b->getIcon())}",
                             {$press}
                         }),
