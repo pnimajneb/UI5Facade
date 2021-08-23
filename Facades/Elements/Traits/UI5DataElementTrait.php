@@ -858,7 +858,7 @@ JS;
             } elseif ($valueExpr->isConstant()) {
                 $addLocalValuesJs .= <<<JS
                 
-                                oRow["{$col->getDataColumnName()}"] = {$valueExpr->toString()};
+                                oRow["{$col->getDataColumnName()}"] = {$valueExpr->evaluate()};
 JS;
             }
         }
