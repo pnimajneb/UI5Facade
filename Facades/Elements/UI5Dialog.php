@@ -391,7 +391,7 @@ JS;
                 $width = json_encode($dim->getValue());
                 break;
             case $dim->isRelative():
-                $width = json_encode(($dim->getValue() * $this->getHeightRelativeUnit()) . 'px');
+                $width = json_encode(($dim->getValue() * $this->getWidthRelativeUnit()) . 'px');
                 break;
             default:
                 if ($this->isLargeDialog()) {
