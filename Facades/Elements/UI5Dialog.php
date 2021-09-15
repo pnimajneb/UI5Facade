@@ -773,10 +773,15 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsDialogButtons()
+    protected function buildJsDialogButtons(bool $addSpacer = true)
     {
         $toolbarEl = $this->getFacade()->getElement($this->getWidget()->getToolbarMain());
-        return $toolbarEl->buildJsConstructorsForLeftButtons() . 'new sap.m.ToolbarSpacer(),' . $toolbarEl->buildJsConstructorsForRightButtons();
+        $js = $toolbarEl->buildJsConstructorsForLeftButtons();
+        if ($addSpacer === true) {
+            $js .= 'new sap.m.ToolbarSpacer(),';
+        }
+        $js .= $toolbarEl->buildJsConstructorsForRightButtons();
+        return $js;
     }
     
     /**
