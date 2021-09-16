@@ -391,7 +391,7 @@ JS;
                 $width = json_encode($dim->getValue());
                 break;
             case $dim->isRelative():
-                $width = json_encode(($dim->getValue() * $this->getHeightRelativeUnit()) . 'px');
+                $width = json_encode(($dim->getValue() * $this->getWidthRelativeUnit()) . 'px');
                 break;
             default:
                 if ($this->isLargeDialog()) {
@@ -773,10 +773,15 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsDialogButtons()
+    protected function buildJsDialogButtons(bool $addSpacer = true)
     {
         $toolbarEl = $this->getFacade()->getElement($this->getWidget()->getToolbarMain());
-        return $toolbarEl->buildJsConstructorsForLeftButtons() . 'new sap.m.ToolbarSpacer(),' . $toolbarEl->buildJsConstructorsForRightButtons();
+        $js = $toolbarEl->buildJsConstructorsForLeftButtons();
+        if ($addSpacer === true) {
+            $js .= 'new sap.m.ToolbarSpacer(),';
+        }
+        $js .= $toolbarEl->buildJsConstructorsForRightButtons();
+        return $js;
     }
     
     /**

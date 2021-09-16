@@ -856,9 +856,14 @@ JS;
                                 oRow["{$col->getDataColumnName()}"] = {$linkedEl->buildJsValueGetter()};
 JS;
             } elseif ($valueExpr->isConstant()) {
+                if ($valueExpr->isString()) {
+                    $value = "'{$valueExpr->evaluate()}'";
+                } else {
+                    $value = $valueExpr->evaluate();
+                }
                 $addLocalValuesJs .= <<<JS
                 
-                                oRow["{$col->getDataColumnName()}"] = {$valueExpr->toString()};
+                                oRow["{$col->getDataColumnName()}"] = {$value};
 JS;
             }
         }
