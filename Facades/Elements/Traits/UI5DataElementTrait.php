@@ -498,7 +498,12 @@ JS;
      */
     protected function buildJsDataResetter() : string
     {
-        return "sap.ui.getCore().byId('{$this->getId()}').getModel().setData({})";
+        $widget = $this->getWidget();
+        $js = "sap.ui.getCore().byId('{$this->getId()}').getModel().setData({});";
+        if ($widget instanceof iShowData && $widget->isEditable() && $widget->getEditableChangesResetOnRefresh()) {            
+            $js .= $this->buildJsEditableChangesWatcherReset();
+        }
+        return $js;
     }
     
     /**
@@ -528,9 +533,11 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsDataLoader($oControlEventJsVar = 'oControlEvent', $keepPagePosJsVar = 'bKeepPagingPos')
+    protected function buildJsDataLoader($oControlEventJsVar = 'oControlEvent', $keepPagePosJsVar = 'bKeepPagingPos', $showWarning = true)
     {
         $widget = $this->getWidget();
+        $disableEditableChangesWatcher = '';
+        $preventDataLoad = '';
         if ($widget instanceof iShowData && $widget->isEditable()) {
             $disableEditableChangesWatcher = <<<JS
                 
@@ -538,8 +545,33 @@ JS;
                 // changes the data but does not mean a change by the editor
                 {$this->buildJsEditableChangesWatcherDisable()}
 JS;
-        } else {
-            $disableEditableChangesWatcher = '';
+                
+            if ($widget->getEditableChangesResetOnRefresh() && $showWarning) {
+                $translator = $this->getWidget()->getWorkbench()->getCoreApp()->getTranslator();
+                $preventDataLoad = <<<JS
+                    
+                    var oChanges = {$this->buildJsEditableChangesGetter()};
+                    console.log('Prevent data load');
+                    if (oChanges !== undefined && ! $.isEmptyObject(oChanges)) {
+                        var oComponent = this.getOwnerComponent();
+                        var oDialog = oComponent.showDialog('{$translator->translate('WIDGET.DATA.DISCARD_INPUT')}', '{$translator->translate('WIDGET.DATA.DISCARD_INPUT.TEXT')}', 'Warning');
+                        var oResetButton = new sap.m.Button({
+                            icon: 'sap-icon://font-awesome/eraser',
+                            type: 'Emphasized',
+                            text: "{$translator->translate('WIDGET.DATA.DISCARD_INPUT')}",
+                            press: function() {{$this->buildJsDataResetter()} {$this->buildJsRefresh()}; oDialog.close()},
+                        });
+                        var oCloseButton = new sap.m.Button({
+                            icon: 'sap-icon://font-awesome/close',
+                            text: "{$translator->translate('WIDGET.DIALOG.CLOSE_BUTTON_CAPTION')}",
+                            press: function() {oDialog.close()},
+                        });
+                        oDialog.addButton(oResetButton);
+                        oDialog.addButton(oCloseButton);
+                        return;
+                    }
+JS;
+            }
         }
         
         // Before we load anything, we need to make sure, the view data is loaded.
@@ -554,6 +586,7 @@ JS;
         // prefill!
         $js = <<<JS
         
+                {$preventDataLoad}
                 var oViewModel = sap.ui.getCore().byId("{$this->getId()}").getModel("view");
                 var sPendingPropery = "/_prefill/pending";
                 if (oViewModel.getProperty(sPendingPropery) === true) {
@@ -1396,6 +1429,7 @@ JS;
         
         return <<<JS
 
+            console.log('Apply changes');
             var oTable = sap.ui.getCore().byId('{$this->getId()}');
             var oChangesModel = oTable.getModel('{$this->getModelNameForChanges()}');
             
@@ -1419,18 +1453,20 @@ JS;
                 }
                 if (oRowLast) {
                     aEditableColNames.forEach(function(sFld){
-                        if (oRowChanged[sFld] != oRowLast[sFld]) {
+                        if (oRowChanged[sFld] == '' && oRowLast[sFld] == undefined) {
+                            delete oChanges[sUid][sFld];
+                        } else if (oRowChanged[sFld] != oRowLast[sFld] ) {
                             if (oChanges[sUid] === undefined) {
                                 oChanges[sUid] = {};
                             }
                             oChanges[sUid][sFld] = oRowChanged[sFld];
                         } else {
                             if (oChanges[sUid] && oChanges[sUid][sFld]) {
-                                delete oChanges[sUid][sFld];
-                                if (Object.keys(oChanges[sUid]).length === 0) {
-                                    delete oChanges[sUid];
-                                }
+                                delete oChanges[sUid][sFld];                                
                             }
+                        }
+                        if (oChanges[sUid] && Object.keys(oChanges[sUid]).length === 0) {
+                            delete oChanges[sUid];
                         }
                     });
                 }
@@ -1481,7 +1517,7 @@ JS;
                 var aEditableColNames = {$this->getEditableColumnNamesJson()};
                 var oData = $oModelJs.getData();
                 var aRows = oData.rows;
-                if (aRows === undefined || aRows.length === 0) return;
+				if (aRows === undefined || aRows.length === 0) return;
                 
                 var bDataUpdated = false;
                 var oChanges = {$this->buildJsEditableChangesGetter()};
