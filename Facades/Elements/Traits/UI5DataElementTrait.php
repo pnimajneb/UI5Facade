@@ -551,7 +551,6 @@ JS;
                 $preventDataLoad = <<<JS
                     
                     var oChanges = {$this->buildJsEditableChangesGetter()};
-                    console.log('Prevent data load');
                     if (oChanges !== undefined && ! $.isEmptyObject(oChanges)) {
                         var oComponent = this.getOwnerComponent();
                         var oDialog = oComponent.showDialog('{$translator->translate('WIDGET.DATA.DISCARD_INPUT')}', '{$translator->translate('WIDGET.DATA.DISCARD_INPUT.TEXT')}', 'Warning');
@@ -1429,7 +1428,6 @@ JS;
         
         return <<<JS
 
-            console.log('Apply changes');
             var oTable = sap.ui.getCore().byId('{$this->getId()}');
             var oChangesModel = oTable.getModel('{$this->getModelNameForChanges()}');
             
