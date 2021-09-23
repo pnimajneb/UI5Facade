@@ -6,6 +6,7 @@ use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 use exface\Core\Widgets\DataTable;
 use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
+use exface\Core\DataTypes\StringDataType;
 
 /**
  *
@@ -60,6 +61,7 @@ class UI5DataColumn extends UI5AbstractElement
         {$this->buildJsPropertyTooltip()}
 	    {$this->buildJsPropertyVisibile()}
 	    {$this->buildJsPropertyWidth()}
+        {$this->buildJsPropertyWidthMin()}
         {$grouped}
 	})
 	.data('_exfAttributeAlias', '{$col->getAttributeAlias()}')
@@ -255,6 +257,17 @@ JS;
         if ($dim->isFacadeSpecific()) {
             return 'width: "' . $dim->getValue() . '",';
         }   
+        
+        return '';
+    }
+    
+    protected function buildJsPropertyWidthMin()
+    {
+        $dim = $this->getWidget()->getWidthMin();
+        
+        if ($dim->isFacadeSpecific() && StringDataType::endsWith($dim->getValue(), 'px')) {
+            return 'minWidth: ' . StringDataType::substringBefore($dim->getValue(), 'px') . ',';
+        }
         
         return '';
     }
