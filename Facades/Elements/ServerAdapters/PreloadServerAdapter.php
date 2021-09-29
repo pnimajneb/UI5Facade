@@ -7,6 +7,8 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Actions\ReadData;
 use exface\Core\Interfaces\Widgets\iHaveQuickSearch;
 use exface\Core\Actions\ReadPrefill;
+use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 class PreloadServerAdapter implements UI5ServerAdapterInterface
 {
@@ -177,8 +179,16 @@ JS;
         }
         
         $filters = [];
-        foreach ($widget->getAttributesForQuickSearch() as $attr) {
-            $filters[] = "((oRow['{$attr->getAliasWithRelationPath()}'] || '').toString().toLowerCase().indexOf({$sQueryJs}) !== -1)";
+        $quickSearchCondGroup = $widget->getQuickSearchConditionGroup();
+        if ($quickSearchCondGroup->countNestedGroups(false) > 0) {
+            throw new FacadeUnsupportedWidgetPropertyWarning('Quick search with custom condition_group not supported in preloaded offline data!');
+        }
+        foreach ($quickSearchCondGroup->getConditions() as $condition) {
+            if ($condition->getExpression()->isMetaAttribute()) {
+                $filters[] = "((oRow['{$condition->getExpression()->toString()}'] || '').toString().toLowerCase().indexOf({$sQueryJs}) !== -1)";
+            } else {
+                throw new FacadeUnsupportedWidgetPropertyWarning('Quick search filters not based on simple attribute_alias not supported in preloaded offline data!');
+            }
         }
         
         if (! empty($filters)) {

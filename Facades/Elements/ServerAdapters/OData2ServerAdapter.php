@@ -33,6 +33,7 @@ use exface\UI5Facade\Exceptions\UI5ExportUnsupportedException;
 use exface\Core\Factories\DataSheetFactory;
 use exface\Core\Interfaces\DataSheets\DataSheetInterface;
 use exface\UrlDataConnector\QueryBuilders\AbstractUrlBuilder;
+use exface\Core\Interfaces\Widgets\iHaveFilters;
 
 
 /**
@@ -240,6 +241,18 @@ JS;
         $prefillData = $this->getDataSheetToPrefill($widget);
         $this->checkDataSheetExportable($prefillData, $e);
         
+        if ($widget instanceof iHaveQuickSearch) {
+            $quickSearchCondGroup = $widget->getQuickSearchConditionGroup();
+            if ($quickSearchCondGroup->countNestedGroups(false) > 0) {
+                $e->addError('Quick search filters with custom condition_group not supported!');
+            }
+            foreach ($quickSearchCondGroup->getConditions() as $condition) {
+                if (! $condition->getExpression()->isMetaAttribute()) {
+                    $e->addError('Quick search filters not based on simple attribute_alias not supported!');
+                }
+            }
+        }
+        
         if ($e->hasErrors()) {
             throw $e;
         }
@@ -328,11 +341,13 @@ JS;
         
         $localFilters = json_encode($this->getAttributeAliasesForLocalFilters($object));
         $quickSearchFilters = [];
-        if ($widget instanceof iHaveQuickSearch) {            
-            foreach ($widget->getAttributesForQuickSearch() as $attr) {
-                $quickSearchFilters[] = $attr->getAlias();
+        if ($widget instanceof iHaveQuickSearch) {
+            foreach ($widget->getQuickSearchConditionGroup()->getConditions() as $condition) {
+                if ($condition->getExpression()->isMetaAttribute()) {
+                    $quickSearchFilters[] = $condition->getExpression()->toString();
+                }
             }
-            if (count($quickSearchFilters) !== 0) {
+            if (! empty($quickSearchFilters)) {
                 $quickSearchFilters = json_encode($quickSearchFilters);
             }          
         }
