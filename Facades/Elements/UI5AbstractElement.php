@@ -574,9 +574,26 @@ JS;
      * 
      * @return bool
      */
-    public function getNeedsContainerContentPadding() : bool
+    public function needsContainerContentPadding() : bool
     {
         return ! (($this->getWidget() instanceof iFillEntireContainer) || $this->getWidget()->getWidth()->isMax());
+    }
+    
+    /**
+     * Returns TRUE if the element requires a container height to scale properly (like sap.ui.table.Table).
+     * 
+     * Some UI5 controls do not scale properly inside layouts: e.g. sap.ui.table.Table or various page-like
+     * controls placed in another page or in an ObjectPageLayout. These cases require workarounds for the
+     * controls to be displayed in full height.
+     * 
+     * By default this method returns FALSE. It should be overridden in facade elements that use 
+     * UI5 controls mentioned above.
+     * 
+     * @return bool
+     */
+    public function needsContainerHeight() : bool
+    {
+        return false;
     }
     
     /**

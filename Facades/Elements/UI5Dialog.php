@@ -48,6 +48,9 @@ class UI5Dialog extends UI5Form
     const PREFILL_WITH_CONTEXT = 'context';
     const PREFILL_WITH_ANY = 'any';
     
+    const CONTROLLER_METHOD_FIX_HEIGHT = 'fixHeight';
+    const CONTROLLER_METHOD_CLOSE_DIALOG = 'closeDialog';
+    
     /**
      * 
      * {@inheritDoc}
@@ -71,7 +74,7 @@ class UI5Dialog extends UI5Form
         $controller = $this->getController();
         $controller->addOnShowViewScript("{$controller->getView()->buildJsViewGetter($this)}.getModel('view').setProperty('/_closed', false);");
         if ($this->isMaximized() === false) {
-            $controller->addMethod('closeDialog', $this, 'oEvent', <<<JS
+            $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
 
                 try { 
                     var oViewModel = this.getView().getModel('view');
@@ -86,7 +89,8 @@ JS
             );
             return $this->buildJsDialog();
         } else {
-            $controller->addMethod('closeDialog', $this, 'oEvent', <<<JS
+            // Controller method to close the dialog
+            $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
 
                 var oViewModel = this.getView().getModel('view');
                 oViewModel.setProperty('/_prefill/current_data_hash', null); 
@@ -95,10 +99,43 @@ JS
                 {$triggerElement->buildJsTriggerActionEffects($triggerAction)}
 JS
             );
+            
+            // Controller method to apply height-fix for inner controls with virtual scrolling
             if ($this->isObjectPageLayout()) {
-                return $this->buildJsPage($this->buildJsChildrenConstructors());
-            } else {
+                $controller->addMethod(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', <<<JS
+    
+                    var oPage = sap.ui.getCore().byId('{$this->getid()}');
+                    var jqPageCont = $('#{$this->getid()}-cont');
+                    var iHeightContent = jqPageCont.height();
+                    var iHeightHeader = 0;
+                    jqPageCont.find('.sapUxAPObjectPageHeaderDetails').each(function() {
+                        iHeightHeader += $(this).height();
+                    });
+                    jqPageCont.find('.exf-section-fullheight').each(function(){
+                        var sId = $(this).attr('id');
+                        var oPanel;
+                        if (! sId) return;
+                        oPanel = sap.ui.getCore().byId(sId);
+                        if (! oPanel) return;
+                        oPanel.setHeight((iHeightContent - iHeightHeader) + 'px');
+                    });
+JS
+                );
+                $fixInnerPanelHeightJs = $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', $oControllerJs);
+                $this->getController()->addOnShowViewScript($fixInnerPanelHeightJs, false);
+                $this->getController()->addOnInitScript(<<<JS
+                    
+                        sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}'), function(){
+                            {$fixInnerPanelHeightJs}
+                        });
+JS
+                );
+            }
+            
+            if ($this->isObjectPageLayout()) {
                 return $this->buildJsPage($this->buildJsObjectPageLayout($oControllerJs), $oControllerJs);
+            } else {
+                return $this->buildJsPage($this->buildJsChildrenConstructors());
             }
         }        
     }
@@ -113,7 +150,7 @@ JS
         $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget) {
             return $widget->isHidden() === false;
         });
-        return $widget->hasHeader() === false && count($visibleChildren) === 1 && $visibleChildren[0] instanceof iFillEntireContainer && ! $visibleChildren[0] instanceof Tabs;
+        return ! ($widget->hasHeader() === false && count($visibleChildren) === 1 && $visibleChildren[0] instanceof iFillEntireContainer && ! $visibleChildren[0] instanceof Tabs);
     }
     
     /**
@@ -462,7 +499,7 @@ JS;
         new sap.m.Page("{$this->getId()}", {
             title: "{$this->getCaption()}",
             showNavButton: true,
-            navButtonPress: {$this->getController()->buildJsMethodCallFromView('closeDialog', $this, $oControllerJs)},
+            navButtonPress: {$this->getController()->buildJsMethodCallFromView(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, $oControllerJs)},
             content: [
                 {$content_js}
             ],
@@ -470,10 +507,20 @@ JS;
                 {$this->buildJsPageHeaderContent($oControllerJs)}
             ],
             footer: {$this->buildJsFloatingToolbar()}
-        }).addStyleClass('exf-dialog-page')
+        }).addStyleClass('{$this->buildCssElementClass()}')
         {$this->buildJsPseudoEventHandlers()}
 
 JS;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Form::buildCssElementClass()
+     */
+    public function buildCssElementClass()
+    {
+        return 'exf-dialog-page' .  ($this->getWidget()->isFilledBySingleWidget() ? ' exf-dialog-filled' : '');
     }
         
     /**
@@ -655,7 +702,7 @@ JS;
                 // Large widgets need to be handled differently if the fill the entire dialog (i.e. being
                 // the only visible widget). In this case, we don't need any layout - just the big filling
                 // widget.
-                case (! $this->getFacade()->getElement($child)->getNeedsContainerContentPadding()):
+                case (! $this->getFacade()->getElement($child)->needsContainerContentPadding()):
                     if ($widget->countWidgetsVisible() === 1) {
                         $hasSingleVisibleChild = true;
                     }
@@ -675,17 +722,28 @@ JS;
         // Build an ObjectPageSection for the non-tab elements
         if (! empty($nonTabChildrenWidgets)) {
             $sectionContent = '';
+            $fullHeight = false;
             if ($hasSingleVisibleChild || $paddingNeeded === false) {
                 foreach ($nonTabChildrenWidgets as $child) {
                     $sectionContent .= $this->getFacade()->getElement($child)->buildJsConstructor() . ',';
                 }
-                $sectionContent = substr($sectionContent, 0, -1);                
                 $sectionCssClass = 'sapUiNoContentPadding';
             } else {
                 $sectionContent = $this->buildJsLayoutConstructor($nonTabChildrenWidgets);
                 $sectionCssClass = 'sapUiTinyMarginTop';
             }
-            $js .= $this->buildJsObjectPageSection($sectionContent, $sectionCssClass);
+            
+            
+            if ($widget->isFilledBySingleWidget()) {
+                $fillerWidget = $widget->getFillerWidget();
+                $fillerHeight = $widget->getHeight();
+                $fillerEl = $this->getFacade()->getElement($fillerWidget);
+                if ($fillerHeight->isMax() || ($fillerHeight->isPercentual() && $fillerHeight->getValue() === '100%') || $fillerEl->needsContainerHeight()) {
+                    $fullHeight = true;
+                }
+            }
+            
+            $js .= $this->buildJsObjectPageSection($sectionContent, $sectionCssClass, $fullHeight);
         }
         
         return $js;
@@ -699,9 +757,21 @@ JS;
      * @param string $content_js
      * @return string
      */
-    protected function buildJsObjectPageSection($content_js, $cssClass = null)
+    protected function buildJsObjectPageSection($content_js, $cssClass = null, bool $fullHeight = false)
     {
         $suffix = $cssClass !== null ? '.addStyleClass("' . $cssClass . '")' : '';
+        if ($fullHeight) {
+            $content_js = <<<JS
+
+                            new sap.m.Panel({
+                                height: '100%',
+                                content: [
+                                    {$content_js}
+                                ]
+                            }).addStyleClass("sapUiNoContentPadding exf-section-fullheight")
+
+JS;
+        }
         return <<<JS
 
                 // BOF ObjectPageSection
@@ -740,7 +810,7 @@ JS;
         } else {
             $cssClass = null;
             foreach ($tab->getWidgets() as $child) {
-                if ($this->getFacade()->getElement($child)->getNeedsContainerContentPadding() === true) {
+                if ($this->getFacade()->getElement($child)->needsContainerContentPadding() === true) {
                     $cssClass = '';
                     break;
                 }
@@ -791,7 +861,7 @@ JS;
      */
     public function buildJsCloseDialog() : string
     {
-        return $this->getController()->buildJsMethodCallFromController('closeDialog', $this, '') . ';';
+        return $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, '') . ';';
     }
     
     /**

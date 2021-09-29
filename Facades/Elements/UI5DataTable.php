@@ -1417,4 +1417,9 @@ JS;
         $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
         return $this->buildJsDataResetter() . ';' . $this->buildJsEditableChangesWatcherReset() . ';' . $configuratorElement->buildJsResetter();
     }
+    
+    public function needsContainerHeight() : bool
+    {
+        return $this->isWrappedInDynamicPage() || $this->isUiTable();
+    }
 }

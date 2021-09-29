@@ -222,9 +222,9 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::getNeedsContainerContentPadding()
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::needsContainerContentPadding()
      */
-    public function getNeedsContainerContentPadding() : bool
+    public function needsContainerContentPadding() : bool
     {
         return false;
     }

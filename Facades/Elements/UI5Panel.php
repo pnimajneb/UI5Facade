@@ -187,7 +187,7 @@ JS;
         }
         
         foreach ($widget->getWidgets() as $child) {
-            if ($this->getFacade()->getElement($child)->getNeedsContainerContentPadding() === true) {
+            if ($this->getFacade()->getElement($child)->needsContainerContentPadding() === true) {
                 return true;
             }
         }
