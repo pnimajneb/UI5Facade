@@ -276,16 +276,17 @@ JS;
         }
         
         foreach ($sheet->getColumns() as $col) {
-            if ($col->isAttribute() === false) {
-                $e->addError('Only regular attributes supported: "' . $col->getExpressionObj()->toString() . '"');
+            $colExpr = $col->getExpressionObj();
+            if (! $colExpr->isMetaAttribute() && ! $colExpr->isEmpty() && ! $colExpr->isConstant()) {
+                $e->addError('Only meta attributes and constants (strings, numbers) supported as data values: "' . $colExpr->toString() . '" is not an attribute of object "' . $sheet->getMetaObject()->getAliasWithNamespace() . '"');
             }
-            if (! $col->getAttribute()->getRelationPath()->isEmpty()) {
-                foreach ($col->getAttribute()->getRelationPath()->getRelations() as $rel) {
+            if ($colExpr->isMetaAttribute() && ($attr = $col->getAttribute()) && ! $attr->getRelationPath()->isEmpty()) {
+                foreach ($attr->getRelationPath()->getRelations() as $rel) {
                     if (! $rel->isForwardRelation()) {
-                        $e->addError('Reverse relations not supported: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
+                        $e->addError('Reverse relations not supported: Attribute "' . $attr->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $attr->getAliasWithRelationPath() . ')');
                     }
                     if (! $rel->getLeftKeyAttribute()->getDataAddressProperty(OData2JsonUrlBuilder::DAP_ODATA_NAVIGATIONPROPERTY)) {
-                        $e->addError('Relation not based on OData NavigationProperty: Attribute "' . $col->getAttribute()->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $col->getAttribute()->getAliasWithRelationPath() . ')');
+                        $e->addError('Relation not based on OData NavigationProperty: Attribute "' . $attr->getName() . '" of object "' . $col->getMetaObject()->getName() . '" (alias ' . $attr->getAliasWithRelationPath() . ')');
                     }
                 }
             }
@@ -309,7 +310,7 @@ JS;
         $e = new UI5ExportUnsupportedException('Cannot export object "' . $object->getName() . '" (alias ' . $object->getAliasWithNamespace() . ')');
         
         if ($object->hasDataSource() && ! ($object->getDataConnection() instanceof OData2Connector)) {
-            $e->addError('Unsupported data source: the object MUST use the OData2Connector or a derivative in its data source!');
+            $e->addError('Unsupported data source: all objects MUST use the OData2Connector or a derivative in its data source!');
         }
         if (! $object->getBehaviors()->isEmpty()) {
             $e->addError('Behaviors not supported: their logic cannot be transferred to JavaScript!');
