@@ -43,13 +43,14 @@ class UI5InputComboTable extends UI5Input
             $onChange = <<<JS
 
                         var oInput = oEvent !== undefined ? oEvent.getSource() : sap.ui.getCore().byId('{$this->getId()}');
-                        if (oInput.getValue() !== '' && $missingKeyCheckJs){
-                            oInput.fireSuggest({suggestValue: {q: oInput.getValue()}});
+                        var sText = oInput.getValue();
+                        if (sText !== '' && $missingKeyCheckJs){
+                            oInput.fireSuggest({suggestValue: {q: sText}});
                             oEvent.cancelBubble();
                             oEvent.preventDefault();
                             return false;
                         }
-                        if (oInput.getValue() === '' && $missingKeyCheckJs){
+                        if (sText === '' && $missingKeyCheckJs){
                             oInput.setValueState(sap.ui.core.ValueState.None);
                         }
 JS;
@@ -383,6 +384,7 @@ JS;
                 var bAutoSelectSingle = {$widget->getAutoselectSingleSuggestion()} ? true : false;
                 var data = oModel.getProperty('/rows');
                 var curKey = oInput.{$this->buildJsValueGetterMethod(false)};
+                var curText = oInput.getValue();
                 var curKeys = curKey.split({$delim});
                 var iRowsCnt = parseInt(oModel.getProperty("/recordsTotal"));
                 var aFoundKeys = [];
@@ -422,14 +424,21 @@ JS;
                             }
                         }
                     } else {
-                        if (bNewKeysAllowed) {
-                            oInput.setValueState(sap.ui.core.ValueState.None);
-                            oInput.{$this->buildJsSetSelectedKeyMethod('curKey', 'curKey', false)};
-                        } else {
-                            oInput
-                            .{$this->buildJsEmptyMethod()}
-                            .setValueStateText("'" + curKey + "' {$this->translate('WIDGET.INPUTCOMPBOTABLE.ERROR_INVALID_KEY')}")
-                            .setValueState(sap.ui.core.ValueState.Error);
+                        switch (true) {
+                            case bNewKeysAllowed:
+                                oInput.setValueState(sap.ui.core.ValueState.None);
+                                oInput.{$this->buildJsSetSelectedKeyMethod('curKey', 'curKey', false)};
+                                break;
+                            case curKey === '' && (! curText || curText.trim() === ''):
+                                oInput
+                                    .{$this->buildJsEmptyMethod()}
+                                    .setValueState(sap.ui.core.ValueState.None);
+                                break;
+                            default:
+                                oInput
+                                    .setValueStateText("'" + (curKey || curText) + "' {$this->translate('WIDGET.INPUTCOMPBOTABLE.ERROR_INVALID_KEY')}")
+                                    .setValueState(sap.ui.core.ValueState.Error);
+                                break;
                         }
                     }
                 }
@@ -446,6 +455,14 @@ JS;
                         oInput.closeSuggestions();
                         oInput.fireChange();
                     }, 1);
+                }
+                
+                // Remove pure-whitespace values. Otherwise they will remain while still inivisble
+                // eventually causing input values consisting of whitespaces.
+                if (curText && curText.trim() === '') {
+                    setTimeout(function(){
+                        oInput.setValue('');
+                    }, 0);
                 }
                 
 JS;
@@ -465,6 +482,12 @@ JS;
                 } else {
                     qParams.q = q;
                 }
+                
+                // Just space (or multiple) means trigger autosuggest without filtering!
+                if (qParams.q && qParams.q.trim() === '') {
+                    qParams.q = '';
+                }
+
                 var params = { 
                     action: "{$widget->getLazyLoadingActionAlias()}",
                     resource: "{$this->getPageId()}",
