@@ -560,14 +560,20 @@ JS;
         $page = $this->getWebapp()->createLoginPage($exception, $pageAlias);
         $loginPrompt = $page->getWidgetRoot();
         
+        $headers = $this->buildHeadersCommon();
+        
         if ($this->isRequestAjax($request)) {
             $responseBody = $this->buildHtmlHead($loginPrompt) . "\n" . $this->buildHtmlBody($loginPrompt);
+            $headers = array_merge($headers, $this->buildHeadersForAjax());
         } else {
             $tplPath = $this->getPageTemplateFilePathForUnauthorized();
             $renderer = new UI5FacadePageTemplateRenderer($this, $tplPath, $loginPrompt);
             $responseBody = $renderer->render();   
+            $headers = array_merge($headers, $this->buildHeadersFroHtml());
         }
         
-        return new Response(401, $this->buildHeadersAccessControl(), $responseBody);
+        $headers = array_merge($headers, $this->buildHeadersForErrors());
+        
+        return new Response(401, $headers, $responseBody);
     }
 }
