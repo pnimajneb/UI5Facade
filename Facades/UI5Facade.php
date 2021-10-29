@@ -569,7 +569,7 @@ JS;
             $tplPath = $this->getPageTemplateFilePathForUnauthorized();
             $renderer = new UI5FacadePageTemplateRenderer($this, $tplPath, $loginPrompt);
             $responseBody = $renderer->render();   
-            $headers = array_merge($headers, $this->buildHeadersFroHtml());
+            $headers = array_merge($headers, $this->buildHeadersForHtml());
         }
         
         $headers = array_merge($headers, $this->buildHeadersForErrors());
