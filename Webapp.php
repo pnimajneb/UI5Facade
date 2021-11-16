@@ -841,7 +841,7 @@ class Webapp implements WorkbenchDependantInterface
         if ($exception instanceof ExceptionInterface) {
             $logId = $exception->getId();
             $alias =  $exception->getAlias();
-            $text = $exception->getMessageTitle($this->getWorkbench());
+            $text = $exception->getMessageModel($this->getWorkbench())->getTitle();
             $description = $exception->getMessage();
             if ($logId) {
                 $title = "{i18n>MESSAGE.ERROR.SERVER_ERROR_TITLE}: Log ID $logId";
@@ -854,7 +854,7 @@ class Webapp implements WorkbenchDependantInterface
                 $description = '';
             }
             if ($alias) {
-                $text = "{i18n>MESSAGE.TYPE.{$exception->getMessageType($this->getWorkbench())}} $alias: $text";
+                $text = "{i18n>MESSAGE.TYPE.{$exception->getMessageModel($this->getWorkbench())->getType()}} $alias: $text";
             } else {
                 $text = "{i18n>MESSAGE.TYPE.ERROR}";
             }
