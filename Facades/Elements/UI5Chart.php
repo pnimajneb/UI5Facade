@@ -101,7 +101,7 @@ JS;
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
     {
         $f = $this->getFacade();
-        if ($this->getChartType() === $this->chartTypes[CHART_TYPE_HEATMAP]) {
+        if ($this->getChartType() === $this->chartTypes['CHART_TYPE_HEATMAP']) {
             $controller->addExternalModule('libs.exface.charts.ECharts', $f->buildUrlToSource('LIBS.ECHARTS.ECHARTSHEATMAP_JS'), null, 'echarts');
         } else {
             $controller->addExternalModule('libs.exface.charts.ECharts', $f->buildUrlToSource('LIBS.ECHARTS.ECHARTS_JS'), null, 'echarts');
