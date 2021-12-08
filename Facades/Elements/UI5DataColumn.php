@@ -52,13 +52,13 @@ class UI5DataColumn extends UI5AbstractElement
 
 	 new sap.ui.table.Column('{$this->getId()}', {
 	    label: new sap.ui.commons.Label({
-            text: "{$this->getCaption()}"
+            text: "{$this->getCaption()}",
+            {$this->buildJsPropertyTooltip(true)}
         }),
         autoResizable: true,
         template: {$this->buildJsConstructorForCell()},
 	    {$this->buildJsPropertyShowSortMenuEntry()}
         {$this->buildJsPropertyShowFilterMenuEntry()}
-        {$this->buildJsPropertyTooltip()}
 	    {$this->buildJsPropertyVisibile()}
 	    {$this->buildJsPropertyWidth()}
         {$this->buildJsPropertyWidthMin()}
@@ -151,11 +151,11 @@ JS;
 						popinDisplay: {$popinDisplay},
 						demandPopin: true,
 						{$this->buildJsPropertyMinScreenWidth()}
-						{$this->buildJsPropertyTooltip()}
 						{$this->buildJsPropertyWidth()}
 						header: [
                             new sap.m.Label({
-                                text: "{$this->getCaption()}"
+                                text: "{$this->getCaption()}",
+                                {$this->buildJsPropertyTooltip()}
                             })
                         ],
                         {$alignment}
@@ -214,14 +214,26 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsPropertyTooltip()
      */
-    protected function buildJsPropertyTooltip()
+    protected function buildJsPropertyTooltip(bool $includeCaption = false)
     {
-        return 'tooltip: "' . $this->escapeJsTextValue($this->buildTextTooltip()) . '",';
+        return 'tooltip: "' . $this->escapeJsTextValue($this->buildTextTooltip($includeCaption)) . '",';
     }
     
-    protected function buildTextTooltip()
+    /**
+     * 
+     * @param bool $includeCaption
+     * @return string
+     */
+    protected function buildTextTooltip(bool $includeCaption = false) : string
     {
-        return $this->getWidget()->getCaption() . ($this->getWidget()->getCaption() ? ': ' : '') . $this->getWidget()->getHint();
+        if ($includeCaption) {
+            $caption = $this->getWidget()->getCaption();
+            $hint = $this->getWidget()->getHint();
+            if ($caption && ! StringDataType::startsWith($hint, $caption)) {
+                return $caption . ': ' . $hint;
+            }
+        }
+        return $this->getWidget()->getHint() ?? '';
     }
     
     /**
