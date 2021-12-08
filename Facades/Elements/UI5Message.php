@@ -127,4 +127,14 @@ JS;
     {
         return false;
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValueSetterMethod()
+     */
+    public function buildJsValueSetterMethod($valueJs)
+    {
+        return "setText({$valueJs} || '')";
+    }
 }

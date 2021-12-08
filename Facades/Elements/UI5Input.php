@@ -38,9 +38,9 @@ class UI5Input extends UI5Value
     use JqueryInputValidationTrait;
     
     /**
-     *
+     * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsConstructor()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsConstructor()
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
@@ -221,10 +221,11 @@ JS;
      */
     public function buildJsValueSetterMethod($valueJs)
     {
+        $setValue = "setValue({$valueJs})";
         if ($valueJs === '' || $valueJs === null) {
-            return parent::buildJsValueSetterMethod($valueJs) . ".fireChange({value: ''})";
+            return "{$setValue}.fireChange({value: ''})";
         }
-        return parent::buildJsValueSetterMethod($valueJs) . ".fireChange({value: " . $valueJs . "})";
+        return "{$setValue}.fireChange({value: " . $valueJs . "})";
     }
     
     /**

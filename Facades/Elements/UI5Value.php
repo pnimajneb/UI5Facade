@@ -39,6 +39,7 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalBehaviors();
         return $this->buildJsConstructorForMainControl($oControllerJs);
     }
     
@@ -81,6 +82,16 @@ JS;
         return <<<JS
             text: {$this->buildJsValue()},
 JS;
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueSetter()
+     */
+    public function buildJsValueSetterMethod($valueJs)
+    {
+        return "setText({$valueJs} || '')";
     }
     
     /**

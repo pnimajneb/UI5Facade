@@ -75,4 +75,14 @@ JS;
     {
         return 'code';
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsValueSetterMethod()
+     */
+    public function buildJsValueSetterMethod($valueJs)
+    {
+        return "setCode({$valueJs})";
+    }
 }

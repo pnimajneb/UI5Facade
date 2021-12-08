@@ -63,6 +63,21 @@ JS;
     }
     
     /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValue()
+     */
+    public function buildJsValue()
+    {
+        // Make sure NOT to yield live ref formulas as values as this would cause an attempt to load
+        // a non-existant URI.
+        if (! $this->isValueBoundToModel() && $this->getWidget()->hasValue() && $this->getWidget()->getValueExpression()->isReference()) {
+            return '""';
+        }
+        return parent::buildJsValue();
+    }
+    
+    /**
      * 
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerExternalModules()
@@ -80,6 +95,7 @@ JS;
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalBehaviors();
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
     
@@ -111,5 +127,18 @@ JS;
     public function buildJsValueBindingPropertyName() : string
     {
         return 'src';
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueSetter()
+     */
+    public function buildJsValueSetterMethod($valueJs)
+    {
+        if ($base = $this->getWidget()->getBaseUrl()) {
+            $valueJs = "({$valueJs} ? '{$base}' : '') + ({$valueJs} || '')";
+        }
+        return "setSrc({$valueJs})";
     }
 }

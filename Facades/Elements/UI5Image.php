@@ -44,7 +44,27 @@ class UI5Image extends UI5Display
 
 JS;
     }
-            
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValue()
+     */
+    public function buildJsValue()
+    {
+        // Make sure NOT to yield live ref formulas as values as this would cause an attempt to load
+        // a non-existant URI.
+        if (! $this->isValueBoundToModel() && $this->getWidget()->hasValue() && $this->getWidget()->getValueExpression()->isReference()) {
+            return '""';
+        }
+        return parent::buildJsValue();
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsValueBindingOptions()
+     */
     public function buildJsValueBindingOptions()
     {
         $base = $this->getWidget()->getBaseUrl();
@@ -52,7 +72,7 @@ JS;
             $proxyFormatter = <<<JS
 
             var proxyUrl = "{$this->getWidget()->buildProxyUrl('xxurixx')}";
-            url = proxyUrl.replace("xxurixx", url);
+            sUrl = proxyUrl.replace("xxurixx", url);
 
 JS;
         }
@@ -60,9 +80,14 @@ JS;
             return <<<JS
 
         formatter: function(value) {
-            var url = encodeURI('{$base}' + value);
+            var sBase = encodeURI('{$base}');
+            var sUrl = value;
+            if (sUrl) {
+                sUrl = sBase + encodeURI(sUrl);
+            }
             {$proxyFormatter}
-            return url;
+
+            return (sUrl || '');
         },
 
 JS;
@@ -120,5 +145,17 @@ JS;
     {
         return '';
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueSetter()
+     */
+    public function buildJsValueSetterMethod($valueJs)
+    {
+        if ($base = $this->getWidget()->getBaseUrl()) {
+            $valueJs = "({$valueJs} ? '{$base}' : '') + ({$valueJs} || '')";
+        }
+        return "setSrc({$valueJs})";
+    }
 }
-?>
