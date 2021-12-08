@@ -48,6 +48,9 @@ class UI5DataColumn extends UI5AbstractElement
             }
         }
         
+        // The tooltips for columns of the UI table also include the column caption
+        // because columns may get quite narrow and in this case there would not be
+        // any way to see the entire caption except for using the tooltip.
         return <<<JS
 
 	 new sap.ui.table.Column('{$this->getId()}', {
