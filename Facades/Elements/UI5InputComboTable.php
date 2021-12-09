@@ -93,6 +93,17 @@ JS;
         
         $controller->addMethod('onSuggest', $this, 'oEvent', $this->buildJsDataLoader('oEvent'));
         
+        // If there are links to this combo, that point to additional column, we need a lazy load right
+        // at the start to make sure all columns are loaded. Otherwise no columns accespt value/text
+        // will have empty values.
+        $allColumnsRequiredJs = 'false';
+        foreach ($widget->getValueLinksToThisWidget() as $link) {
+            if ($link->getTargetColumnId() !== $widget->getValueColumnId() && $link->getTargetColumnId() !== $widget->getTextColumnId()) {
+                $allColumnsRequiredJs = 'true';
+                break;
+            }
+        }
+        
         if (! $this->isValueBoundToModel() && $value = $widget->getValueWithDefaults()) {
             // If the widget value is set explicitly, we either set the key only or the 
             // key and the text (= value of the input)
@@ -111,13 +122,16 @@ JS;
         } elseif ($widget->getValueAttribute() !== $widget->getTextAttribute()) {
             // If the value is to be taken from a model, we need to check if both - key
             // and value are there. If not, the value needs to be fetched from the server.
+            // Same goes for the case when some additional columns are required by widget
+            // links - the values for these columns need to be fetched to.
             // NOTE: in sap.m.MultiInput there are no tokens yet, so we tell the getter
-            // method not to rely on the explicitly!!!
+            // method not to rely on them explicitly!!!
             $missingValueJs = <<<JS
 
                 var sKey = oInput.{$this->buildJsValueGetterMethod(false)};
                 var sVal = oInput.getValue();
-                if (sKey !== '' && sVal === '') {
+                var bNeedAllCols = {$allColumnsRequiredJs};
+                if (sKey !== '' && (sVal === '' || bNeedAllCols)) {
                     {$this->buildJsValueSetter('sKey')};
                 } else {
                     oInput.setValueState(sap.ui.core.ValueState.None);
