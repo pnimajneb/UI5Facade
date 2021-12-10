@@ -200,12 +200,20 @@ JS;
         $caption = $grouper->getHideCaption() ? '' : $this->escapeJsTextValue($grouper->getCaption());
         $caption .= $caption ? ': ' : '';
         
+        // Row grouping is defined inside a sorter, so we must add a client-side sorter to have the
+        // groups. Since the actual sorting is normally done elsewhere (in the server or by the data,
+        // loader) we use a sorter with a custom compare function here, that does not really do anything.
+        // This is important, as the built-in sorter yielded very strage result for some data types like
+        // dates.
         return <<<JS
         
                 sorter: new sap.ui.model.Sorter(
     				'{$grouper->getGroupByColumn()->getDataColumnName()}', // sPath
     				{$sorterDir}, // bDescending
-    				true // vGroup
+    				true, // vGroup
+                    function(a, b) { // fnComparator
+                        return 0;
+                    }
     			),
     			groupHeaderFactory: function(oGroup) {
                     // TODO add support for counters
