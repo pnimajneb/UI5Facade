@@ -84,10 +84,10 @@ JS;
 JS;
             } else {
                 $script = <<<JS
-                
-            var oCtxt = oEvent.getSource().getBindingContext();
-            var path = oCtxt.sPath;
-            oCtxt.getModel().setProperty(path, oEvent.getParameters().selected ? 1 : 0);
+            
+            var oSelect = oEvent.getSource();
+            var sPath = oSelect.getBinding('selected').getPath();
+            oSelect.getModel().setProperty(sPath, oEvent.getParameters().selected ? 1 : 0);
             
 JS;
             }
