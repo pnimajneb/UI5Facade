@@ -255,6 +255,7 @@ JS;
         // Register conditional reactions
         $this->registerDisableConditionAtLinkedElement();
         $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
+        $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
         $this->registerLiveReferenceAtLinkedElement();
         return;
     }
