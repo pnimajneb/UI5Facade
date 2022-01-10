@@ -301,7 +301,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsChildrenConstructors()
      */
-    public function buildJsChildrenConstructors() : string
+    public function buildJsChildrenConstructors(array $widgets = null) : string
     {
         $js = '';
         foreach ($this->getWidget()->getWidgets() as $widget) {
