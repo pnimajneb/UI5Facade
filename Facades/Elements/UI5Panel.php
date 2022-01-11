@@ -187,7 +187,14 @@ JS;
         }
         
         foreach ($widget->getWidgets() as $child) {
-            if ($this->getFacade()->getElement($child)->needsContainerContentPadding() === true) {
+            // As soon as we know, that at least one child needs padding, we need the form layout
+            $childEl = $this->getFacade()->getElement($child);
+            if ($childEl->needsContainerContentPadding() === true) {
+                return true;
+            }
+            // Same goes for any child having explicit non-maximum width
+            $width = $child->getWidth();
+            if ($width->isUndefined() === false && $width->isMax() === false && ! $width->getValue() !== '100%') {
                 return true;
             }
         }
