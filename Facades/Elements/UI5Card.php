@@ -83,7 +83,7 @@ JS;
         if ($dim->isMax()){
             return $js . '"100%",';
         } else {
-            return $js . '"' . $dim->getValue() . '",';
+            return $js . '"' . $this->buildCssWidth() . '",';
         }
     }
 }
