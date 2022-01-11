@@ -9,8 +9,10 @@ class UI5DataSpreadSheet extends UI5AbstractElement
 {    
     use JExcelTrait;
     use UI5DataElementTrait {
-        
+        UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
+        JExcelTrait::buildJsDataResetter as buildJsJExcelResetter;
         JExcelTrait::buildJsDataGetter insteadof UI5DataElementTrait;
+        JExcelTrait::buildJsValueGetter insteadof UI5DataElementTrait;
     }
     
     /**
@@ -140,4 +142,8 @@ JS;
         return '[]';
     }
 
+    protected function buildJsDataResetter() : string
+    {
+        return $this->buildJsDataResetterViaTrait() . ';' . $this->buildJsJExcelResetter();
+    }
 }
