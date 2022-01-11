@@ -132,9 +132,9 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsValidator()
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryInputValidationTrait::buildJsValidator()
      */
-    public function buildJsValidator()
+    public function buildJsValidator(?string $valJs = null)
     {
         return 'true';
     }
