@@ -5,6 +5,7 @@ use exface\Core\Widgets\Dashboard;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Factories\WidgetFactory;
 use exface\Core\Widgets\Card;
+use exface\Core\Widgets\Tile;
 
 /**
  * A `Dashboard` is a Widget to display multiple Widgets in an grid-like layout, to let the user have an
@@ -104,38 +105,38 @@ JS;
     {
         $js = '';
         foreach ($widgets as $widget){
-            if (! ($widget instanceof Box)) {
-                $box = WidgetFactory::create($this->getWidget()->getPage(), 'Card', $this->getWidget());
-                $box->addWidget($widget);
+            if (! ($widget instanceof Card) && ! ($widget instanceof Tile)) {
+                $card = WidgetFactory::create($this->getWidget()->getPage(), 'Card', $this->getWidget());
+                $card->addWidget($widget);
                 if ($widget->getHeight()->isUndefined() === false && $widget->getHeight()->isMax() === false) {
-                    $box->setHeight($widget->getHeight()->getValue());
+                    $card->setHeight($widget->getHeight()->getValue());
                     $widget->setHeight("100%");
                 }
                 if ($widget->getWidth()->isUndefined() === false && $widget->getWidth()->isMax() === false) {
-                    $box->setWidth($widget->getWidth()->getValue());
+                    $card->setWidth($widget->getWidth()->getValue());
                     $widget->setWidth("100%");
                 }
             } else {
-                $box = $widget;
+                $card = $widget;
             }
             
             // check whether the whith of the current set of widgets is given as destinct integer or with an unit
             if ($containerWidthIsInUnits === false){
                 // calculate the count columns the box will occupy
-                $widthUnits = $this->getChildrenElementWidthUnitCount($box);
+                $widthUnits = $this->getChildrenElementWidthUnitCount($card);
             } else {
                 // check if there is an facade specific value given, like 'px'
-                if ($box->getWidth()->isFacadeSpecific()){
+                if ($card->getWidth()->isFacadeSpecific()){
                     $widthUnits = 1;
-                } elseif ($box->getWidth()->isUndefined() === false) {
+                } elseif ($card->getWidth()->isUndefined() === false) {
                     // take the number of columns straight from the widgets width
-                    $widthUnits = $box->getWidth()->getValue();
-                    $box->setWidth("100%");
+                    $widthUnits = $card->getWidth()->getValue();
+                    $card->setWidth("100%");
                 } 
             }
             
-            if ($widthUnits) {
-                $element = $this->getFacade()->getElement($box);
+            $element = $this->getFacade()->getElement($card);
+            if ($widthUnits && ! ($card instanceof Tile)) {
                 $element->setLayoutData("new sap.f.GridContainerItemLayoutData({columns: {$widthUnits}})");
             }
             
