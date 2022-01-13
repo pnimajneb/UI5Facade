@@ -13,6 +13,7 @@ use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 use exface\Core\CommonLogic\WidgetDimension;
 use exface\Core\Factories\WidgetDimensionFactory;
 use exface\Core\Widgets\ImageGallery;
+use exface\Core\Interfaces\Widgets\iHaveContextualHelp;
 
 /**
  * Generates a `sap.m.Panel` with a `sap.ui.layout.form.Form` inside for a Panel widget.
@@ -100,7 +101,12 @@ class UI5Panel extends UI5Container
 
 JS;
         if ($this->hasPageWrapper() === true) {
-            $headerContent = $this->getWidget()->getHideHelpButton() === false ? $this->buildJsHelpButtonConstructor($oControllerJs) : '';
+            $widget = $this->getWidget();
+            if ($widget instanceof iHaveContextualHelp && $widget->getHideHelpButton() === false) {
+                $headerContent = $this->buildJsHelpButtonConstructor($oControllerJs);
+            } else {
+               $headerContent = '';
+            }
             return $this->buildJsPageWrapper($panel, '', $headerContent);
         }
         
