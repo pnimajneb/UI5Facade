@@ -31,13 +31,37 @@ use exface\UI5Facade\Facades\Formatters\UI5EnumFormatter;
 use exface\Core\Interfaces\DataSheets\DataSheetInterface;
 use exface\UI5Facade\Facades\Formatters\UI5TimeFormatter;
 use exface\Core\Facades\AbstractFacade\AbstractFacade;
-use exface\UI5Facade\Facades\Templates\UI5FacadePageTemplateRenderer;
 use exface\Core\Interfaces\Exceptions\ErrorExceptionInterface;
 use exface\Core\Exceptions\Facades\FacadeLogicError;
 use GuzzleHttp\Psr7\Response;
+use exface\UI5Facade\Facades\Templates\UI5CustomPlaceholders;
+use exface\Core\Facades\AbstractAjaxFacade\Templates\FacadePageTemplateRenderer;
 
 /**
  * Renders SAP Fiori apps using OpenUI5 or SAP UI5.
+ * 
+ * ## Page templates
+ * 
+ * As suggested by the Fiori guidelines, the UI can be rendered spacier or more condencend to make it
+ * better suitable for different screen sizes. This can be controlled by setting the `content_density`
+ * property of the page template.
+ * 
+ * ### Template files and placeholders
+ * 
+ * This facade uses *.html files as templates (to be placed in `page_template_file_path`). Along with
+ * regula HTML and JavaScript these templates can contain the following placeholders
+ * 
+ * - `[#~head#]` - replaced by the output of `Facade::buildHtmlHead($widget, true)`
+ * - `[#~body#]` - replaced by the output of `Facade::buildHtmlBody($widget)`
+ * - `[#~widget:<widget_type>#] - renders a widget, e.g. `[#~widget:NavCrumbs#]`
+ * - `[#~url:<page_selector>#]` - replaced by the URL to the page identified by the 
+ * `<page_selector>` (i.e. UID or alias with namespace) or to the server adress
+ * - `[#~page:<attribute_alias|url>#]` - replaced by the value of a current page's attribute or URL
+ * - `[#~config:<app_alias>:<config_key>#]` - replaced by the value of the configuration option
+ * - `[#~translate:<app_alias>:<message>#]` - replaced by the message's translation to current locale
+ * - `[#~session:<option>#]` - replaced by session option values
+ * - `[#~facade:<property>]` - replaced by the value of a current facade's attribute
+ * - `[#ui5:density_body_class#]` - replaced by CSS classes for the `<body>` tag
  * 
  * ## Custom facade options for widgets
  * 
@@ -510,15 +534,14 @@ JS;
     }
     
     /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::buildHtmlPage()
+     * {@inheritdoc}
+     * @see AbstractAjaxFacade::getTemplateRenderer()
      */
-    protected function buildHtmlPage(WidgetInterface $widget, string $pagetTemplateFilePath = null) : string
+    protected function getTemplateRenderer(WidgetInterface $widget) : FacadePageTemplateRenderer
     {
-        $pagetTemplateFilePath = $pagetTemplateFilePath ?? $this->getPageTemplateFilePath();
-        $renderer = new UI5FacadePageTemplateRenderer($this, $pagetTemplateFilePath, $widget);
-        return $renderer->render();   
+        $renderer = parent::getTemplateRenderer($widget);
+        $renderer->addPlaceholder(new UI5CustomPlaceholders($this));
+        return $renderer;
     }
     
     /**
@@ -567,8 +590,8 @@ JS;
             $headers = array_merge($headers, $this->buildHeadersForAjax());
         } else {
             $tplPath = $this->getPageTemplateFilePathForUnauthorized();
-            $renderer = new UI5FacadePageTemplateRenderer($this, $tplPath, $loginPrompt);
-            $responseBody = $renderer->render();   
+            $renderer = $this->getTemplateRenderer($loginPrompt);
+            $responseBody = $renderer->render($tplPath);   
             $headers = array_merge($headers, $this->buildHeadersForHtml());
         }
         
