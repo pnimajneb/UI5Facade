@@ -123,7 +123,7 @@ JS;
      * 
      * @see \exface\UI5Facade\Facades\Elements\UI5Value::getRenderCaptionAsLabel()
      */
-    protected function getRenderCaptionAsLabel() : bool
+    protected function getRenderCaptionAsLabel(bool $default = false) : bool
     {
         return false;
     }
