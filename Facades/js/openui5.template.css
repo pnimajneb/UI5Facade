@@ -120,10 +120,10 @@ table.jexcel.jexcel_overflow {border-top: none; border-left: none;}
 table.jexcel > thead > tr > td {padding-left: 8px; padding-right: 8px; text-align: left !important;}
 table.jexcel > tbody > tr, table.jexcel > thead > tr {height: 33px;}
 table.jexcel > tbody > tr.selected {background-color: #e5f0fa}
-table.jexcel > tbody > tr > td:not(.readonly) {border-top-color: #89919a; border-left-color: #89919a;}
-table.jexcel > tbody > tr > td:not(.readonly) + td.readonly {border-left-color: #89919a;}
-table.jexcel > tbody > tr > td:last-child:not(.readonly) {border-right-color: #89919a}
-table.jexcel > tbody > tr:last-child > td:not(:first-child):not(.readonly) {border-bottom-color: #89919a;}
+table.jexcel > tbody > tr > td:not(.readonly):not(.highlight-selected) {border-top-color: #89919a; border-left-color: #89919a;}
+table.jexcel > tbody > tr > td:not(.readonly):not(.highlight-selected) + td.readonly {border-left-color: #89919a;}
+table.jexcel > tbody > tr > td:last-child:not(.readonly):not(.highlight-selected) {border-right-color: #89919a}
+table.jexcel > tbody > tr:last-child > td:not(:first-child):not(.readonly):not(.highlight-selected) {border-bottom-color: #89919a;}
 table.jexcel > thead > tr > td {border-top-color: rgb(229, 229, 229); border-left-color: rgb(229, 229, 229); background-color: #f2f2f2;}
 table.jexcel > tbody > tr > td:first-child {background-color: #f2f2f2; border-top-color: rgb(229, 229, 229)}
 table.jexcel > tbody > tr > td.readonly {color:inherit;}
