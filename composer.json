@@ -30,8 +30,9 @@
 		"npm-asset/leaflet.locatecontrol" : "~0.72",
 		"npm-asset/esri-leaflet" : "^3.0",
 		"npm-asset/leaflet.markercluster" : "^1.4",
-		"npm-asset/tinycolor2": "^1.4.2",
-		"npm-asset/tinygradient": "^1.1.4"
+		"npm-asset/tinycolor2" : "^1.4.2",
+		"npm-asset/tinygradient" : "^1.1.4",
+		"npm-asset/jspreadsheet-ce" : "^4.10"
 	},
 	"autoload" : {
 		"psr-4" : {

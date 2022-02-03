@@ -36,7 +36,7 @@ class UI5DataSpreadSheet extends UI5AbstractElement
         $chart = <<<JS
         
                 new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getId()}_jexcel\" class=\"{$this->buildCssElementClass()}\"></div>",
+                    content: "<div id=\"{$this->getId()}_jexcel\" class=\"{$this->buildCssElementClass()} sapUiTable\"></div>",
                     afterRendering: function(oEvent) {
                         {$this->buildJsDestroy()}
                         {$this->buildJsJExcelInit()}
@@ -47,7 +47,7 @@ class UI5DataSpreadSheet extends UI5AbstractElement
                 
 JS;
                             
-        return $this->buildJsPanelWrapper($chart, $oControllerJs);
+        return $this->buildJsPanelWrapper($chart, $oControllerJs) . ".addStyleClass('sapUiNoContentPadding exf-panel-no-border')";
     }
     
     protected function buildJsFixOverflowVisibility() : string
@@ -145,5 +145,28 @@ JS;
     protected function buildJsDataResetter() : string
     {
         return $this->buildJsDataResetterViaTrait() . ';' . $this->buildJsJExcelResetter();
+    }
+    
+    protected function buildJsFixAutoColumnWidth() : string
+    {
+        return '';
+    }
+    
+    public function buildJsBusyIconShow($global = false)
+    {
+        if ($global) {
+            return 'sap.ui.core.BusyIndicator.show(0);';
+        } else {
+            return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusyIndicatorDelay(0).setBusy(true);';
+        }
+    }
+    
+    public function buildJsBusyIconHide($global = false)
+    {
+        if ($global) {
+            return 'sap.ui.core.BusyIndicator.hide();';
+        } else {
+            return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusy(false);';
+        }
     }
 }
