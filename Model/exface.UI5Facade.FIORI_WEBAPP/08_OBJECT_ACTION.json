@@ -90,7 +90,7 @@
                 }
             },
             "APP": "0x11e837e87a640bfd91380205857feb80",
-            "USE_IN_OBJECT_BASKET_FLAG": "0",
+            "USE_IN_OBJECT_BASKET_FLAG": 0,
             "DOCS": ""
         }
     ],
