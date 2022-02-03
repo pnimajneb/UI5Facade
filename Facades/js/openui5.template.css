@@ -116,6 +116,7 @@ table.jexcel.jexcel_overflow {border-top: none; border-left: none;}
 .jexcel>thead.footer>tr>td {background-color: white; font-weight: bold; border-top: 1px solid #666;}
 .jexcel td {overflow: hidden; text-overflow: ellipsis;}
 .jdropdown-container.slide-bottom-in {bottom: initial !important;}
+.jexcel .editor > input {font-family: inherit; font-size: inherit; text-align: inherit !important; padding: 6px;}
 /* jExcel style as UI5 tables */
 table.jexcel > thead > tr > td {padding-left: 8px; padding-right: 8px; text-align: left !important;}
 table.jexcel > tbody > tr, table.jexcel > thead > tr {height: 33px;}
@@ -127,6 +128,7 @@ table.jexcel > tbody > tr:last-child > td:not(:first-child):not(.readonly):not(.
 table.jexcel > thead > tr > td {border-top-color: rgb(229, 229, 229); border-left-color: rgb(229, 229, 229); background-color: #f2f2f2;}
 table.jexcel > tbody > tr > td.jexcel_row {background-color: #f2f2f2; border-top-color: rgb(229, 229, 229) !important;}
 table.jexcel > tbody > tr > td.readonly {color:inherit;}
+table.jexce td > input {font-family: inherit;}
 
 /* UI5DashBoard Widget GridContainer layout for columns*/
 .dashboard_gridcontainer_layout {grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important; grid-auto-rows: auto !important;}
