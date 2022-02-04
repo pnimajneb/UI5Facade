@@ -106,6 +106,8 @@ img.sapMImg:not(.sapUxAPObjectPageHeaderObjectImage) {display: block; max-width:
 .sapUxAPObjectPageHeaderContent {padding-top: 1rem;}
 /* sap.m.Table group header rows barely different from striped rows */
 .sapMGHLICell {padding: 0 1rem; border-top: 2px solid #ccc !important; font-weight: bold;}
+/* Virtual touch-scrollbar gets too wide on Chrome (see ObjectPageLayout) */
+.sapMScrollBarTouch > .sapMScrollBarInnerDiv {width: 0.75rem;}
 
 /* jExcel */
 .jexcel_container {width: 100%; padding: 0 !important;}
