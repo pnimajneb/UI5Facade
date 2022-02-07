@@ -240,7 +240,7 @@ const exfLauncher = {};
 
 			showMenu : function (oButton){
 				var sPopoverId = oButton.data('widget')+"_popover";
-				var iPopoverWidth = "350px";
+				var iPopoverWidth = sPopoverId === 'ContextBar_UserExfaceCoreNotificationContext' ? "500px" : "350px";
 				var iPopoverHeight = "300px";
 				var oPopover = sap.ui.getCore().byId(sPopoverId);
 				if (oPopover) {
@@ -289,18 +289,56 @@ const exfLauncher = {};
 						var viewMatch = data.match(/sap.ui.jsview\("(.*)"/i);
 			            if (viewMatch !== null) {
 			                var view = viewMatch[1];
-			                //$('body').append(data);
 			            } else {
 			            	_oComponent.showAjaxErrorDialog(jqXHR);
 			            }
 			            
-			            var oPopoverPage = oPopover.getContent()[0].getPages()[0];
-			            oPopoverPage.removeAllContent();
-			            
+			            var oPopoverPage = oPopover.getContent()[0].getPages()[0];			            
 			            var oView = _oComponent.runAsOwner(function() {
 		            		return sap.ui.view({type:sap.ui.core.mvc.ViewType.JS, viewName:view});
 	            		}); 
+	            		var oEvent;
+	            		
+	            		var oNavInfoOpen = {
+            				from: null,
+            				fromId: null,
+            				to: oView || null,
+            				toId: (oView ? oView.getId() : null),
+            				firstTime: true,
+            				isTo: false,
+            				isBack: false,
+            				isBackToTop: false,
+            				isBackToPage: false,
+            				direction: "initial"
+            			};
+            			
+			            oPopoverPage.removeAllContent();
+            			
+            			// Before-open events
+            			oNavInfoOpen.to = oView;
+                        oNavInfoOpen.toId = oView.getId();
+	            		
+            			oEvent = jQuery.Event("BeforeShow", oNavInfoOpen);
+            			oEvent.srcControl = oPopover.getContent()[0];
+            			oEvent.data = {};
+            			oEvent.backData = {};
+            			oView._handleEvent(oEvent);  
+            			
+                        oView.fireBeforeRendering();
+	            		
+	            		// After-open events
 		            	oPopoverPage.addContent(oView);
+            			
+            			oEvent = jQuery.Event("AfterShow", oNavInfoOpen);
+            			oEvent.srcControl = oPopover.getContent()[0];
+            			oEvent.data = {};
+            			oEvent.backData = {};
+            			oView._handleEvent(oEvent);
+            			
+                        oView.fireAfterRendering();
+                        
+                        // TODO need close-events here?
+
 			        	oPopover.setBusy(false);
 						
 					},
