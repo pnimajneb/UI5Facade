@@ -356,7 +356,7 @@ JS;
             {$this->buildJsPropertyContentHeight()}
             {$this->buildJsPropertyContentWidth()}
             stretch: jQuery.device.is.phone,
-            title: "{$this->getCaption()}",
+            title: {$this->escapeString($this->getCaption())},
 			content : [ {$content} ],
             buttons : [new sap.m.Button()],
             beforeOpen: function(oEvent) {

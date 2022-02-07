@@ -403,7 +403,7 @@ JS;
                                                 var oWrapper = new sap.m.Dialog({
                                                     stretch: true,
                                                     verticalScrolling: false,
-                                                    title: "{$this->getCaption()}",
+                                                    title: {$this->escapeString($this->getCaption())},
                                         			content: [ {$oViewContent} ],
                                                     buttons: [
                                                         new sap.m.Button({

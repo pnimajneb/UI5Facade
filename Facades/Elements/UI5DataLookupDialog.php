@@ -92,7 +92,7 @@ JS;
             contentHeight: "80%",
             contentWidth: "70%",
             stretch: jQuery.device.is.phone,
-            title: "{$this->getCaption()}",
+            title: {$this->escapeString($this->getCaption())},
 			buttons : [ {$this->buildJsDialogButtons(false)} ],
 			content : [ {$this->buildJsDialogContent()} ],
             {$prefill}
