@@ -3,6 +3,7 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Widgets\SplitPanel;
 use exface\Core\Widgets\Split;
+use exface\Core\Widgets\Dialog;
 
 /**
  * Renders a Split widget as sap.ui.layout.ResponsiveSplitter
@@ -101,5 +102,15 @@ JS;
     protected function getOrientation()
     {
         return $this->getWidget()->isSideBySide() === true  ? 'Horizontal' : 'Vertical';
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::needsContainerHeight()
+     */
+    public function needsContainerHeight() : bool
+    {
+        return true;
     }
 }

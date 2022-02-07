@@ -101,16 +101,21 @@ JS
             );
             
             // Controller method to apply height-fix for inner controls with virtual scrolling
+            // This piece of JS code will calculate the available vertical space (by subtracting
+            // any header height from the total page height) and apply it to the section marked
+            // with the CSS class exf-section-fullheight (see buildJsObjectPageSection()).
+            // Unfortunately some widgets in the header (like progress bars) make the height
+            // change a little, so we use setTimeout() to adjust the height again
             if ($this->isObjectPageLayout()) {
                 $controller->addMethod(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', <<<JS
     
                     var oPage = sap.ui.getCore().byId('{$this->getid()}');
                     var jqPageCont = $('#{$this->getid()}-cont');
-                    var iHeightContent = jqPageCont.height();
+                    var iHeightContent = jqPageCont.outerHeight();
                     var iHeightHeader = 0;
-                    jqPageCont.find('.sapUxAPObjectPageHeaderDetails').each(function() {
-                        iHeightHeader += $(this).height();
-                    });
+                    iHeightHeader = jqPageCont.find('.sapUxAPObjectPageHeaderDetails').toArray().reduce(function(iSum, oEl) {
+                        return iSum + $(oEl).outerHeight();
+                    }, 0);
                     jqPageCont.find('.exf-section-fullheight').each(function(){
                         var sId = $(this).attr('id');
                         var oPanel;
@@ -122,10 +127,16 @@ JS
 JS
                 );
                 $fixInnerPanelHeightJs = $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', $oControllerJs);
+                // Adjust the height every time the view is shown
                 $this->getController()->addOnShowViewScript($fixInnerPanelHeightJs, false);
+                // Adjust the height every time the size of the dialog or the sap.uxap.ObjectPageHeaderContent changes
                 $this->getController()->addOnInitScript(<<<JS
                     
                         sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}'), function(){
+                            {$fixInnerPanelHeightJs}
+                        });
+
+                        sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}').getContent()[0]._getHeaderContent(), function(){
                             {$fixInnerPanelHeightJs}
                         });
 JS
