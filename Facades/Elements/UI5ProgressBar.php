@@ -149,9 +149,28 @@ JS;
      */
     protected function buildJsColorCssSetter(string $oControlJs, string $sColorJs) : string
     {
-        return "setTimeout(function(){ $oControlJs.$().find('.sapMPIBar').css('background-color', $sColorJs); }, 200)";
+        // Set the color explicitly and make sure it is set again every time the progressbar
+        // is resized - this happens very often in tables: e.g. after navigating back from
+        // a large-dialog-view.
+        return <<<JS
+        
+        setTimeout(function(){ 
+            var sColorVal = $sColorJs;
+            $oControlJs.$().find('.sapMPIBar').css('background-color', sColorVal); 
+            if ($oControlJs.data('_exfColored') !== true) {
+                sap.ui.core.ResizeHandler.register($oControlJs, function(){
+                    $oControlJs.$().find('.sapMPIBar').css('background-color', sColorVal);
+                });
+                $oControlJs.data('_exfColored', true);
+            } 
+        }, 0);
+JS;
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsPropertyState() : string
     {
         if ($this->getWidget() instanceof iHaveColorScale) {
