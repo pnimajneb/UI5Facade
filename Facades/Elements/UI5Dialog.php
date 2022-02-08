@@ -944,39 +944,4 @@ JS;
         }
         return null;
     }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsDataGetter($action)
-     */
-    public function buildJsDataGetter(ActionInterface $action = null)
-    {
-        $dataObj = $this->getMetaObjectForDataGetter($action);
-        
-        // If the object of the action is the same as that of the widget, treat
-        // it as a regular input.
-        if ($this->getMetaObject()->is($dataObj) || $action->getInputMapper($this->getMetaObject()) !== null) {
-            return "{oId: '{$dataObj->getId()}', rows: [ sap.ui.getCore().byId('{$this->getId()}').getModel().getData() ] }";
-        }
-        
-        return parent::buildJsDataGetter($action);
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueGetter()
-     */
-    public function buildJsValueGetter($dataColumnName = null)
-    {
-        if ($dataColumnName === null) {
-            if ($this->getMetaObject()->hasUidAttribute()) {
-                $dataColumnName = DataColumn::sanitizeColumnName($this->getMetaObject()->getUidAttributeAlias());
-            } else {
-                return parent::buildJsValueGetter($dataColumnName);
-            }
-        }
-        return "({$this->buildJsDataGetter()}.rows[0] || {})['{$dataColumnName}']";
-    }
 }
