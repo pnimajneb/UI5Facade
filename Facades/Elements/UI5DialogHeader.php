@@ -5,6 +5,7 @@ use exface\Core\Widgets\WidgetGrid;
 use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\Widgets\iDisplayValue;
+use exface\Core\Widgets\Input;
 
 /**
  * Generates the controls inside a sap.uxap.ObjectPageHeader.
@@ -19,10 +20,16 @@ class UI5DialogHeader extends UI5Container
         $js = '';
         
         foreach ($this->getWidget()->getWidgets() as $widget) {
-            if ($widget instanceof iHaveValue) {
-                $js .= $this->buildJsObjectStatus($widget) . ',';
-            } elseif ($widget instanceof WidgetGrid) {
-                $js .= $this->buildJsVerticalLayout($widget) . ',';
+            switch (true) {
+                case $widget instanceof Input:
+                    $js .= $this->getFacade()->getElement($widget)->buildJsConstructor() . ',';
+                    break;
+                case $widget instanceof iHaveValue:
+                    $js .= $this->buildJsObjectStatus($widget) . ',';
+                    break;
+                case $widget instanceof WidgetGrid:
+                    $js .= $this->buildJsVerticalLayout($widget) . ',';
+                    break;
             }
         }
         
