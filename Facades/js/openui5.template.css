@@ -86,6 +86,7 @@ html.sapUiMedia-Std-Phone .exf-tiles > .sapMPanelContent {padding-left: 0; paddi
 .exf-formcontainer-invisible {padding: 0 !important}
 .exf-panel.exf-form-mixed-width .sapUiRespGridMedia-Std-Tablet.sapUiRespGridHSpace0>.sapUiRespGridSpanM12 {padding: 0 0.75rem; box-sizing: border-box;}
 .exf-panel.exf-form-mixed-width .sapUiRespGrid {padding-right: 0; padding-left: 0;}
+.sapUiRespGrid > div > .sapMMsgStrip {margin: 0px !important;}
 
 /* HTML widgets */
 .exf-html {font-size: 0.875rem;}
@@ -138,15 +139,18 @@ table.jexce td > input {font-family: inherit;}
 .dashboard_gridcontainer_gap_margin_bottom {margin-bottom: 10px !important}
 
 /* Dialog */
-html.sap-phone .sapMDialog {min-width: 20rem !important}
-html.sap-tablet .sapMDialog, html.sap-desktop .sapMDialog {min-width: 25rem !important}
 .sapUxAPObjectPageSection.sapUiNoContentPadding > .sapUxAPObjectPageSectionContainer > .sapUxAPObjectPageSubSection > .sapUxAPBlockContainer {padding: 0;}
 .sapUxAPObjectPageSection.sapUiNoContentPadding .sapUiRespGridMedia-Std-Phone.sapUiRespGridHSpace1>.sapUiRespGridSpanS12:first-of-type {width: 100%}
 .sapUxAPObjectPageSection.sapUiNoContentPadding .sapUiRespGrid:first-of-type {padding: 0;}
 .sapUxAPObjectPageSection.sapUiNoContentPadding .sapUiRespGrid.sapUiRespGridHSpace1>div:first-of-type {margin: 0; width: 100%}
 .sapUxAPObjectPageSection.sapUiNoContentPadding {margin-bottom: 1.5rem;}
 .exf-dialog-page.exf-dialog-filled .sapUxAPObjectPageSection.sapUiNoContentPadding {margin-bottom: 0;}
-.exf-dialog-page.exf-dialog-filled .sapUxAPObjectPageSection.sapUiNoContentPadding + .sapUxAPObjectPageSection.sapUiNoContentPadding{margin-top: 1rem;}
+.exf-dialog-page.exf-dialog-filled .sapUxAPObjectPageSection.sapUiNoContentPadding + .sapUxAPObjectPageSection.sapUiNoContentPadding {margin-top: 1rem;}
+/* Dialog (non-max) */
+html.sap-phone .sapMDialog {min-width: 20rem !important}
+html.sap-tablet .sapMDialog, html.sap-desktop .sapMDialog {min-width: 25rem !important}
+/* Remove extra space at bottom of last WidgetGroup in a small dialog */
+.sapMDialog .sapUiRespGrid > .sapUiRespGridSpanS12:last-of-type > .sapUiRGLContainer > .sapUiRGLContainerCont > .sapUiRespGrid:last-of-type {padding-bottom: 0;}
 
 /* DataLookupDialog */
 .sapMDialog > .sapMDialogSection > .sapMDialogScroll {height: 100%}
