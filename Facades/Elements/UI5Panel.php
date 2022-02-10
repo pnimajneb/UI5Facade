@@ -419,11 +419,24 @@ JS;
             $title = $containerWidget->getCaption() ? 'text: "' . $containerWidget->getCaption() . '",' : '';
         }
         
+        // Hide the entire form container if all of its widgets are hidden
+        // If not hidden explicitly, the form container will have significant 
+        // height despight of being empty!
+        $hidden = true;
+        foreach ($widgets as $widget) {
+            if (! $widget->isHidden()) {
+                $hidden = false;
+                break;
+            }
+        }
+        $visible = $hidden === true || ($containerWidget !== null && $containerWidget->isHidden()) ? 'visible: false,' : '';
+        
         $title = "title: new sap.ui.core.Title({{$title}}),";
         $js .= <<<JS
     new sap.ui.layout.form.FormContainer({
         {$title}
         {$layout}
+        {$visible}
         formElements: [
             {$this->buildJsConstructorFormElement($widgets)}
         ]
