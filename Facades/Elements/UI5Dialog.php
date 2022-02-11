@@ -492,8 +492,14 @@ JS;
     protected function getCaption() : string
     {
         $caption = parent::getCaption();
-        $objectName = $this->getWidget()->getMetaObject()->getName();
-        return $caption === $objectName ? $caption : $caption . ': ' . $objectName;
+        $widget = $this->getWidget();
+        $objectName = $widget->getMetaObject()->getName();
+        $buttonCaption = $widget->hasParent() ? $widget->getParent()->getCaption() : null;
+        
+        // Append the object name to the caption unless
+        // - The dialog has a custom caption (= not qual to the button caption)
+        // - The caption is the same as the object name (would look stupid then)
+        return $caption === $objectName || $caption !== $buttonCaption ? $caption : $caption . ': ' . $objectName;
     }
     
     /**
