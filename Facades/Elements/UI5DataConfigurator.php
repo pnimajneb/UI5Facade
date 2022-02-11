@@ -194,10 +194,13 @@ JS;
             return '';
         }
         
+        $visible = $this->getWidget()->getFilterTab()->countWidgetsVisible() === 0 ? 'visible: false,' : '';
+        
         return <<<JS
 
                 new exface.openui5.P13nLayoutPanel({
                     title: "{$this->translate('WIDGET.DATATABLE.SETTINGS_DIALOG.FILTERS')}",
+                    {$visible}
                     content: [
                         new sap.ui.layout.Grid({
                             defaultSpan: "L6 S12",
