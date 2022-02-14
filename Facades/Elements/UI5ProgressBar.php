@@ -151,19 +151,21 @@ JS;
     {
         // Set the color explicitly and make sure it is set again every time the progressbar
         // is resized - this happens very often in tables: e.g. after navigating back from
-        // a large-dialog-view.
+        // a large-dialog-view. It also turned out, that we need to save the color value
+        // in the controls data() - otherwise the value changes unexpectedly when in-table
+        // controls are resized (don't know why...)
         return <<<JS
         
         setTimeout(function(){ 
-            var sColorVal = $sColorJs;
-            $oControlJs.$().find('.sapMPIBar').css('background-color', sColorVal); 
+            $oControlJs.data('_exfColor', $sColorJs);
+            $oControlJs.$().find('.sapMPIBar').css('background-color', $sColorJs); 
             if ($oControlJs.data('_exfColored') !== true) {
                 sap.ui.core.ResizeHandler.register($oControlJs, function(){
-                    $oControlJs.$().find('.sapMPIBar').css('background-color', sColorVal);
+                    $oControlJs.$().find('.sapMPIBar').css('background-color', $oControlJs.data('_exfColor'));
                 });
                 $oControlJs.data('_exfColored', true);
             } 
-        }, 10);
+        }, 0);
 JS;
     }
     
