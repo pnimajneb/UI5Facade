@@ -10,6 +10,7 @@ class UI5DataSpreadSheet extends UI5AbstractElement
     use JExcelTrait;
     use UI5DataElementTrait {
         UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
+        UI5DataElementTrait::buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
         JExcelTrait::buildJsDataResetter as buildJsJExcelResetter;
         JExcelTrait::buildJsDataGetter insteadof UI5DataElementTrait;
         JExcelTrait::buildJsValueGetter insteadof UI5DataElementTrait;
@@ -81,7 +82,7 @@ JS;
      */
     protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
     {
-        return <<<JS
+        return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
 
         {$this->buildJsDataSetter('oModel.getData()')}
         {$this->buildJsFooterRefresh('data', 'jqSelf')}
@@ -155,7 +156,7 @@ JS;
     public function buildJsBusyIconShow($global = false)
     {
         if ($global) {
-            return 'sap.ui.core.BusyIndicator.show(0);';
+            return parent::buildJsBusyIconShow($global);
         } else {
             return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusyIndicatorDelay(0).setBusy(true);';
         }
@@ -164,7 +165,7 @@ JS;
     public function buildJsBusyIconHide($global = false)
     {
         if ($global) {
-            return 'sap.ui.core.BusyIndicator.hide();';
+            return parent::buildJsBusyIconHide($global);
         } else {
             return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusy(false);';
         }

@@ -143,10 +143,8 @@ JS;
     /**
      * 
      */
-    protected function getValidationErrorText() : string
+    public function getValidationErrorText() : string
     {
         return $this->translate("WIDGET.INPUTPASSWORD.DONT_MATCH");
-    }
-    
+    }   
 }
-?>

@@ -89,7 +89,7 @@ use exface\Core\Exceptions\Facades\FacadeRuntimeError;
  * 
  * The trait will automatically track changes for editable columns if the built-in data loader is used 
  * (see above). All changes are strored in a separate model (see. `getModelNameForChanges()`). The trait 
- * provides `buildJsEditableChangesXXX()` methods use in your JS. If the data widget has 
+ * provides `buildJsEditableChangesXXX()` methods to use in your JS. If the data widget has 
  * `editable_changes_reset_on_refresh` set to `false`, the trait will automatically restore changes
  * after every refresh.
  * 
