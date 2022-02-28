@@ -15,8 +15,6 @@ use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Interfaces\Actions\iShowDialog;
 use exface\Core\Widgets\Split;
-use exface\Core\Interfaces\Actions\ActionInterface;
-use exface\Core\CommonLogic\DataSheets\DataColumn;
 
 /**
  * In OpenUI5 dialog widgets are either rendered as sap.m.Page (if maximized) or as sap.m.Dialog.
@@ -662,7 +660,7 @@ JS;
                 'oResultModel',
                 'data',
                 $hideBusyJs . " setTimeout(function(){ oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON())) }, 0);",
-                $hideBusyJs,
+                $hideBusyJs . $this->buildJsCloseDialog(),
                 $showOfflineMsgJs
             )}
         })();
