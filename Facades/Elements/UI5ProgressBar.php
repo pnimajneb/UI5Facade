@@ -165,7 +165,7 @@ JS;
                 });
                 $oControlJs.data('_exfColored', true);
             } 
-        }, 0);
+        }, 20);
 JS;
     }
     
