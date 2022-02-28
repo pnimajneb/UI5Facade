@@ -33,6 +33,7 @@ use exface\Core\Exceptions\Security\AuthenticationFailedError;
 use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
 use exface\Core\Events\Widget\OnPrefillDataLoadedEvent;
 use exface\Core\Events\Action\OnActionInputValidatedEvent;
+use exface\Core\Events\Action\OnBeforeActionInputValidatedEvent;
 
 class Webapp implements WorkbenchDependantInterface
 {
@@ -155,6 +156,15 @@ class Webapp implements WorkbenchDependantInterface
                     }
                     return;
                 });
+                    
+                // Listen to OnBeforeActionInputValidated to disable any validators to ensure the
+                // dummy data does not cause validations to fail.
+                $this->getWorkbench()->eventManager()->addListener(OnBeforeActionInputValidatedEvent::getEventName(), function(OnBeforeActionInputValidatedEvent $event) use ($action) {
+                    if ($event->getAction() !== $action) {
+                        return;
+                    }
+                    $event->getAction()->getInputChecks()->setDisabled(true);
+                });
                 
                 // Listen to OnActionInputValidated to make sure, the input data of the action always
                 // has dummy data - even if it was modified by input mappers or anything else.
@@ -162,6 +172,7 @@ class Webapp implements WorkbenchDependantInterface
                     if ($event->getAction() !== $action) {
                         return;
                     }
+                    $event->getAction()->getInputChecks()->setDisabled(false);
                     $ds = $event->getDataSheet();
                     if (! $ds->isEmpty() && $ds->hasUidColumn()) {
                         $this->handlePrefillGenerateDummyData($ds);
