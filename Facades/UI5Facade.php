@@ -88,6 +88,10 @@ class UI5Facade extends AbstractAjaxFacade
     
     private $theme = null;
     
+    private $themeHeaderColor = null;
+    
+    private $themeHeaderTextColor = null;
+    
     /**
      * Cache for config key WIDGET.DIALOG.MAXIMIZE_BY_DEFAULT_IN_ACTIONS:
      * @var array [ action_alias => true/false ]
@@ -598,5 +602,53 @@ JS;
         $headers = array_merge($headers, $this->buildHeadersForErrors());
         
         return new Response(401, $headers, $responseBody);
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    public function getThemeHeaderColor() : string
+    {
+        return $this->themeHeaderColor ?? $this->getConfig()->getOption('THEME.HEADER_COLOR') ?? '';
+    }
+    
+    /**
+     * Custom background color for the shell toolbar (at the very top)
+     * 
+     * @uxon-property theme_header_color
+     * @uxon-type color
+     * 
+     * @param string $value
+     * @return UI5Facade
+     */
+    protected function setThemeHeaderColor(string $value) : UI5Facade
+    {
+        $this->themeHeaderColor = $value;
+        return $this;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    public function getThemeHeaderTextColor() : string
+    {
+        return $this->themeHeaderTextColor ?? $this->getConfig()->getOption('THEME.HEADER_TEXT_COLOR') ?? '';
+    }
+    
+    /**
+     * Custom text/icon color for the shell toolbar (at the very top)
+     * 
+     * @uxon-property theme_header_text_color
+     * @uxon-type color
+     * 
+     * @param string $value
+     * @return UI5Facade
+     */
+    protected function setThemeHeaderTextColor(string $value) : UI5Facade
+    {
+        $this->themeHeaderTextColor = $value;
+        return $this;
     }
 }

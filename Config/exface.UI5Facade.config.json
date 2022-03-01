@@ -33,6 +33,10 @@
         "Expires": 0
 	},
 	
+	"THEME.HEADER_COLOR": "",
+	"THEME.HEADER_TEXT_COLOR": "",
+	
+	
 	"DEFAULT_SERVER_ADAPTER_CLASS": "\\exface\\UI5Facade\\Facades\\Elements\\ServerAdapters\\UI5FacadeServerAdapter",
 	
 	"ICON_CLASSES.DEFAULT_CLASS_PREFIX": "",
