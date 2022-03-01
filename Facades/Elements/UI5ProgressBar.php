@@ -36,6 +36,7 @@ class UI5ProgressBar extends UI5Display
             displayValue: {$this->buildJsDisplayValue()},
             {$this->buildJsProperties()}
             {$this->buildJsPropertyState()}
+            {$this->buildJsPropertyDisplayAnimation()}
     	})
     	
 JS;
@@ -180,6 +181,11 @@ JS;
         }
         
         return $stateJs ? 'state: ' . $stateJs . ',' : '';
+    }
+    
+    protected function buildJsPropertyDisplayAnimation() : string
+    {
+        return $this->getWidget()->isInTable() ? 'displayAnimation: false,' : '';
     }
     
     /**
