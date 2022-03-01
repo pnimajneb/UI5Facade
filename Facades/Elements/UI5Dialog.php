@@ -617,6 +617,12 @@ JS;
                 oViewModel.setProperty('/_prefill/pending', false);
 
 JS;
+        $onErrorJs = '';
+        // Close the dialog on error, but only if it is not a view. Closing the view
+        // would also close the actual error dialog.
+        if ($this->isMaximized() === false) {
+            $onErrorJs .=  $this->buildJsCloseDialog();
+        }
         
         // FIXME use buildJsPrefillLoaderSuccess here somewere?
         
@@ -660,7 +666,7 @@ JS;
                 'oResultModel',
                 'data',
                 $hideBusyJs . " setTimeout(function(){ oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON())) }, 0);",
-                $hideBusyJs . $this->buildJsCloseDialog(),
+                $hideBusyJs . $onErrorJs,
                 $showOfflineMsgJs
             )}
         })();
