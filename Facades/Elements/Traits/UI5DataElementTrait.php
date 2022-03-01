@@ -630,7 +630,7 @@ JS;
         
         // Since non-lazy loading means all the data is embedded in the view, we need to make
         // sure the the view is not cached: so we destroy the view after it was hidden!
-        $this->getController()->addOnHideViewScript($this->getController()->getView()->buildJsViewGetter($this). '.destroy();', false);
+        $this->getController()->addOnHideViewScript("var oView = {$this->getController()->getView()->buildJsViewGetter($this)}; if (oView !== undefined) {oView.destroy();}", false);
         
         // FIXME make filtering, sorting, pagination, etc. work in non-lazy mode too!
         
