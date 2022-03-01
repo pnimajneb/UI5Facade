@@ -367,6 +367,8 @@ JS;
             $prefill = 'if (typeof this._onPrefill === "function") {this._onPrefill();}';
         }
         
+        $cacheableJs = $this->getWidget()->isCacheable() ? 'true' : 'false';
+        
         // Finally, instantiate the dialog
         return <<<JS
 
@@ -384,22 +386,29 @@ JS;
                 {$prefill}                    
             },
             afterOpen: function(oEvent) {
+                var oView = {$this->getController()->getView()->buildJsViewGetter($this)};
                 var oDialog = oEvent.getSource();
                 var oToolbar = oDialog._getToolbar();
-                var aContent = oToolbar.getContent();
-                oToolbar.removeAllContent();
                 var aContent = [{$this->buildJsDialogButtons()}];
+                oToolbar.removeAllContent();
                 aContent.forEach(function(oElem) {                
                     oToolbar.addContent(oElem);
+                    oView.addDependent(oElem);
                 });
             },
             afterClose: function(oEvent) { 
                 var oDialog = oEvent.getSource();
                 var oToolbar = oDialog._getToolbar();
                 var aContent = oToolbar.getContent();
-                aContent.forEach(function(oElem) {
-                    oElem.destroy();
-                });
+                var bCacheable = $cacheableJs;
+                if (bCacheable) {
+                    aContent.forEach(function(oElem) {
+                        oElem.destroy();
+                    });
+                } else {
+                    {$this->getController()->getView()->buildJsViewGetter($this)}.destroy();
+                    oDialog.destroy();
+                }
             }
 		})
         {$this->buildJsPseudoEventHandlers()}
