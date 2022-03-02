@@ -97,6 +97,7 @@ class UI5Panel extends UI5Container
                         {$this->buildJsLayoutConstructor()}
                     ],
                     {$this->buildJsProperties()}
+                    {$this->buildJsPropertyWidth()}
                 }).addStyleClass("sapUiNoContentPadding {$this->buildCssElementClass()} {$this->buildCssGridClass()}")
 
 JS;

@@ -49,6 +49,7 @@ class UI5Container extends UI5AbstractElement
         new sap.m.Panel("{$this->getId()}", {
             {$heading}
             {$this->buildJsPropertyHeight()}
+            {$this->buildJsPropertyWidth()}
             content: [
                 {$contentJs}
             ]
@@ -58,7 +59,7 @@ JS;
     }
     
     /**
-     * Returns height: "xxx" if required by the container control
+     * Returns `height: "xxx",` if required by the container control
      * 
      * @return string
      */
@@ -67,6 +68,53 @@ JS;
         if ($this->getWidget()->hasParent() === false) {
             return 'height: "100%",';
         }
+        return '';
+    }
+    
+    /**
+     * Returns `width: "xxx",` if required by the container control
+     * 
+     * @return string
+     */
+    protected function buildJsPropertyWidth()
+    {
+        if ($this->getWidget()->hasParent() === false) {
+            return '';
+        }
+        
+        $dim = $this->getWidget()->getWidth();
+        switch (true) {
+            case $dim->isFacadeSpecific():
+                $val = strtolower($dim->getValue());
+                // If we have a large px-value the container will not be responsive anymore,
+                // so we set a max-width on the main controls DOM element instead of specifying
+                // a width in the UI5 control itself. 
+                if (substr($val, -2) === 'px' && substr($val, 0, -2) > 200) {
+                    $this->getController()->addOnShowViewScript("sap.ui.getCore().byId('{$this->getId()}').$().css('max-width', '{$val}');", false);
+                    $val = null;
+                }
+                break;
+            case $dim->isPercentual():
+                $val = $dim->getValue();
+                break;
+            default:
+            // TODO add support for relative units
+            $val = $this->buildCssWidthDefaultValue();
+        }
+        if (! is_null($val) && $val !== '') {
+            return 'width: "' . $val . '",';
+        } else {
+            return '';
+        }
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildCssWidthDefaultValue()
+     */
+    protected function buildCssWidthDefaultValue() : string
+    {
         return '';
     }
                 
