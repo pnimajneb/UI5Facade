@@ -80,8 +80,7 @@ JS;
 
         // TODO #binding store values in real model
         if(! $this->isValueBoundToModel()) {
-            $value = str_replace("\n", '', $this->getWidget()->getValue());
-            $value = $this->escapeJsTextValue($value);
+            $value = $this->escapeJsTextValue($this->getWidget()->getValue());
             $js .= <<<JS
 
             .setModel(function(){

@@ -80,7 +80,7 @@ JS;
     protected function buildJsPropertyValue()
     {
         return <<<JS
-            text: {$this->buildJsValue()},
+            {$this->buildJsValueBindingPropertyName()}: {$this->buildJsValue()},
 JS;
     }
     
