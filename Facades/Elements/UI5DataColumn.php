@@ -233,7 +233,7 @@ JS;
             $caption = $this->getWidget()->getCaption();
             $hint = $this->getWidget()->getHint();
             if ($caption && ! StringDataType::startsWith($hint, $caption)) {
-                return $caption . ': ' . $hint;
+                return $caption . ($hint ? ': ' . $hint : '');
             }
         }
         return $this->getWidget()->getHint() ?? '';
