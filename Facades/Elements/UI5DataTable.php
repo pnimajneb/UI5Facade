@@ -569,13 +569,25 @@ JS;
         } else {
             // NOTE: selected indices are not neccessarily the row indices in the model!
             // The table sometimes sorts the rows differently (e.g. when grouping in used).
+            // This is why getContextByIndex() must be used instead of direct access to 
+            // the rows array.
+            
+            // NOTE: if there are total rows at the bottom, they can be selected too and will
+            // even match data rows as the totals are appended to the data by the loader. This
+            // is why we need to chek if the selected index is greater than the number of
+            // real data rows (excluding the totals).
+            // TODO: this might not work correctly with row grouping. Need some more testing!
             if ($this->isUiTable()) {
                 $rows = '[];' . <<<JS
         
         var aSelectedIndices = oTable.getSelectedIndices();
         var oModel = oTable.getModel();
         var oCxt;
+        var iFixedRowsCnt = oTable.getFixedBottomRowCount();
         for (var i in aSelectedIndices) {
+            if (iFixedRowsCnt > 0 && aSelectedIndices[i] >= (oModel.getData().rows.length - iFixedRowsCnt)) {
+                continue;
+            }
             oCxt = oTable.getContextByIndex(aSelectedIndices[i]);
             rows.push(oModel.getProperty(oCxt.sPath));
         }
