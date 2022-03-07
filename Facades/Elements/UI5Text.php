@@ -112,6 +112,10 @@ JS;
             return <<<JS
             
                 formatter: function(value) {
+                    console.log('Value: ',value);
+                    if (value == undefined || value == null) {
+                        return '';
+                    }
                     return ({$this->getValueBindingFormatter()->getJsFormatter()->buildJsFormatter('value')} + '').replace(/([^>\\r\\n]?)(\\r\\n|\\n\\r|\\r|\\n)/g, '$1<br>$2');
                 },
                 
