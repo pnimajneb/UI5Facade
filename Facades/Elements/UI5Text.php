@@ -112,7 +112,6 @@ JS;
             return <<<JS
             
                 formatter: function(value) {
-                    console.log('Value: ',value);
                     if (value == undefined || value == null) {
                         return '';
                     }
