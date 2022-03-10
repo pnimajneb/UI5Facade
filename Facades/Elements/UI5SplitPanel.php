@@ -85,4 +85,16 @@ JS;
     {
         return 'height: "100%",';
     }
+    
+    /**
+     * Do not set the widht of the panel inside SplitPane - otherwise a SplitPane with 30% width will
+     * have a panel, that is 30% of the SplitPane! The width of the SplitPane itself is set in
+     * `buildJsSizeLayoutConstructor()`.
+     * 
+     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsPropertyWidth()
+     */
+    protected function buildJsPropertyWidth()
+    {
+        return '';
+    }
 }
