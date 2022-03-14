@@ -9,6 +9,7 @@ use exface\Core\DataTypes\StringDataType;
 use exface\Core\Widgets\Parts\Maps\DataSelectionMarkerLayer;
 use exface\Core\Interfaces\Widgets\iUseData;
 use exface\Core\CommonLogic\DataSheets\DataColumn;
+use exface\Core\Factories\WidgetFactory;
 
 /**
  * 
@@ -231,7 +232,11 @@ JS;
      */
     protected function getDataWidget() : Data
     {
-        return $this->getWidget()->getDataLayers()[0]->getDataWidget();
+        $layer = $this->getWidget()->getDataLayers()[0];
+        if ($layer) {
+            return $layer->getDataWidget();
+        }
+        return WidgetFactory::create($this->getWidget()->getPage(), 'Data', $this->getWidget());
     }
     
     /**
