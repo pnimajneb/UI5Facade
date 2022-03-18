@@ -317,6 +317,10 @@ JS;
      */
     public function buildJsController() : string
     {
+        $controllerGlobals = '';
+        $controllerArgs = '';
+        $cssIncludes = '';
+        $moduleRegistration = '';
         // See if the view requires a prefill request
         // FIXME UI5Dialog has it's own prefill logic - need to unify both approaches!
         if (! ($this->getView()->getRootElement() instanceof UI5Dialog)) {
@@ -330,7 +334,6 @@ JS;
         
         // Build the view first to ensure, all view elements have contributed to the controller!
         $this->getView()->buildJsView();
-        
         foreach ($this->externalModules as $name => $properties) {
             $modules .= ",\n\t\"" . str_replace('.', '/', $name) . '"';            
             $controllerArgs .= ', ' . ($properties['var'] ? $properties['var'] : $this->getDefaultVarForModule($name, $properties['globalVarName']));
@@ -679,7 +682,12 @@ JS;
      */
     public function addExternalModule(string $name, string $urlRelativeToAppRoot, string $controllerArgumentName = null, string $globalVarName = null) : UI5ControllerInterface
     {
-        $this->externalModules[$name] = ['path' => $urlRelativeToAppRoot, 'var' => $controllerArgumentName, 'globalVarName' => $globalVarName];
+        $propsNew = ['path' => $urlRelativeToAppRoot, 'var' => $controllerArgumentName, 'globalVarName' => $globalVarName];
+        $propsOld = $this->externalModules[$name];
+        if (! empty($propsOld) && $propsNew !== $propsOld) {
+            throw new FacadeRuntimeError('Cannot register UI5 external module "' . $name . '": attempted multiple registrations with different options!');
+        }
+        $this->externalModules[$name] = $propsNew;
         return $this;
     }
     
