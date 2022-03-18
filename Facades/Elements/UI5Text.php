@@ -23,6 +23,10 @@ class UI5Text extends UI5Display
             $this->addElementCssClass('exf-promoted');
         }
         
+        if ($this->getWidget()->isMultiLine() === false) {
+            return parent::buildJsConstructorForMainControl($oControllerJs);
+        }
+        
         return <<<JS
         
         new sap.m.FormattedText("{$this->getId()}", {
@@ -82,6 +86,10 @@ JS;
      */
     public function buildJsValue()
     {
+        if ($this->getWidget()->isMultiLine() === false) {
+            return parent::buildJsValue();
+        }
+        
         if (! $this->isValueBoundToModel()) {
             $value = nl2br($this->getWidget()->getValue());
             $value = '"' . $this->escapeJsTextValue($value) . '"';
@@ -98,6 +106,10 @@ JS;
      */
     public function buildJsValueBindingPropertyName() : string
     {
+        if ($this->getWidget()->isMultiLine() === false) {
+            return parent::buildJsValueBindingPropertyName();
+        }
+        
         return 'htmlText';
     }
     
@@ -108,7 +120,7 @@ JS;
      */
     public function buildJsValueBindingOptions()
     {
-        if ($this->getWidget()->getValueDataType() instanceof TextDataType) {
+        if (! $this->getWidget()->isMultiLine() && ($this->getWidget()->getValueDataType() instanceof TextDataType)) {
             return <<<JS
             
                 formatter: function(value) {
@@ -130,6 +142,10 @@ JS;
      */
     public function buildJsValueGetterMethod()
     {
+        if ($this->getWidget()->isMultiLine() === false) {
+            return parent::buildJsValueGetterMethod();
+        }
+        
         return "(getHtmlText()+'').replace(/<\\s*\\/?br\\s*[\\/]?>/gi, \"\\n\")";
     }
     
@@ -140,6 +156,10 @@ JS;
      */
     public function buildJsValueSetterMethod($valueJs)
     {
+        if ($this->getWidget()->isMultiLine() === false) {
+            return parent::buildJsValueSetterMethod($valueJs);
+        }
+        
         return "setHtmlText(({$valueJs} || '').replace(/([^>\\r\\n]?)(\\r\\n|\\n\\r|\\r|\\n)/g, '$1<br>$2'))";
     }
 }
