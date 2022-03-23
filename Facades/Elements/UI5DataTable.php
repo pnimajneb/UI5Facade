@@ -10,7 +10,6 @@ use exface\Core\Widgets\DataColumn;
 use exface\Core\Widgets\DataButton;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
-use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 
 /**

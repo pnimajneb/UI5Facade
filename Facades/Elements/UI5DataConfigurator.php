@@ -6,6 +6,8 @@ use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Widgets\Dialog;
+use exface\Core\Interfaces\Widgets\iTakeInput;
+use exface\Core\Widgets\Data;
 
 /**
  * 
@@ -106,6 +108,13 @@ JS;
         $controller->addOnEventScript($this, self::EVENT_BUTTON_RESET, $this->buildJsResetter() . '; oEvent.getSource().setShowResetEnabled(true).close()');
         
         $onActionEffectJs = $this->getFacade()->getElement($this->getWidget()->getWidgetConfigured())->buildJsRefresh(true, $oControllerJs);
+        // If the configured widget is an editable data widget, only react to action effects if
+        // no unsaved changes exist or the widget is explicitly required to refresh (by button config)!
+        if ($dataElement->getWidget() instanceof Data && $dataElement->getWidget()->isEditable() && method_exists($dataElement, 'buildJsEditableChangesChecker')) {
+            $onActionEffectJs = "if (! {$dataElement->buildJsEditableChangesChecker()} || ((oParams || {}).refresh_widgets || []).indexOf('{$dataElement->getWidget()->getId()}') !== -1) { {$onActionEffectJs} }";
+        }
+        // If we are inside a dialog, make sure the dialog is still in the DOM before performing the
+        // action effects!
         if ($dialog = $this->getWidget()->getParentByClass(Dialog::class)) {
             $onActionEffectJs = "if ({$this->getFacade()->getElement($dialog)->buildJsCheckDialogClosed()} !== true) { {$onActionEffectJs} }";
         }

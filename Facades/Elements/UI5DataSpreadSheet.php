@@ -171,4 +171,14 @@ JS;
             return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusy(false);';
         }
     }
+    
+    /**
+     * @see UI5DataElementTrait::buildJsEditableChangesChecker()
+     * @param string $oTableJs
+     * @return string
+     */
+    public function buildJsEditableChangesChecker(string $oTableJs = null) : string
+    {
+        return "{$this->buildJsJqueryElement()}[0].exfWidget.hasChanges()";
+    }
 }

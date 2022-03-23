@@ -1495,6 +1495,17 @@ JS;
         return $this->buildJsEditableChangesModelGetter($oTableJs) . ".getProperty('/changes')";
     }
     
+    /**
+     * Returns a JS snippet that resolves to TURE if the data was edited (changed) and FALSE otherwise.
+     * 
+     * @param string $oTableJs
+     * @return string
+     */
+    public function buildJsEditableChangesChecker(string $oTableJs = null) : string
+    {
+        return "({$this->buildJsEditableChangesModelGetter($oTableJs)}.getProperty('/changes').length > 0)";
+    }
+    
     protected function buildJsEditableChangesModelGetter(string $oTableJs = null) : string
     {
         return ($oTableJs ?? "sap.ui.getCore().byId('{$this->getId()}')") . ".getModel('{$this->getModelNameForChanges()}')";
