@@ -21,6 +21,16 @@ class UI5InlineGroup extends UI5Value
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        if ($condProp = $this->getWidget()->getHiddenIf()) {
+            $this->getController()->addOnPrefillDataChangedScript(
+                $this->buildJsConditionalPropertyInitializer(
+                    $condProp,
+                    $this->buildJsVisibilitySetter(false),
+                    $this->buildJsVisibilitySetter(true)
+                )
+            );
+        }
+        
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
     

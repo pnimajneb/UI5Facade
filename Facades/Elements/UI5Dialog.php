@@ -861,11 +861,22 @@ JS;
         }
         
         $tabElement = $this->getFacade()->getElement($tab);
+        
+        if ($condProp = $tab->getHiddenIf()) {
+            $this->getController()->addOnPrefillDataChangedScript( 
+                $this->buildJsConditionalPropertyInitializer(
+                    $condProp,
+                    "sap.ui.getCore().byId('{$tabElement->getId()}').setVisible(false);",
+                    "sap.ui.getCore().byId('{$tabElement->getId()}').setVisible(true);",
+                    )
+                );
+        } 
+        
         return <<<JS
 
                 // BOF ObjectPageSection
-                new sap.uxap.ObjectPageSection({
-					title:"{$tab->getCaption()}",
+                new sap.uxap.ObjectPageSection('{$tabElement->getId()}', {
+					title: {$this->escapeString($tabElement->getCaption())},
                     titleUppercase: false,
 					subSections: new sap.uxap.ObjectPageSubSection({
 						blocks: [

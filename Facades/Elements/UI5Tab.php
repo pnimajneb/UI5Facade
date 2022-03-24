@@ -11,6 +11,15 @@ class UI5Tab extends UI5Panel
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        if ($condProp = $this->getWidget()->getHiddenIf()) {
+            $this->getController()->addOnPrefillDataChangedScript(
+                $this->buildJsConditionalPropertyInitializer(
+                    $condProp, 
+                    $this->buildJsVisibilitySetter(false), 
+                    $this->buildJsVisibilitySetter(true)
+                )
+            );
+        } 
         // Since the tab is allways a child of Tabs, we don't need to check for hasPageWrapper() here
         return $this->buildJsIconTabFilter();
     }

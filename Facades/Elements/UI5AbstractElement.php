@@ -13,6 +13,7 @@ use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
 use exface\UI5Facade\Facades\Interfaces\UI5ViewInterface;
 use exface\Core\Interfaces\Widgets\iHaveIcon;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
+use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 
 /**
  *
@@ -23,6 +24,8 @@ use exface\Core\Interfaces\Widgets\iFillEntireContainer;
  */
 abstract class UI5AbstractElement extends AbstractJqueryElement
 {
+    use JsConditionalPropertyTrait;
+    
     const EVENT_NAME_CHANGE = 'change';
     
     private $jsVarName = null;
@@ -40,6 +43,22 @@ abstract class UI5AbstractElement extends AbstractJqueryElement
     private $pseudo_events = [];
     
     /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::init()
+     */
+    protected function init()
+    {
+        if ($hiddenIf = $this->getWidget()->getHiddenIf()) {
+            $this->registerConditionalPropertyUpdaterOnLinkedElements(
+                $hiddenIf, 
+                $this->buildJsVisibilitySetter(false), 
+                $this->buildJsVisibilitySetter(true)
+            );
+        }
+    }
+    
+    /**
      * Returns the JS constructor for this element (without the semicolon!): e.g. "new sap.m.Button()" etc.
      * 
      * For complex widgets (e.g. requireing a model, init-scripts, etc.) you can use the following approaches:
@@ -54,25 +73,6 @@ abstract class UI5AbstractElement extends AbstractJqueryElement
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
         return '';
-    }
-    
-    /**
-     * Returns a unique variable name for this element, that meets UI5 conventions: e.g. "oDataTableDataToolbarDataButton02".
-     * 
-     * @return string
-     */
-    public function buildJsVarName() : string
-    {
-        if (is_null($this->jsVarName)) {
-            $this->jsVarName = 'o' . StringDataType::convertCaseUnderscoreToPascal($this->getId());
-        }
-        return $this->jsVarName;
-    }
-    
-    protected function setJsVar($jsVarName)
-    {
-        $this->jsVarName = $jsVarName;
-        return $this;
     }
     
     public function buildJsProperties()
@@ -303,6 +303,16 @@ JS;
     protected function isVisible()
     {
         return ! $this->getWidget()->isHidden();
+    }
+    
+    /**
+     * 
+     * @param bool $visible
+     * @return string
+     */
+    protected function buildJsVisibilitySetter(bool $visible) : string
+    {
+        return "sap.ui.getCore().byId('{$this->getId()}').setVisible(" . ($visible ? 'true' : 'false') . ");";
     }
     
     /**
