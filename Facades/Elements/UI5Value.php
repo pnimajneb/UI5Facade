@@ -142,12 +142,8 @@ JS;
         $labelAppearance = '';
         if ($widget->getHideCaption() === true || $widget->isHidden()) {
             $labelAppearance .= 'visible: false,';
-        } else {
-            if ($widget instanceof iTakeInput) {
-                if ($widget->isRequired()) {
-                    $labelAppearance .= 'required: true,';
-                }
-            }
+        } elseif ($this->isRequired()) {
+            $labelAppearance .= 'required: true,';
         }
         $this->labelRendered = true;
         
@@ -159,6 +155,15 @@ JS;
         }),
         
 JS;
+    }
+    
+    /**
+     * 
+     * @return bool
+     */
+    protected function isRequired() : bool
+    {
+        return false;
     }
     
     /**

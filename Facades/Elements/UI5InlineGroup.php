@@ -3,6 +3,7 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryContainerTrait;
 use exface\Core\Interfaces\WidgetInterface;
+use exface\Core\Interfaces\Widgets\iTakeInput;
 
 /**
  * Generates OpenUI5 inputs
@@ -140,5 +141,20 @@ JS;
 				if(!' . $validator . ') { ' . $el->buildJsValidationError() . '; }';
         }
         return $output;
+    }
+
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::isRequired()
+     */
+    protected function isRequired() : bool
+    {
+        foreach ($this->getWidget()->getWidgets() as $w) {
+            if (($w instanceof iTakeInput) && $w->isRequired() === true) {
+                return true;
+            }
+        }
+        return false;
     }
 }
