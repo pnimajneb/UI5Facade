@@ -137,6 +137,8 @@ table.jexcel > tbody > tr > td.jexcel_dropdown { background-image: url("data:ima
 .exf-spreadsheet-change::before {content: "◤"; color: #89919a; font-size: 12px; position: absolute; left: 0; top: 0; margin-left: -2px; margin-top: -3px}
 .exf-spreadsheet-invalid {background-color: #ffebeb;}
 .exf-spreadsheet-invalid::before {color: #b00;}
+/* Make sure a cell dropdown does not "dive" under the next jexcel instance */
+.sapUiTable.jexcel_container {position: static; z-index: initial;}
 
 /* UI5DashBoard Widget GridContainer layout for columns*/
 .dashboard_gridcontainer_layout {grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important; grid-auto-rows: auto !important;}
