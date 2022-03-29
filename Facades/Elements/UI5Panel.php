@@ -382,6 +382,7 @@ JS;
         $title = '';
         $layout = '';
         $width = null;
+        $id = '';
         
         if ($containerWidget !== null && ! $containerWidget->getWidth()->isUndefined()) {
             $width = $containerWidget->getWidth(); 
@@ -418,6 +419,7 @@ JS;
         
         if ($containerWidget instanceof WidgetGroup) {
             $title = $containerWidget->getCaption() ? 'text: "' . $containerWidget->getCaption() . '",' : '';
+            $id = "'{$this->getFacade()->getElement($containerWidget)->getId()}',";            
         }
         
         // Hide the entire form container if all of its widgets are hidden
@@ -434,7 +436,7 @@ JS;
         
         $title = "title: new sap.ui.core.Title({{$title}}),";
         $js .= <<<JS
-    new sap.ui.layout.form.FormContainer({
+    new sap.ui.layout.form.FormContainer({$id}{
         {$title}
         {$layout}
         {$visible}
