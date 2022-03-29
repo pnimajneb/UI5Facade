@@ -32,6 +32,8 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
     
     private $renderCaptionAsLabel = null;
     
+    private $labelRendered = false;
+    
     /**
      * 
      * {@inheritDoc}
@@ -140,22 +142,28 @@ JS;
         $labelAppearance = '';
         if ($widget->getHideCaption() === true || $widget->isHidden()) {
             $labelAppearance .= 'visible: false,';
-        } else {
-            if ($widget instanceof iTakeInput) {
-                if ($widget->isRequired()) {
-                    $labelAppearance .= 'required: true,';
-                }
-            }
+        } elseif ($this->isRequired()) {
+            $labelAppearance .= 'required: true,';
         }
+        $this->labelRendered = true;
         
         return <<<JS
-        new sap.m.Label({
+        new sap.m.Label('{$this->getIdOfLabel()}', {
             text: "{$caption}",
             {$this->buildJsPropertyTooltip()}
             {$labelAppearance}
         }),
         
 JS;
+    }
+    
+    /**
+     * 
+     * @return bool
+     */
+    protected function isRequired() : bool
+    {
+        return false;
     }
     
     /**
@@ -431,7 +439,18 @@ JS;
      */
     protected function registerConditionalBehaviors()
     {
+        // Update this element if its value is a live reference
         $this->registerLiveReferenceAtLinkedElement();
+        // Initialize hidden_if state
+        if ($condProp = $this->getWidget()->getHiddenIf()) {
+            $this->getController()->addOnPrefillDataChangedScript(
+                $this->buildJsConditionalPropertyInitializer(
+                    $condProp,
+                    $this->buildJsVisibilitySetter(false),
+                    $this->buildJsVisibilitySetter(true)
+                )
+            );
+        } 
         return;
     }
     
@@ -478,5 +497,26 @@ JS;
     {
         $this->renderCaptionAsLabel = $value;
         return $this;
+    }
+    
+    protected function getIdOfLabel() : string
+    {
+        return $this->getUseWidgetId() ? $this->getId() . '__label' : '';
+    }
+    
+    /**
+     *
+     * @param bool $visible
+     * @return string
+     */
+    protected function buildJsVisibilitySetter(bool $visible) : string
+    {
+        $showHideLabelJs = '';
+        if ($this->labelRendered === true || $this->getRenderCaptionAsLabel()) {
+            if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
+                $showHideLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setVisible(" . ($visible ? 'true' : 'false') . ");";
+            }
+        } 
+        return parent::buildJsVisibilitySetter($visible) . ' ' . $showHideLabelJs;
     }
 }

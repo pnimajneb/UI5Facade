@@ -379,5 +379,15 @@ JS;
         }
         return parent::buildJsPseudoEventHandlers();
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::isRequired()
+     */
+    protected function isRequired() : bool
+    {
+        return $this->getWidget()->isRequired();
+    }
 }
 ?>

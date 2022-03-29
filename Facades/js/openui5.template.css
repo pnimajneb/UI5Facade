@@ -137,6 +137,8 @@ table.jexcel > tbody > tr > td.jexcel_dropdown { background-image: url("data:ima
 .exf-spreadsheet-change::before {content: "◤"; color: #89919a; font-size: 12px; position: absolute; left: 0; top: 0; margin-left: -2px; margin-top: -3px}
 .exf-spreadsheet-invalid {background-color: #ffebeb;}
 .exf-spreadsheet-invalid::before {color: #b00;}
+/* Make sure a cell dropdown does not "dive" under the next jexcel instance */
+.sapUiTable.jexcel_container {position: static; z-index: initial;}
 
 /* UI5DashBoard Widget GridContainer layout for columns*/
 .dashboard_gridcontainer_layout {grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)) !important; grid-auto-rows: auto !important;}
@@ -206,8 +208,10 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .slick-carousel.horizontal .slick-arrow:before {color: #404040}
 .slick-carousel .slick-slide.selected {border: 5px solid #9cc8f7}
 .slick-lightbox .slick-prev.slick-arrow {z-index: 1}
+.imagecarousel-icon,
 .imagecarousel-upload {height: 100%; width: 50px; position: relative; background-color: #f5f5f5; cursor: pointer;}
 .imagecarousel-upload:hover {background-color: #9cc8f7}
+.imagecarousel-icon > i,
 .imagecarousel-upload > i {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 200%}
 .imagecarousel-upload.armed {width: 180px; border: 5px dashed #f5f5f5; background-color: #9cc8f7}
 .imagecarousel-upload.armed > span {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;}

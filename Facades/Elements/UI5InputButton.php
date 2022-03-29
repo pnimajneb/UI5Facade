@@ -1,10 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDisableConditionTrait;
-use exface\Core\Widgets\InputButton;
-use exface\Core\CommonLogic\DataSheets\DataColumn;
-
 /**
  * Generates OpenUI5 inputs
  *
