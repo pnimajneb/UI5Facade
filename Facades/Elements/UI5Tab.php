@@ -11,6 +11,13 @@ class UI5Tab extends UI5Panel
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        if ($hiddenIf = $this->getWidget()->getHiddenIf()) {
+            $this->registerConditionalPropertyUpdaterOnLinkedElements(
+                $hiddenIf,
+                $this->buildJsVisibilitySetter(false),
+                $this->buildJsVisibilitySetter(true)
+                );
+        }
         if ($condProp = $this->getWidget()->getHiddenIf()) {
             $this->getController()->addOnPrefillDataChangedScript(
                 $this->buildJsConditionalPropertyInitializer(
