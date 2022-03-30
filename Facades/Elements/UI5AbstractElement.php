@@ -43,22 +43,6 @@ abstract class UI5AbstractElement extends AbstractJqueryElement
     private $pseudo_events = [];
     
     /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::init()
-     */
-    protected function init()
-    {
-        if ($hiddenIf = $this->getWidget()->getHiddenIf()) {
-            $this->registerConditionalPropertyUpdaterOnLinkedElements(
-                $hiddenIf, 
-                $this->buildJsVisibilitySetter(false), 
-                $this->buildJsVisibilitySetter(true)
-            );
-        }
-    }
-    
-    /**
      * Returns the JS constructor for this element (without the semicolon!): e.g. "new sap.m.Button()" etc.
      * 
      * For complex widgets (e.g. requireing a model, init-scripts, etc.) you can use the following approaches:
