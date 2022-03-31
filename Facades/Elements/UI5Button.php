@@ -231,6 +231,15 @@ JS;
         $output = $this->buildJsRequestDataCollector($action, $input_element);
         $targetWidget = $widget->getAction()->getWidget();
         
+        // Close the dialog on action success only if it navigates to a view.
+        // If it opens a sap.m.Dialog, the parent dialog will be closed after
+        // the user closes this new dialog - see JS attachAfterClose() below
+        if ($this->opensDialogPage()) {
+            $closeDialogJs = $this->buildJsCloseDialog($widget, $input_element);
+        } else {
+            $closeDialogJs = '';
+        }
+        
         // Build the AJAX request
         $output .= <<<JS
                         {$this->buildJsBusyIconShow()}
@@ -240,7 +249,7 @@ JS;
 								{$prefill}
 							},
                             success: function(data, textStatus, jqXHR) {
-                                {$this->buildJsCloseDialog($widget, $input_element)}                                                    
+                                {$closeDialogJs}                                                
                             },
                             complete: function() {
                                 {$this->buildJsBusyIconHide()}
@@ -356,6 +365,7 @@ JS;
                                         			oEvent.data = {};
                                         			oEvent.backData = {};
                                         			oView._handleEvent(oEvent);
+                                                    {$this->buildJsCloseDialog($widget, $input_element)}
                                                 })
                                                 .addEventDelegate({
                                                     "onBeforeRendering": function () {
