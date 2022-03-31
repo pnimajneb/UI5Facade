@@ -248,7 +248,7 @@ JS;
         return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
     }
     
-    protected function registerConditionalProperties() : UI5AbstractElement
+    public function registerConditionalProperties() : UI5AbstractElement
     {
         parent::registerConditionalProperties();
         $contoller = $this->getController();

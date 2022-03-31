@@ -178,7 +178,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Button::registerConditionalProperties()
      */
-    protected function registerConditionalProperties() : UI5AbstractElement
+    public function registerConditionalProperties() : UI5AbstractElement
     {
         parent::registerConditionalProperties();
         $contoller = $this->getController();

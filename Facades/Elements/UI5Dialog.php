@@ -151,6 +151,10 @@ JS
                 );
             }
             
+            foreach ($widget->getButtons() as $btn) {
+                $this->getFacade()->getElement($btn)->registerConditionalProperties();
+            }
+            
             if ($this->isObjectPageLayout()) {
                 return $this->buildJsPage($this->buildJsObjectPageLayout($oControllerJs), $oControllerJs);
             } else {

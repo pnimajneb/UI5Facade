@@ -438,7 +438,7 @@ JS;
     /**
      * @return void
      */
-    protected function registerConditionalProperties() : UI5AbstractElement
+    public function registerConditionalProperties() : UI5AbstractElement
     {
         parent::registerConditionalProperties();
         

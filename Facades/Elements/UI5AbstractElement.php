@@ -549,7 +549,7 @@ JS;
         return $this;
     }
     
-    protected function registerConditionalProperties() : UI5AbstractElement
+    public function registerConditionalProperties() : UI5AbstractElement
     {
         // hidden_if
         if ($condProp = $this->getWidget()->getHiddenIf()) {
