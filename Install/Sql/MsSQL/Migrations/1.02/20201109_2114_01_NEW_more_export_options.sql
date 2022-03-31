@@ -1,3 +1,5 @@
+-- BATCH-DELIMITER ;
+
 -- UP
 
 ALTER TABLE [dbo].[fiori_webapp]
