@@ -549,6 +549,27 @@ JS;
         return $this;
     }
     
+    protected function registerConditionalProperties() : UI5AbstractElement
+    {
+        // hidden_if
+        if ($condProp = $this->getWidget()->getHiddenIf()) {
+            $this->registerConditionalPropertyUpdaterOnLinkedElements(
+                $condProp,
+                $this->buildJsVisibilitySetter(false),
+                $this->buildJsVisibilitySetter(true)
+            );
+            $this->getController()->addOnPrefillDataChangedScript(
+                $this->buildJsConditionalPropertyInitializer(
+                    $condProp,
+                    $this->buildJsVisibilitySetter(false),
+                    $this->buildJsVisibilitySetter(true)
+                )
+            );
+        }
+        
+        return $this;
+    }
+    
     /**
      * Don't use default logic from AbstractJqueryElement as it will empty bound models!!!
      * 

@@ -11,6 +11,8 @@ class UI5Tabs extends UI5Container
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $iconTabBar = $this->buildJsIconTabBar();
         
         if ($this->hasPageWrapper() === true) {

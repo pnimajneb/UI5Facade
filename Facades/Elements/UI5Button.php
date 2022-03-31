@@ -57,11 +57,8 @@ class UI5Button extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerExternalModules($this->getController());        
-        // Register conditional reactions
-        $this->registerDisableConditionAtLinkedElement();
-        $this->getController()->addOnInitScript($this->buildJsDisableConditionInitializer());
-        $this->getController()->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
+        $this->registerExternalModules($this->getController());
+        $this->registerConditionalProperties();
         
         return <<<JS
 
@@ -647,5 +644,23 @@ JS;
         }
         
         return $js;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
+     */
+    protected function registerConditionalProperties() : UI5AbstractElement
+    {
+        parent::registerConditionalProperties();
+        $contoller = $this->getController();
+        
+        // disabled_if
+        $this->registerDisableConditionAtLinkedElement();
+        $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
+        $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
+        
+        return $this;
     }
 }

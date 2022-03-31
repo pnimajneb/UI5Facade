@@ -95,7 +95,7 @@ JS;
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalBehaviors();
+        $this->registerConditionalProperties();
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
     

@@ -31,6 +31,8 @@ class UI5WidgetCarousel extends UI5Tabs
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $widgetCarousel = $this->buildJsWidgetCarousel();
         
         if ($this->hasPageWrapper() === true) {

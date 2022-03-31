@@ -54,6 +54,8 @@ class UI5Split extends UI5Container
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $widget = $this->getWidget();
         // NOTE: buildJsPropertyLayoutData() is required for setting width/height
         // of nested splits! See UI5SplitPanel for details.

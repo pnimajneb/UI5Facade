@@ -7,6 +7,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryLiveReferenceTrait;
 use exface\Core\Interfaces\Widgets\iTakeInput;
 use exface\Core\Widgets\Input;
 use exface\Core\Interfaces\Widgets\iShowDataColumn;
+use exface\Core\Interfaces\Widgets\iHaveValue;
 
 /**
  * Generates sap.m.Text controls for Value widgets
@@ -41,7 +42,7 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalBehaviors();
+        $this->registerConditionalProperties();
         return $this->buildJsConstructorForMainControl($oControllerJs);
     }
     
@@ -437,21 +438,18 @@ JS;
     /**
      * @return void
      */
-    protected function registerConditionalBehaviors()
+    protected function registerConditionalProperties() : UI5AbstractElement
     {
+        parent::registerConditionalProperties();
+        
         // Update this element if its value is a live reference
-        $this->registerLiveReferenceAtLinkedElement();
-        // Initialize hidden_if state
-        if ($condProp = $this->getWidget()->getHiddenIf()) {
-            $this->getController()->addOnPrefillDataChangedScript(
-                $this->buildJsConditionalPropertyInitializer(
-                    $condProp,
-                    $this->buildJsVisibilitySetter(false),
-                    $this->buildJsVisibilitySetter(true)
-                )
-            );
-        } 
-        return;
+        // Make sure, this is only done for value widgets - e.g. not for InlineGroup, which
+        // also inherits from UI5Value
+        if ($this->getWidget() instanceof iHaveValue) {
+            $this->registerLiveReferenceAtLinkedElement();
+        }
+        
+        return $this;
     }
     
     /**

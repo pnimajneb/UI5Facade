@@ -89,6 +89,8 @@ class UI5Panel extends UI5Container
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $panel = <<<JS
 
                 new sap.m.Panel("{$this->getId()}", {

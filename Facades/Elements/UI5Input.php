@@ -44,7 +44,7 @@ class UI5Input extends UI5Value
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalBehaviors();
+        $this->registerConditionalProperties();
         $this->registerOnChangeValidation();
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
@@ -248,16 +248,17 @@ JS;
         return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
     }
     
-    protected function registerConditionalBehaviors()
+    protected function registerConditionalProperties() : UI5AbstractElement
     {
-        parent::registerConditionalBehaviors();
+        parent::registerConditionalProperties();
         $contoller = $this->getController();
-        // Register conditional reactions
+        
+        // disabled_if
         $this->registerDisableConditionAtLinkedElement();
         $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
         $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
-        $this->registerLiveReferenceAtLinkedElement();
-        return;
+
+        return $this;
     }
     
     /**

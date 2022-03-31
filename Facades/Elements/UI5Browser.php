@@ -9,6 +9,8 @@ class UI5Browser extends UI5AbstractElement
     
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $escapedHtml = json_encode($this->buildHtmlIFrame());
         $control = <<<JS
         

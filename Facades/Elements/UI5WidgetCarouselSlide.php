@@ -16,6 +16,8 @@ class UI5WidgetCarouselSlide extends UI5Tab
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         // Since the tab is allways a child of Tabs, we don't need to check for hasPageWrapper() here
         return $this->buildJsSlidePage();
     }

@@ -28,9 +28,7 @@ class UI5Tile extends UI5Button
         
         $this->registerExternalModules($this->getController());
         // Register conditional reactions
-        $this->registerDisableConditionAtLinkedElement();
-        $this->getController()->addOnInitScript($this->buildJsDisableConditionInitializer());
-        $this->getController()->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
+        $this->registerConditionalProperties();
         
         $header = $this->getCaption() ? 'header: "' . $widget->getTitle() . '",' : '';
         $handler = $this->buildJsClickViewEventHandlerCall();
@@ -173,5 +171,23 @@ JS;
     public function buildCssElementClass()
     {
         return 'exf-tile';
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Button::registerConditionalProperties()
+     */
+    protected function registerConditionalProperties() : UI5AbstractElement
+    {
+        parent::registerConditionalProperties();
+        $contoller = $this->getController();
+        
+        // disabled_if
+        $this->registerDisableConditionAtLinkedElement();
+        $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
+        $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
+        
+        return $this;
     }
 }

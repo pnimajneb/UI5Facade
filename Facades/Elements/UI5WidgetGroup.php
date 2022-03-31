@@ -6,6 +6,8 @@ class UI5WidgetGroup extends UI5Container
     
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $title = $this->getCaption() ? 'text: "' . $this->getCaption() . '",' : '';
         return  <<<JS
                 new sap.ui.core.Title({

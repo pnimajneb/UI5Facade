@@ -14,6 +14,8 @@ class UI5Pad extends UI5Container
     
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $childConstructorsJs = $this->buildJsChildrenConstructors();
         
         $panel = <<<JS

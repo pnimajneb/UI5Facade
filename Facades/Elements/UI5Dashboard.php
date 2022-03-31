@@ -42,6 +42,7 @@ class UI5Dashboard extends UI5Container
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {   
+        $this->registerConditionalProperties();
         return $this->buildJsLayoutConstructor($this->buildJsLayoutGridContainers($oControllerJs));
     }
     

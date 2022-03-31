@@ -21,6 +21,8 @@ class UI5NavMenu extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $menu = $this->getWidget()->getMenu();
         $output = <<<JS
 

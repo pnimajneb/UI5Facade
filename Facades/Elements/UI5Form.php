@@ -21,6 +21,8 @@ class UI5Form extends UI5Panel
     {
         $widget = $this->getWidget();
         
+        $this->registerConditionalProperties();
+        
         if ($widget->hasButtons() === true) {
             $this->registerSubmitOnEnter($oControllerJs);
             $toolbar = $this->buildJsFloatingToolbar();

@@ -22,6 +22,8 @@ class UI5NavCrumbs extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $this->currentPage = $this->getWidget()->getPage();
         $breadcrumbs = $this->getWidget()->getBreadcrumbs();
         $currentLocation = $this->getWidget()->getPage()->getName();

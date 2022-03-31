@@ -87,6 +87,8 @@ class UI5DataConfigurator extends UI5Tabs
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        $this->registerConditionalProperties();
+        
         $controller = $this->getController();
         
         $dataElement = $this->getDataElement();

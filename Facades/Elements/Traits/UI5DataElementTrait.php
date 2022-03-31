@@ -148,6 +148,7 @@ trait UI5DataElementTrait {
         $widget = $this->getDataWidget();
         $controller = $this->getController();
         
+        $this->registerConditionalProperties();
         $this->registerExternalModules($this->getController());
         
         // Add placeholders for the custom events here. If not done so, at least the select-event will be
