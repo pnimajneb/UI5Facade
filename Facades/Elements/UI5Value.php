@@ -517,4 +517,14 @@ JS;
         } 
         return parent::buildJsVisibilitySetter($visible) . ' ' . $showHideLabelJs;
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsValueGetterMethod()
+     */
+    public function buildJsValueGetterMethod()
+    {
+        return "getText()";
+    }
 }

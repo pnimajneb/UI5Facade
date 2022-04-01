@@ -171,4 +171,14 @@ JS;
     {
         return $this->widthExpanded;
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValueGetterMethod()
+     */
+    public function buildJsValueGetterMethod()
+    {
+        return "getValue()";
+    }
 }
