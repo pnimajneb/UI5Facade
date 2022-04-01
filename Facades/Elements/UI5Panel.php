@@ -14,6 +14,7 @@ use exface\Core\CommonLogic\WidgetDimension;
 use exface\Core\Factories\WidgetDimensionFactory;
 use exface\Core\Widgets\ImageGallery;
 use exface\Core\Interfaces\Widgets\iHaveContextualHelp;
+use exface\Core\Interfaces\Widgets\iTakeInput;
 
 /**
  * Generates a `sap.m.Panel` with a `sap.ui.layout.form.Form` inside for a Panel widget.
@@ -420,7 +421,18 @@ JS;
         }
         
         if ($containerWidget instanceof WidgetGroup) {
-            $title = $containerWidget->getCaption() ? 'text: "' . $containerWidget->getCaption() . '",' : '';
+            // Mark the entire group as required if it only contains required widgets
+            // This is particularly important if the inner widget do not have their own
+            // label controls - in this case it will not be visible to the user, that
+            // they are required until a submit is attempted
+            $required = true;
+            foreach ($widgets as $widget) {
+                if (! ($widget instanceof iTakeInput) || ($widget->isRequired() === false && $widget->isHidden() === false)) {
+                    $required = false;
+                    break;
+                }
+            }
+            $title = $containerWidget->getCaption() ? 'text: ' . $this->escapeString($containerWidget->getCaption() . ($required ? ' *' : '')) . ',' : '';
             $id = "'{$this->getFacade()->getElement($containerWidget)->getId()}',";            
         }
         
@@ -436,10 +448,9 @@ JS;
         }
         $visible = $hidden === true || ($containerWidget !== null && $containerWidget->isHidden()) ? 'visible: false,' : '';
         
-        $title = "title: new sap.ui.core.Title({{$title}}),";
         $js .= <<<JS
     new sap.ui.layout.form.FormContainer({$id}{
-        {$title}
+        title: new sap.ui.core.Title({{$title}}),
         {$layout}
         {$visible}
         formElements: [
