@@ -44,11 +44,11 @@ JS;
     public function buildJsValue()
     {
         if (! $this->isValueBoundToModel()) {
-            $value = str_replace("\n", '', $this->getWidget()->getValue());
+            $value = $this->getWidget()->getValue();
             if ($caption = $this->getCaption()) {
                 $value = '<strong>' . $caption . ': </strong> ' . $value;
             }
-            $value = '"' . $this->escapeJsTextValue($value) . '"';
+            $value = '"' . nl2br($this->escapeJsTextValue($value)) . '"';
         } else {
             $value = $this->buildJsValueBinding();
         }
