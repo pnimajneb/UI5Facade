@@ -151,6 +151,8 @@ JS
                 );
             }
             
+            // Register conditional reactions BEFORE rendering the layout - otherwise it will
+            // be too late to add them to appropriate event handlers inside the layout.
             foreach ($widget->getButtons() as $btn) {
                 $this->getFacade()->getElement($btn)->registerConditionalProperties();
             }

@@ -1,14 +1,12 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\Button;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryButtonTrait;
-use exface\Core\Widgets\MenuButton;
 
 /**
- * Generates OpenUI5 MenuButtons for respective widgets
+ * Generates sap.m.MenuButton for MenuButton widgets
  *
- * @method MenuButton getWidget()
+ * @method \exface\Core\Widgets\MenuButton getWidget()
  * 
  * @author Andrej Kabachnik
  *        
@@ -17,6 +15,11 @@ class UI5MenuButton extends UI5AbstractElement
 {
     use JqueryButtonTrait;
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsConstructor()
+     */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
         $this->registerConditionalProperties();
@@ -37,6 +40,11 @@ class UI5MenuButton extends UI5AbstractElement
 JS;
     }
         
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::getCaption()
+     */
     protected function getCaption() : string
     {
         $caption = parent::getCaption();
@@ -46,7 +54,11 @@ JS;
         return $caption;
     }
         
-    protected function buildJsMenuItems()
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsMenuItems() : string
     {
         $js = '';
         $last_parent = null;
@@ -61,41 +73,25 @@ JS;
             if (! $b->getCaption() && ! $b->getAction()){
                 $start_section = true;
             } else {
-                $properties = '';
+                $btnElement = new UI5MenuItem($b, $this->getFacade());
+                
                 if ($b->getParent() !== $last_parent){
                     $start_section = true;
                     $last_parent = $b->getParent();
                 }
                 
-                if ($start_section) {
-                    $properties .= 'startsSection: true,';
-                }
+                $btnElement->setStartsSection($start_section);
                 
-                /* @var $btnElement \exface\UI5Facade\Facades\Elements\UI5Button */
-                $btnElement = $this->getFacade()->getElement($b);
-                $handler = $btnElement->buildJsClickViewEventHandlerCall();
-                $press = $handler !== '' ? 'press: ' . $handler . ',' : '';
-                
-                $js .= <<<JS
-
-                        new sap.m.MenuItem({
-                            {$properties}
-                            text: "{$b->getCaption()}",
-                            icon: "{$btnElement->getIconSrc($b->getIcon())}",
-                            {$press}
-                        }),
-
-JS;
+                $js .= $btnElement->buildJsConstructor();
             }
         }
         return $js;
     }
     
-    protected function buildJsMenuItem(Button $button)
-    {
-        
-    }
-    
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsPropertyIcon()
     {
         $widget = $this->getWidget();

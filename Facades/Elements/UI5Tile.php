@@ -1,15 +1,13 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\Tile;
 use exface\Core\Widgets\Display;
 use exface\Core\DataTypes\NumberDataType;
-use exface\Core\CommonLogic\Constants\Colors;
 
 /**
  * Tile widget for OpenUI5-Facade.
  * 
- * @method Tile getWidget()
+ * @method \exface\Core\Widgets\Tile getWidget()
  * 
  * @author SFL
  *
@@ -171,23 +169,5 @@ JS;
     public function buildCssElementClass()
     {
         return 'exf-tile';
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Button::registerConditionalProperties()
-     */
-    public function registerConditionalProperties() : UI5AbstractElement
-    {
-        parent::registerConditionalProperties();
-        $contoller = $this->getController();
-        
-        // disabled_if
-        $this->registerDisableConditionAtLinkedElement();
-        $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
-        $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
-        
-        return $this;
     }
 }
