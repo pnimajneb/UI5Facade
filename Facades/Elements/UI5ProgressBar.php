@@ -155,6 +155,8 @@ JS;
         // a large-dialog-view. It also turned out, that we need to save the color value
         // in the controls data() - otherwise the value changes unexpectedly when in-table
         // controls are resized (don't know why...)
+        // Unfortunately, just the on-resize is not enough - need to repeat coloring a little
+        // later - e.g. when the browser window is maximized.
         return <<<JS
         
         setTimeout(function(){ 
@@ -163,6 +165,9 @@ JS;
             if ($oControlJs.data('_exfColored') !== true) {
                 sap.ui.core.ResizeHandler.register($oControlJs, function(){
                     $oControlJs.$().find('.sapMPIBar').css('background-color', $oControlJs.data('_exfColor'));
+                    setTimeout(function(){
+                        $oControlJs.$().find('.sapMPIBar').css('background-color', $oControlJs.data('_exfColor'));
+                    }, 10);
                 });
                 $oControlJs.data('_exfColored', true);
             } 
