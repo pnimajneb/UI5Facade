@@ -223,3 +223,6 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 
 /* Pad */
 .exf-pad > .sapMPanelContent {border-bottom: 0 !important}
+
+/* ColorIndicator */
+.sapMObjStatus {white-space: nowrap;}
