@@ -14,7 +14,7 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 /**
  * Generates sap.m.Input with tabular autosuggest and value help.
  *
- * @method \exface\Core\Widgets\InputComboTable\InputComboTable getWidget()
+ * @method \exface\Core\Widgets\InputComboTable getWidget()
  *
  * @author Andrej Kabachnik
  *        
@@ -257,7 +257,7 @@ JS;
             {$this->buildJsPropertyType()}
 			textFormatMode: "ValueKey",
 			showSuggestion: true,
-            maxSuggestionWidth: "400px",
+            maxSuggestionWidth: "{$this->buildCssDropdownWidth()}",
             startSuggestion: function(){
                 return sap.ui.Device.system.phone ? 0 : 1;
             }(),
@@ -889,5 +889,20 @@ JS;
             $f->getElement($col)->registerExternalModules($controller);
         }
         return $this;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildCssDropdownWidth() : string
+    {
+        $visibleCols = 0;
+        foreach ($this->getWidget()->getTable()->getColumns() as $col) {
+            if ($col->isHidden() === false) {
+                $visibleCols++;
+            }
+        }
+        return min(max(400, $visibleCols * 160), 700) . 'px';
     }
 }
