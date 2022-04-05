@@ -21,6 +21,12 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
  */
 class UI5InputComboTable extends UI5Input
 {
+    const DROPDOWN_WIDTH_MIN = 400;
+    
+    const DROPDOWN_WIDTH_MAX = 700;
+    
+    const DROPDOWN_WIDTH_PER_COLUMN = 160;
+    
     /**
      * 
      * {@inheritDoc}
@@ -903,6 +909,12 @@ JS;
                 $visibleCols++;
             }
         }
-        return min(max(400, $visibleCols * 160), 700) . 'px';
+        return min(
+            max(
+                self::DROPDOWN_WIDTH_MIN, 
+                $visibleCols * self::DROPDOWN_WIDTH_PER_COLUMN
+            ), 
+            self::DROPDOWN_WIDTH_MAX
+        ) . 'px';
     }
 }
