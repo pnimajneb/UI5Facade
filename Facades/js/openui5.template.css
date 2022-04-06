@@ -211,6 +211,7 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .slick-lightbox .slick-prev.slick-arrow {z-index: 1}
 .imagecarousel-file {height: 100%; width: 150px; position: relative; background-color: #f5f5f5; cursor: pointer;}
 .imagecarousel-file > i {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 200%}
+.imagecarousel-title {bottom: 5px; position: absolute; padding: 2px; font-size: 0.8rem; text-align: center;}
 .imagecarousel-nodata > .sapUiIcon::before {font-family: SAP-icons; content: "\e172";}
 
 /* DocScanner */
