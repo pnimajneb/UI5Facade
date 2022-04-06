@@ -119,6 +119,12 @@
 	
 	"WIDGET.FORM.MESSAGE_VALIDATION_FAILED": "Bitte alle markierten Felder kontrollieren: die Eingaben scheinen nicht korrekt zu sein!",
 	
+	"WIDGET.IMAGEGALLERY.BUTTON_ZOOM": "Zoom",
+	"WIDGET.IMAGEGALLERY.BUTTON_REMOVE": "Entfernen",
+	"WIDGET.IMAGEGALLERY.BUTTON_BROWSE": "Durchsuchen",
+	"WIDGET.IMAGEGALLERY.HINT_UPLOAD": "Dateien für Upload hierher ziehen oder Button \"Durchsuchen\" verwenden.",
+	"WIDGET.IMAGEGALLERY.HINT_EMPTY": "Keine Dateien vorhanden",
+	
 	"WIDGET.INPUTPASSWORD.CONFIRM": "Passwort bestätigen",
 	"WIDGET.INPUTPASSWORD.DONT_MATCH": "Passwörter stimmen nicht überein",
 	

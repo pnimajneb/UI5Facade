@@ -206,15 +206,12 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .slick-carousel.horizontal .slick-prev.slick-arrow {left: 5px; z-index: 1;}
 .slick-carousel.horizontal .slick-next.slick-arrow {right: 5px; z-index: 1;}
 .slick-carousel.horizontal .slick-arrow:before {color: #404040}
+.slick-carousel .slick-slide {overflow: hidden;}
 .slick-carousel .slick-slide.selected {border: 5px solid #9cc8f7}
 .slick-lightbox .slick-prev.slick-arrow {z-index: 1}
-.imagecarousel-icon,
-.imagecarousel-upload {height: 100%; width: 50px; position: relative; background-color: #f5f5f5; cursor: pointer;}
-.imagecarousel-upload:hover {background-color: #9cc8f7}
-.imagecarousel-icon > i,
-.imagecarousel-upload > i {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 200%}
-.imagecarousel-upload.armed {width: 180px; border: 5px dashed #f5f5f5; background-color: #9cc8f7}
-.imagecarousel-upload.armed > span {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;}
+.imagecarousel-file {height: 100%; width: 150px; position: relative; background-color: #f5f5f5; cursor: pointer;}
+.imagecarousel-file > i {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 200%}
+.imagecarousel-nodata > .sapUiIcon::before {font-family: SAP-icons; content: "\e172";}
 
 /* DocScanner */
 .docScanner {aspect-ratio: 210 / 297; max-height: 100%; max-width: 100%; border: 1px solid #0854a0; box-sizing: border-box; margin: 10px; background-color: white;}

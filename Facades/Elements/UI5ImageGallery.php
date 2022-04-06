@@ -51,11 +51,14 @@ class UI5ImageGallery extends UI5AbstractElement
                 new sap.ui.core.HTML("{$this->getId()}", {
                     content: "<div id=\"{$this->getId()}\" style=\"height: calc({$this->getHeight()} - 2.75rem - 2px);\"><div id=\"{$this->getIdOfSlick()}\" class=\"slick-carousel horizontal\" style=\"height: 100%\"></div></div>",
                     afterRendering: function(oEvent) { 
-                        if ($('#{$this->getIdOfSlick()}').hasClass('slick-initialized')) {
+                        var jqSlick = $('#{$this->getIdOfSlick()}');
+                        if (jqSlick.hasClass('slick-initialized')) {
                             return;
                         }
 
                         {$this->buildJsSlickInit()}
+
+                        {$this->buildJsUploaderInit('jqSlick')}
 
                         sap.ui.getCore().byId('{$this->getId()}').getParent().addStyleClass('sapUiNoContentPadding');
                     }
@@ -78,8 +81,6 @@ JS;
                 var carousel = $('#{$this->getIdOfSlick()}');
                     
                 {$this->buildJsSlickSlidesFromData('carousel', 'oModel.getData()')}
-
-                {$this->buildJsUploaderInit('carousel')}
 
 JS;
     }
@@ -227,5 +228,26 @@ JS;
     public function needsContainerContentPadding() : bool
     {
         return false;
+    }
+    
+    protected function buildHtmlNoDataOverlay() : string
+    {
+        if ($this->getWidget()->isUploadEnabled()) {
+            $message = $this->translate('WIDGET.IMAGEGALLERY.HINT_UPLOAD');
+        } else {
+            $message = $this->translate('WIDGET.IMAGEGALLERY.HINT_EMPTY');
+        }
+        return <<<HTML
+        
+            <div id="{$this->getIdOfSlick()}-nodata" style="position: absolute; top: 0; z-index: 1; width: 100%; height: 100%">
+                <li class="sapMLIB sapMUCNoDataPage sapMLIBFocusable imagecarousel-nodata">
+                    <span role="presentation" aria-hidden="true" aria-label="document" class="sapUiIcon sapUiIconMirrorInRTL" style="font-family: 'SAP\2dicons'; font-size: 6rem;"></span>
+                    <div class="sapMUCNoDataDescription">
+                        {$message}
+                    </div>
+                </li>
+            </div>
+    
+HTML;
     }
 }
