@@ -209,10 +209,12 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .slick-carousel .slick-slide {overflow: hidden;}
 .slick-carousel .slick-slide.selected {border: 5px solid #9cc8f7}
 .slick-lightbox .slick-prev.slick-arrow {z-index: 1}
-.imagecarousel-file {height: 100%; width: 150px; position: relative; background-color: #f5f5f5; cursor: pointer;}
+.imagecarousel-file {height: 100%; width: 180px; position: relative; background-color: #f5f5f5; cursor: pointer;}
 .imagecarousel-file > i {position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 200%}
-.imagecarousel-title {bottom: 5px; position: absolute; padding: 2px; font-size: 0.8rem; text-align: center;}
+.imagecarousel-title {bottom: 0; position: absolute; padding: 10px; font-size: 0.8rem; text-align: center; width: calc(100% - 20px);}
 .imagecarousel-overlay {position: absolute; top: 0; width: 100%; height: 100%}
+
+.imagecarousel-file {background-color: white; border: 1px solid rgb(217, 217, 217);}
 .imagecarousel-nodata > .sapUiIcon::before {font-family: SAP-icons; content: "\e172";}
 
 /* DocScanner */
