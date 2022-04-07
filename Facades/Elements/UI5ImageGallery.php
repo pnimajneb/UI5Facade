@@ -239,7 +239,7 @@ JS;
         }
         return <<<HTML
         
-            <div id="{$this->getIdOfSlick()}-nodata" style="position: absolute; top: 0; z-index: 1; width: 100%; height: 100%">
+            <div id="{$this->getIdOfSlick()}-nodata" class="imagecarousel-overlay">
                 <li class="sapMLIB sapMUCNoDataPage sapMLIBFocusable imagecarousel-nodata">
                     <span role="presentation" aria-hidden="true" aria-label="document" class="sapUiIcon sapUiIconMirrorInRTL" style="font-family: 'SAP\2dicons'; font-size: 6rem;"></span>
                     <div class="sapMUCNoDataDescription">
