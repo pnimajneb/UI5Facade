@@ -26,6 +26,7 @@ class UI5ImageGallery extends UI5AbstractElement
         SlickGalleryTrait::buildJsValueGetter insteadof UI5DataElementTrait;
         SlickGalleryTrait::buildJsDataGetter insteadof UI5DataElementTrait;
         SlickGalleryTrait::buildJsDataResetter insteadof UI5DataElementTrait;
+        SlickGalleryTrait::buildJsUploadStore as buildJsUploadStoreViaTrait;
         UI5DataElementTrait::buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
     }
     
@@ -105,6 +106,20 @@ JS;
                 {$this->buildJsDataLoaderOnLoadedHandleWidgetLinks('oUploadModel')}
                 {$this->getServerAdapter()->buildJsServerRequest($uploadAction, 'oUploadModel', 'oParams', $onUploadCompleteJs, $onUploadCompleteJs)}
 
+JS;
+    }
+    
+    protected function buildJsUploadStore(string $oParamsJs, string $onUploadCompleteJs) : string
+    {
+        return <<<JS
+        
+            var oUploadModel = new sap.ui.model.json.JSONModel();
+            oUploadModel.setData($oParamsJs.data);
+            {$this->buildJsDataLoaderOnLoadedHandleWidgetLinks('oUploadModel')}
+            $oParamsJs.data = oUploadModel.getData();
+
+            {$this->buildJsUploadStoreViaTrait($oParamsJs, $onUploadCompleteJs)}
+            
 JS;
     }
     
