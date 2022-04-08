@@ -51,6 +51,8 @@ class Webapp implements WorkbenchDependantInterface
     
     private $rootPage = null;
     
+    private $cacheable = true;
+    
     private $facadeFolder = null;
     
     private $config = [];
@@ -484,6 +486,7 @@ class Webapp implements WorkbenchDependantInterface
             } catch (AuthorizationExceptionInterface $accessError) {
                 $authError = new AuthenticationFailedError($this->getWorkbench()->getSecurity(), $accessError->getMessage(), null, $accessError);
                 $appRootPage = $this->createLoginPage($authError, $this->getRootPageAlias());
+                $this->cacheable = false;
             } 
             $this->rootPage = $appRootPage;
         }
@@ -849,6 +852,7 @@ class Webapp implements WorkbenchDependantInterface
      */
     public function getErrorView(\Throwable $exception, string $originalViewPath = null) : string
     {
+        $this->cacheable = false;
         if ($exception instanceof ExceptionInterface) {
             $logId = $exception->getId();
             $alias =  $exception->getAlias();
@@ -894,6 +898,7 @@ class Webapp implements WorkbenchDependantInterface
      */
     protected function getErrorController(\Throwable $exception) : string
     {
+        $this->cacheable = false;
         return $this->getFromFileTemplate('controller/Error' . $this->getControllerFileSuffix());
     }
     
@@ -946,5 +951,10 @@ class Webapp implements WorkbenchDependantInterface
         $loginPage->addWidget($loginPrompt);
         
         return $loginPage;
+    }
+    
+    public function isCacheable() : bool
+    {
+        return $this->cacheable;
     }
 }

@@ -60,6 +60,12 @@ class UI5WebappRouter implements MiddlewareInterface
         return $handler->handle($request);
     }
     
+    /**
+     * 
+     * @param string $route
+     * @param HttpTaskInterface $task
+     * @return ResponseInterface
+     */
     protected function resolve(string $route, HttpTaskInterface $task = null) : ResponseInterface
     {
         $target = StringDataType::substringAfter($route, '/');
@@ -75,12 +81,20 @@ class UI5WebappRouter implements MiddlewareInterface
         
         switch (strtolower($type)) {
             case 'json':
-                return $this->createResponseJson($body);
+                $response = $this->createResponseJson($body);
             case 'js':
-                return $this->createResponseJs($body);
+                $response = $this->createResponseJs($body);
             default:
-                return $this->createResponsePlain($body);
+                $response = $this->createResponsePlain($body);
         }
+        
+        if (! $webapp->isCacheable()) {
+            $response = $response->withHeader('Cache-Control', ["no-cache", "no-store", "must-revalidate"]);
+            $response = $response->withHeader('Pragma', "no-cache");
+            $response = $response->withHeader('Expires', "0");
+        }
+        
+        return $response;
     }
     
     protected function getManifest() : ResponseInterface
