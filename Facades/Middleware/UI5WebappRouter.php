@@ -88,10 +88,8 @@ class UI5WebappRouter implements MiddlewareInterface
                 $response = $this->createResponsePlain($body);
         }
         
-        if (! $webapp->isCacheable()) {
-            $response = $response->withHeader('Cache-Control', ["no-cache", "no-store", "must-revalidate"]);
-            $response = $response->withHeader('Pragma', "no-cache");
-            $response = $response->withHeader('Expires', "0");
+        foreach ($this->facade->getConfig()->getOption('FACADE.HEADERS.AJAX') as $name => $value) {
+            $response = $response->withHeader($name, $value);
         }
         
         return $response;
