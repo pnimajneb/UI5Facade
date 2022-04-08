@@ -87,8 +87,12 @@ class UI5WebappRouter implements MiddlewareInterface
             default:
                 $response = $this->createResponsePlain($body);
         }
-        
-        foreach ($this->facade->getConfig()->getOption('FACADE.HEADERS.AJAX') as $name => $value) {
+        $config = $this->facade->getConfig();
+        $headers = array_merge(
+            array_filter($config->getOption('FACADE.HEADERS.COMMON')->toArray()),
+            array_filter($config->getOption('FACADE.HEADERS.AJAX')->toArray())
+        );
+        foreach ($headers as $name => $value) {
             $response = $response->withHeader($name, $value);
         }
         
