@@ -202,4 +202,24 @@ JS;
     {
         return 'sap.ui.core.ValueState.None';
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsPropertyTooltip()
+     */
+    protected function buildJsPropertyTooltip()
+    {
+        if ($this->getWidget()->isInTable() === true) {
+            if ($this->isValueBoundToModel()) {
+                $value = $this->buildJsValueBinding();
+            } else {
+                $value = $this->buildJsValue();
+            }
+            
+            return 'tooltip: ' . $value .',';
+        }
+        
+        return parent::buildJsPropertyTooltip();
+    }
 }
