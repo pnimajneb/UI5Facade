@@ -147,5 +147,19 @@ JS;
     {
         return 'inverted: ' . ($this->getInverted() ? 'true' : 'false') . ',';
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsPropertyTooltip()
+     */
+    protected function buildJsPropertyTooltip()
+    {
+        if ($this->getWidget()->isInTable() === true && $this->isValueBoundToModel()) {
+            $value = $this->buildJsValueBinding();
+            return 'tooltip: ' . $value .',';
+        }
+        
+        return parent::buildJsPropertyTooltip();
+    }
 }
-?>

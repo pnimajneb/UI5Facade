@@ -210,13 +210,8 @@ JS;
      */
     protected function buildJsPropertyTooltip()
     {
-        if ($this->getWidget()->isInTable() === true) {
-            if ($this->isValueBoundToModel()) {
-                $value = $this->buildJsValueBinding();
-            } else {
-                $value = $this->buildJsValue();
-            }
-            
+        if ($this->getWidget()->isInTable() === true && $this->isValueBoundToModel()) {
+            $value = $this->buildJsValueBinding();
             return 'tooltip: ' . $value .',';
         }
         
