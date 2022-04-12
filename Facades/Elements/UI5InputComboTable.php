@@ -410,7 +410,6 @@ JS;
                 var aFoundKeys = [];
                 var bNewKeysAllowed = {$allowNewValues};
                 var aNewKeys = [];
-
                 if (silent) {
                     if (iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
                         oInput.{$this->buildJsSetSelectedKeyMethod("data[0]['{$widget->getValueColumn()->getDataColumnName()}']", "data[0]['{$widget->getTextColumn()->getDataColumnName()}']")}
@@ -790,10 +789,15 @@ JS;
              if (oData.rows[0]['{$widget->getTextColumn()->getDataColumnName()}'] != undefined){
                 var oInput = sap.ui.getCore().byId("{$this->getId()}");
                 oInput.{$this->buildJsEmptyMethod()};
+                var vals = [];
                 oData.rows.forEach(function(oRow){
                     oInput.{$this->buildJsSetSelectedKeyMethod("oRow['{$colName}']", "oRow['{$widget->getTextColumn()->getDataColumnName()}']")};
+                    vals.push(oRow['{$colName}']);
                 });
-                                     
+                val = vals.join('{$widget->getAttribute()->getValueListDelimiter()}');                
+                oInput.fireChange({
+                    value: val
+                });              
             } else {
                 var val;
                 if (oData.rows.length === 1) {
