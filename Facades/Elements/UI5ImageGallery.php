@@ -248,9 +248,9 @@ JS;
     protected function buildHtmlNoDataOverlay() : string
     {
         if ($this->getWidget()->isUploadEnabled()) {
-            $message = $this->translate('WIDGET.IMAGEGALLERY.HINT_UPLOAD');
+            $message = $this->getWorkbench()->getCoreApp()->getTranslator()->translate('WIDGET.IMAGEGALLERY.HINT_UPLOAD');
         } else {
-            $message = $this->translate('WIDGET.IMAGEGALLERY.HINT_EMPTY');
+            $message = $this->getWorkbench()->getCoreApp()->getTranslator()->translate('WIDGET.IMAGEGALLERY.HINT_EMPTY');
         }
         return <<<HTML
         

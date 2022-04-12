@@ -117,12 +117,6 @@
 	
 	"WIDGET.FORM.MESSAGE_VALIDATION_FAILED": "Please check all marked fields: it seems, they were not filled correctly!",
 	
-	"WIDGET.IMAGEGALLERY.BUTTON_ZOOM": "Zoom",
-	"WIDGET.IMAGEGALLERY.BUTTON_REMOVE": "Remove",
-	"WIDGET.IMAGEGALLERY.BUTTON_BROWSE": "Browser",
-	"WIDGET.IMAGEGALLERY.HINT_UPLOAD": "Drag files here or press \"Browse\" button.",
-	"WIDGET.IMAGEGALLERY.HINT_EMPTY": "No files found",
-	
 	"WIDGET.INPUTPASSWORD.CONFIRM": "Confirm password",	
 	"WIDGET.INPUTPASSWORD.DONT_MATCH": "Passwords do not match",
 	
