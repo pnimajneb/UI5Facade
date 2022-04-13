@@ -56,7 +56,7 @@ class UI5DialogHeader extends UI5Container
                 $js = $this->buildJsConstructorForVerticalLayout($widget, $oControllerJs);
                 break;
         }
-        return $js;
+        return $js ?? '';
     }
         
     /**
