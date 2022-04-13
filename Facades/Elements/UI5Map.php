@@ -10,6 +10,8 @@ use exface\Core\Widgets\Parts\Maps\DataSelectionMarkerLayer;
 use exface\Core\Interfaces\Widgets\iUseData;
 use exface\Core\CommonLogic\DataSheets\DataColumn;
 use exface\Core\Factories\WidgetFactory;
+use exface\Core\Widgets\Parts\Maps\Interfaces\MapLayerInterface;
+use exface\Core\Widgets\Parts\Maps\DataMarkersLayer;
 
 /**
  * 
@@ -105,6 +107,16 @@ JS);
 JS;
         // Remove the precalculated var name after init scripts were generated (see above).
         $this->leafletVarTemp = null;
+        
+        foreach ($this->getWidget()->getLayers() as $layer) {
+            if ($layer instanceof DataMarkersLayer) {
+                if (($linkLat = $layer->getLatitudeWidgetLink()) && ($linkLng = $layer->getLongitudeWidgetLink())) {
+                    $this->getFacade()->getElement($linkLat->getTargetWidget())->addOnChangeScript($this->buildJsRefresh());
+                    $this->getFacade()->getElement($linkLng->getTargetWidget())->addOnChangeScript($this->buildJsRefresh());
+                    $this->getController()->addOnPrefillDataChangedScript($this->buildJsRefresh());
+                }
+            }
+        }
                         
         return $this->buildJsPanelWrapper($chart, $oControllerJs);
     }
