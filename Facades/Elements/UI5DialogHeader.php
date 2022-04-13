@@ -6,6 +6,7 @@ use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\Widgets\iDisplayValue;
 use exface\Core\Widgets\Input;
+use exface\Core\Interfaces\WidgetInterface;
 
 /**
  * Generates the controls inside a sap.uxap.ObjectPageHeader.
@@ -15,34 +16,56 @@ use exface\Core\Widgets\Input;
  */
 class UI5DialogHeader extends UI5Container
 {
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsConstructor()
+     */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
         $js = '';
         
         foreach ($this->getWidget()->getWidgets() as $widget) {
-            switch (true) {
-                case $widget instanceof Input:
-                    $js .= $this->getFacade()->getElement($widget)->buildJsConstructor() . ',';
-                    break;
-                case $widget instanceof iHaveValue:
-                    $js .= $this->buildJsObjectStatus($widget) . ',';
-                    break;
-                case $widget instanceof WidgetGrid:
-                    $js .= $this->buildJsVerticalLayout($widget) . ',';
-                    break;
-            }
+            $js .= $this->buildJsConstructorForChild($widget, $oControllerJs) . ",\n";
         }
         
         return $js;
     }   
-                    
-    protected function buildJsObjectStatus(iHaveValue $widget)
+    
+    /**
+     * 
+     * @param WidgetInterface $widget
+     * @param string $oControllerJs
+     * @return string
+     */
+    protected function buildJsConstructorForChild(WidgetInterface $widget, string $oControllerJs) : string
     {
-        $element = new UI5ObjectStatus($widget, $this->getFacade());
-        return $element->buildJsConstructor();
+        switch (true) {
+            // Render any custom display widget or input directly
+            case $widget instanceof iDisplayValue && $widget->getWidgetType() !== 'Display':
+            case $widget instanceof Input:
+                $js = $this->getFacade()->getElement($widget)->buildJsConstructor($oControllerJs);
+                break;
+            // Render regular generic value widgets as sap.m.ObjectStatus
+            case $widget instanceof iHaveValue:
+                $element = new UI5ObjectStatus($widget, $this->getFacade());
+                $js = $element->buildJsConstructor($oControllerJs);
+                break;
+            // Render widget groups as vertical layouts
+            case $widget instanceof WidgetGrid:
+                $js = $this->buildJsConstructorForVerticalLayout($widget, $oControllerJs);
+                break;
+        }
+        return $js;
     }
         
-    protected function buildJsVerticalLayout(iContainOtherWidgets $widget)
+    /**
+     * 
+     * @param iContainOtherWidgets $widget
+     * @param string $oControllerJs
+     * @return string
+     */
+    protected function buildJsConstructorForVerticalLayout(iContainOtherWidgets $widget, string $oControllerJs)
     {
         if ($widget->isHidden()){
             return '';
@@ -50,13 +73,7 @@ class UI5DialogHeader extends UI5Container
         
         $title = $widget->getCaption() ? 'new sap.m.Title({text: "' . $this->escapeJsTextValue($widget->getCaption()) . '"}),' : '';
         foreach ($widget->getWidgets() as $w) {
-            if ($w instanceof WidgetGrid) {
-                $content .= $this->buildJsVerticalLayout($w) . ',';
-            } elseif ($w->getWidgetType() !== 'Display' && $w instanceof iDisplayValue) {
-                $content .= $this->getFacade()->getElement($w)->buildJsConstructor('oController') . ',';
-            } elseif ($w instanceof iHaveValue) {
-                $content .= $this->buildJsObjectStatus($w) . ',';
-            }
+            $content .= $this->buildJsConstructorForChild($w, $oControllerJs) . ",\n";
         }
         return <<<JS
         
