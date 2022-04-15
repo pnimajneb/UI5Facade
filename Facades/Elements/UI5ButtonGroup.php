@@ -14,6 +14,11 @@ class UI5ButtonGroup extends UI5AbstractElement
 {
     use JqueryButtonGroupTrait;
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::init()
+     */
     protected function init()
     {
         parent::init();
@@ -23,12 +28,18 @@ class UI5ButtonGroup extends UI5AbstractElement
         // it would be better to add the some how. But how?
         if ($condProp = $this->getWidget()->getHiddenIf()) {
             foreach ($this->getWidget()->getButtons() as $btn) {
-                $btn->setHiddenIf($condProp->exportUxonObject());
+                // Do not override setting of the button itself!
+                if ($btn->isHidden() === false && $btn->getHiddenIf() === null) {
+                    $btn->setHiddenIf($condProp->exportUxonObject());
+                }
             }
         }
         if ($condProp = $this->getWidget()->getDisabledIf()) {
             foreach ($this->getWidget()->getButtons() as $btn) {
-                $btn->setDisabledIf($condProp->exportUxonObject());
+                // Do not override setting of the button itself!
+                if ($btn->isDisabled() === false && $btn->getDisabledIf() === null) {
+                    $btn->setDisabledIf($condProp->exportUxonObject());
+                }
             }
         }
     }
