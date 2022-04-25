@@ -66,7 +66,7 @@ class UI5Display extends UI5Value
                     if (value === '1' || value === 'true' || value === 1 || value === true) return $icon_yes;
                     else return $icon_no;
                 }")}
-        })
+        }).addStyleClass('sapMText')
 
 JS;
         } elseif($widget instanceof iHaveColorScale && $widget->hasColorScale()) {
