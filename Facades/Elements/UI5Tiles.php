@@ -18,7 +18,7 @@ class UI5Tiles extends UI5Container
     {
         $this->registerConditionalProperties();
         
-        $tiles = $this->buildJsChildrenConstructors();
+        $tiles = $this->buildJsChildrenConstructors();        
         if ($this->getWidget()->getCenterContent(false) === true) {
             $tiles = $this->buildJsCenterWrapper($tiles);
         }
@@ -27,6 +27,7 @@ class UI5Tiles extends UI5Container
 
                 new sap.m.Panel("{$this->getId()}", {
                     {$this->buildJsPropertyHeight()}
+                    {$this->buildJsPropertyVisibile()}
                     content: [
                         {$tiles}
                     ],
@@ -109,5 +110,18 @@ JS;
     public function needsContainerContentPadding() : bool
     {
         return false;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsPropertyVisibile()
+     */
+    protected function buildJsPropertyVisibile() : string
+    {
+        if ($this->getWidget()->isHiddenIfEmpty() && $this->getWidget()->countWidgetsVisible() === 0) {
+            return 'visible: false,';
+        }
+        return parent::buildJsPropertyVisibile();
     }
 }

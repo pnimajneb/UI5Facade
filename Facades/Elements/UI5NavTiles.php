@@ -24,7 +24,7 @@ class UI5NavTiles extends UI5Container
         if ($widget->hasParent() === false && $widget->hasWidgets()) {
             $widget->getWidgetFirst()->setHideCaption(true);
         }
-        if ($widget->isEmpty() && $widget->isHiddenIfEmpty()) {
+        if ($widget->isHiddenIfEmpty() && $widget->countWidgetsVisible() === 0) {
             return '';
         }
         return parent::buildJsConstructor($oControllerJs);
