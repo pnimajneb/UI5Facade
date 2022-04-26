@@ -366,6 +366,9 @@ JS;
         $controller->addExternalModule('libs.font_awesome.plugin', $this->buildUrlToSource('LIBS.FONT_AWESOME.PLUGIN'));
         $controller->addExternalModule('libs.exface.custom_controls', $this->buildUrlToSource('LIBS.FACADE.CUSTOM_CONTROLS'));
         
+        $controller->addExternalModule('libs.moment.moment', $this->buildUrlToSource("LIBS.MOMENT.JS"), null, 'moment');
+        $controller->addExternalModule('libs.exface.exfTools', $this->buildUrlToSource("LIBS.EXFTOOLS.JS"), null, 'exfTools');
+        
         return $controller;
     }
     

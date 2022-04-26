@@ -20,8 +20,6 @@ trait UI5MomentFormatterTrait
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5BindingFormatterInterface
     {
         $facade = $controller->getWebapp()->getFacade();
-        $controller->addExternalModule('libs.moment.moment', $facade->buildUrlToSource("LIBS.MOMENT.JS"), null, 'moment');
-        $controller->addExternalModule('libs.exface.exfTools', $facade->buildUrlToSource("LIBS.EXFTOOLS.JS"), null, 'exfTools');
         $this->registerUi5CustomType($controller);
         $locale = $this->getMomentLocale($facade);
         if ($locale !== '') {
