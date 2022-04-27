@@ -26,21 +26,30 @@ trait UI5MomentFormatterTrait
     /**
      * 
      * @param UI5Facade $facade
-     * @return string
+     * @param UI5ControllerInterface $controller
+     * 
+     * @return void
      */
-    public static function getMomentLocale(UI5Facade $facade) : string
+    public static function registerMoment(UI5Facade $facade, UI5ControllerInterface $controller)
     {
         $localesPath = $facade->getWorkbench()->filemanager()->getPathToVendorFolder() . DIRECTORY_SEPARATOR . $facade->getConfig()->getOption('LIBS.MOMENT.LOCALES');
         $fullLocale = $facade->getWorkbench()->getContext()->getScopeSession()->getSessionLocale();
         $locale = str_replace("_", "-", $fullLocale);
+        $momentLocale = '';
         if (file_exists($localesPath . DIRECTORY_SEPARATOR . $locale . '.js')) {
-            return $locale;
+            $momentLocale = $locale;
         }
         $locale = substr($fullLocale, 0, strpos($fullLocale, '_'));
         if (file_exists($localesPath . DIRECTORY_SEPARATOR . $locale . '.js')) {
-            return $locale;
+            $momentLocale = $locale;
         }
-        return '';
+        
+        $controller->addExternalModule('libs.moment.moment', $facade->buildUrlToSource("LIBS.MOMENT.JS"), null, 'moment');
+        if ($momentLocale !== '') {
+            $controller->addExternalModule('libs.moment.locale', $facade->buildUrlToSource("LIBS.MOMENT.LOCALES") . '/' . $momentLocale . '.js', null);
+        }
+        
+        return;
     }
     
     /**
