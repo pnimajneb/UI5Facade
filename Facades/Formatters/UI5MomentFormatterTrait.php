@@ -31,7 +31,7 @@ trait UI5MomentFormatterTrait
     public static function getMomentLocale(UI5Facade $facade) : string
     {
         $localesPath = $facade->getWorkbench()->filemanager()->getPathToVendorFolder() . DIRECTORY_SEPARATOR . $facade->getConfig()->getOption('LIBS.MOMENT.LOCALES');
-        $fullLocale = $facade->getJsFormatter()->getDataType()->getLocale();
+        $fullLocale = $facade->getWorkbench()->getContext()->getScopeSession()->getSessionLocale();
         $locale = str_replace("_", "-", $fullLocale);
         if (file_exists($localesPath . DIRECTORY_SEPARATOR . $locale . '.js')) {
             return $locale;
