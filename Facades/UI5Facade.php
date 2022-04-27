@@ -366,6 +366,10 @@ JS;
         $controller->addExternalModule('libs.font_awesome.plugin', $this->buildUrlToSource('LIBS.FONT_AWESOME.PLUGIN'));
         $controller->addExternalModule('libs.exface.custom_controls', $this->buildUrlToSource('LIBS.FACADE.CUSTOM_CONTROLS'));
         
+        $momentLocale = UI5DateFormatter::getMomentLocale($this);
+        if ($momentLocale !== '') {
+            $controller->addExternalModule('libs.moment.locale', $this->buildUrlToSource("LIBS.MOMENT.LOCALES") . '/' . $momentLocale . '.js', null);
+        }
         $controller->addExternalModule('libs.moment.moment', $this->buildUrlToSource("LIBS.MOMENT.JS"), null, 'moment');
         $controller->addExternalModule('libs.exface.exfTools', $this->buildUrlToSource("LIBS.EXFTOOLS.JS"), null, 'exfTools');
         

@@ -19,12 +19,7 @@ trait UI5MomentFormatterTrait
      */
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5BindingFormatterInterface
     {
-        $facade = $controller->getWebapp()->getFacade();
         $this->registerUi5CustomType($controller);
-        $locale = $this->getMomentLocale($facade);
-        if ($locale !== '') {
-            $controller->addExternalModule('libs.moment.locale', $facade->buildUrlToSource("LIBS.MOMENT.LOCALES") . '/' . $locale . '.js', null);
-        }
         return $this;
     }
     
@@ -33,10 +28,10 @@ trait UI5MomentFormatterTrait
      * @param UI5Facade $facade
      * @return string
      */
-    protected function getMomentLocale(UI5Facade $facade) : string
+    public static function getMomentLocale(UI5Facade $facade) : string
     {
         $localesPath = $facade->getWorkbench()->filemanager()->getPathToVendorFolder() . DIRECTORY_SEPARATOR . $facade->getConfig()->getOption('LIBS.MOMENT.LOCALES');
-        $fullLocale = $this->getJsFormatter()->getDataType()->getLocale();
+        $fullLocale = $facade->getJsFormatter()->getDataType()->getLocale();
         $locale = str_replace("_", "-", $fullLocale);
         if (file_exists($localesPath . DIRECTORY_SEPARATOR . $locale . '.js')) {
             return $locale;
