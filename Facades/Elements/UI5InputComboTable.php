@@ -155,7 +155,7 @@ JS;
             // work on non-maximized dialogs, but this check does)
             $this->getController()->addOnPrefillDataChangedScript("
             setTimeout(function(){
-                var oInput = sap.ui.getCore().byId('{$this->getId()}'); 
+                var oInput = sap.ui.getCore().byId('{$this->getId()}');
                 {$missingValueJs} 
             }, 0);");
             
@@ -410,8 +410,12 @@ JS;
                 var aFoundKeys = [];
                 var bNewKeysAllowed = {$allowNewValues};
                 var aNewKeys = [];
+
                 if (silent) {
                     if (iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
+                        if (oInput.destroyTokens !== undefined) {
+                            oInput.destroyTokens();
+                        }
                         oInput.{$this->buildJsSetSelectedKeyMethod("data[0]['{$widget->getValueColumn()->getDataColumnName()}']", "data[0]['{$widget->getTextColumn()->getDataColumnName()}']")}
                         oInput.closeSuggestions();
                         oInput.setValueState(sap.ui.core.ValueState.None);
@@ -468,6 +472,9 @@ JS;
                 }
 
                 if (bAutoSelectSingle && iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
+                    if (oInput.destroyTokens !== undefined) {
+                        oInput.destroyTokens();
+                    }
                     oInput.{$this->buildJsSetSelectedKeyMethod("data[0]['{$widget->getValueColumn()->getDataColumnName()}']", "data[0]['{$widget->getTextColumn()->getDataColumnName()}']")}
                     oInput.setValueState(sap.ui.core.ValueState.None);
                     setTimeout(function(){
