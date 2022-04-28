@@ -72,7 +72,7 @@ body:not(.sapUiSizeCompact) .sapFDynamicPageTitleMainHeadingInner .sapMTitle > s
 .exf-icon-tile .sapMGTContent {margin-top: -40px}
 .exf-tiles > .sapMPanelContent {border-bottom: none;}
 .exf-tiles > h2, .exf-panel > h2 {margin-top: 1rem;}
-.exf-tile > .sapMGTHdrContent.OneByOne > .sapMGTSubHdrTxt > .sapMText {white-space: normal;max-height: 2rem;  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;text-overflow: -o-ellipsis-lastline;}
+.exf-tile > .sapMGTHdrContent.OneByOne > .sapMGTSubHdrTxt > .sapMText {white-space: normal;max-height: 3rem;  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;text-overflow: -o-ellipsis-lastline;}
 /* Fix remove grayish background on busy-indicator in tile content */
 .sapMTileCntContent > .sapMNC  > .sapUiLocalBusyIndicator {background-color: transparent;}
 /* Fix to force 2-column tile menus even on phones with long narrow screens (centering on wider phones) */
