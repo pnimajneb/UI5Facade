@@ -588,7 +588,9 @@ JS;
                 continue;
             }
             oCxt = oTable.getContextByIndex(aSelectedIndices[i]);
-            rows.push(oModel.getProperty(oCxt.sPath));
+            if (oCxt) {
+                rows.push(oModel.getProperty(oCxt.sPath));
+            }
         }
 
 JS;
@@ -817,10 +819,12 @@ JS;
         // For some reason, the sorting indicators on the column are changed to the opposite after
         // the model is refreshed. This hack fixes it by forcing sorted columns to keep their
         // indicator.
+        $uiTablePostprocessing = '';
+        $uiTableSetFooterRows = '';
         if ($this->isUiTable() === true) {
-            $uiTableSortOrderFix = <<<JS
+            $uiTablePostprocessing .= <<<JS
             
-            sap.ui.getCore().byId('{$this->getId()}').getColumns().forEach(function(oColumn){
+            oTable.getColumns().forEach(function(oColumn){
                 if (oColumn.getSorted() === true) {
                     var order = oColumn.getSortOrder()
                     setTimeout(function(){
@@ -840,7 +844,7 @@ JS;
             
             // Weird code to make the table fill it's container. If not done, tables within
             // sap.f.Card will not be high enough. 
-            $uiTableHeightFix = 'oTable.setVisibleRowCountMode("Fixed").setVisibleRowCountMode("Auto");';
+            $uiTablePostprocessing .= 'oTable.setVisibleRowCountMode("Fixed").setVisibleRowCountMode("Auto");';
             
             // To get the experimental row grouping of the ui.table working, we need to
             // 1. set `enableGrouping` of the table (see `buildJsConstructorForUiTable()`)
@@ -849,11 +853,71 @@ JS;
             // Strangely Table.setGroupBy() fails if the column has no model data, so we
             // must do it here after the model was loaded.
             if ($this->getWidget()->hasRowGroups()) {
-                $uiTableGroupingInit = "sap.ui.getCore().byId('{$this->getId()}').setGroupBy('{$this->getFacade()->getElement($this->getWidget()->getRowGrouper()->getGroupByColumn())->getId()}');";
+                $uiTablePostprocessing .= "oTable.setGroupBy('{$this->getFacade()->getElement($this->getWidget()->getRowGrouper()->getGroupByColumn())->getId()}');";
             }
+            
+            // Optimize column width. This is not eays with sap.ui.table.Table :(
+            // 1) oTable.autoResizeColumn() sets the focus to the column, so it is scrolled into
+            // view. This is why the focus must be removed from the column immediately and restored 
+            // afterwards.
+            // 2) The optimizer only works AFTER all column were populated, so we need a setTimeout().
+            // TODO would be better to have an event, but none seemed suitable...
+            // 3) The optimizer does not take the column header into account, so on narrow columns
+            // the header gets truncated. We need to double-check this after all columns are resized
+            // 4) Also need to make sure, the maximum width of the column is not exceeded
+            // 5) TODO might need to check for minimum width too!
+            $uiTablePostprocessing .= <<<JS
+
+            setTimeout(function(){console.log('pp');
+                var bResized = false;
+                var domFocused = document.activeElement;
+                oTable.getColumns().reverse().forEach(function(oCol) {
+                    var oWidth = oCol.data('_exfWidth');
+                    if (! oWidth) return;
+                    if (oCol.getVisible() === true && oWidth.auto === true) {
+                        bResized = true;
+                        oCol.applyFocusInfo({preventScroll: true});
+                        oTable.autoResizeColumn(oTable.indexOfColumn(oCol));
+                        document.activeElement.blur();
+                    }
+                });
+                if (bResized) {
+                    setTimeout(function(){
+                        var domHScroll = (oTable._getScrollExtension() || {}).getHorizontalScrollbar();
+                        if (domFocused) {
+                            domFocused.focus();
+                        }
+
+                        oTable.getColumns().forEach(function(oCol){
+                            var oWidth = oCol.data('_exfWidth');
+                            var jqCol = $('#'+oCol.getId());
+                            var jqLabel = jqCol.find('label');
+                            var iWidth = null;
+                            if (! oWidth) return;
+                            if (oCol.getVisible() === true && oWidth.auto === true) {
+                                if (! jqLabel[0]) return;
+                                if (jqLabel[0].scrollWidth > jqLabel.width()) {
+                                    oCol.setWidth((jqLabel[0].scrollWidth + (jqCol.outerWidth()-jqLabel.width()) + 1).toString() + 'px');
+                                }
+                                if (oWidth.max) {
+                                    iWidth = $('<div style="width: ' + oWidth.max + '"></div>').width();
+                                    if (jqCol.outerWidth() > iWidth) {
+                                        oCol.setWidth(oWidth.max);
+                                    }
+                                }
+                            }
+                        });
+                    }, 0);
+                }
+            }, 100);
+
+JS;
         }
         
         return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
+            /*if (typeof oTable === 'undefined') {
+                var oTable = sap.ui.getCore().byId('{$this->getId()}');
+            }*/
 
 			var footerRows = {$oModelJs}.getProperty("/footerRows");
             {$uiTableSetFooterRows}
@@ -862,9 +926,7 @@ JS;
             {$paginator->buildJsRefresh('oController')};  
             {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, false)};
             {$singleResultJs};
-            {$uiTableSortOrderFix};
-            {$uiTableHeightFix};
-            {$uiTableGroupingInit};
+            {$uiTablePostprocessing};
             {$this->buildJsCellConditionalDisablers()};
             
 JS;

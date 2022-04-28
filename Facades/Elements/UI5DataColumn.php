@@ -48,6 +48,16 @@ class UI5DataColumn extends UI5AbstractElement
             }
         }
         
+        $width = $col->getWidth();
+        $widthMax = $col->getWidthMax();
+        $widthMin = $col->getWidthMin();
+        $widthJson = json_encode([
+            'auto' => $col->getNowrap() && ($width->isUndefined() || strtolower($width->getValue()) === 'auto'),
+            'fixed' => $this->escapeString($width->getValue()),
+            'min' => $widthMin->isFacadeSpecific() ? $widthMin->getValue() : null,
+            'max' => $widthMax->isFacadeSpecific() ? $widthMax->getValue() : null
+        ]);
+        
         // The tooltips for columns of the UI table also include the column caption
         // because columns may get quite narrow and in this case there would not be
         // any way to see the entire caption except for using the tooltip.
@@ -69,6 +79,7 @@ class UI5DataColumn extends UI5AbstractElement
 	})
 	.data('_exfAttributeAlias', '{$col->getAttributeAlias()}')
 	.data('_exfDataColumnName', '{$col->getDataColumnName()}')
+	.data('_exfWidth', {$widthJson})
 JS;
     }
     
@@ -122,7 +133,7 @@ JS;
         
         $modelPrefix = $modelName ? $modelName . '>' : '';
         if ($tpl instanceof UI5Display) {
-            if (($widget->getDataWidget() instanceof DataTable) && $widget->getDataWidget()->getNowrap() === false) {
+            if (($widget->getDataWidget() instanceof DataTable) && $widget->getNowrap() === false) {
                 $tpl->setWrapping(true);
             }
             $tpl->setValueBindingPrefix($modelPrefix);
