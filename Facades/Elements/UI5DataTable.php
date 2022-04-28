@@ -868,7 +868,7 @@ JS;
             // 5) TODO might need to check for minimum width too!
             $uiTablePostprocessing .= <<<JS
 
-            setTimeout(function(){console.log('pp');
+            setTimeout(function(){
                 var bResized = false;
                 var domFocused = document.activeElement;
                 oTable.getColumns().reverse().forEach(function(oCol) {
