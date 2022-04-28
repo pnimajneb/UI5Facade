@@ -859,18 +859,24 @@ JS;
             // Optimize column width. This is not eays with sap.ui.table.Table :(
             // 1) oTable.autoResizeColumn() sets the focus to the column, so it is scrolled into
             // view. This is why the focus must be removed from the column immediately and restored 
-            // afterwards.
+            // afterwards. This workaound also seems to work only if the columns are iterated over
+            // in reverse order!
             // 2) The optimizer only works AFTER all column were populated, so we need a setTimeout().
             // TODO would be better to have an event, but none seemed suitable...
-            // 3) The optimizer does not take the column header into account, so on narrow columns
+            // 3) Since the optimizer works asynchronously, it will break if while it is running the
+            // underlying data changes. In an attempt to avoid this, we do not optimize empty data.
+            // 4) The optimizer does not take the column header into account, so on narrow columns
             // the header gets truncated. We need to double-check this after all columns are resized
-            // 4) Also need to make sure, the maximum width of the column is not exceeded
-            // 5) TODO might need to check for minimum width too!
+            // 5) Also need to make sure, the maximum width of the column is not exceeded
+            // 6) TODO might need to check for minimum width too!
             $uiTablePostprocessing .= <<<JS
 
             setTimeout(function(){
                 var bResized = false;
                 var domFocused = document.activeElement;
+                if (! $oModelJs.getData().rows || $oModelJs.getData().rows.length === 0) {
+                    return;
+                }
                 oTable.getColumns().reverse().forEach(function(oCol) {
                     var oWidth = oCol.data('_exfWidth');
                     if (! oWidth) return;
