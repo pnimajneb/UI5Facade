@@ -2,6 +2,7 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryButtonGroupTrait;
+use exface\Core\CommonLogic\UxonObject;
 
 /**
  * UI5 does not have anything comparable to a button group, so the actual rendering takes place in UI5Toolbar
@@ -29,16 +30,36 @@ class UI5ButtonGroup extends UI5AbstractElement
         if ($condProp = $this->getWidget()->getHiddenIf()) {
             foreach ($this->getWidget()->getButtons() as $btn) {
                 // Do not override setting of the button itself!
-                if ($btn->isHidden() === false && $btn->getHiddenIf() === null) {
-                    $btn->setHiddenIf($condProp->exportUxonObject());
+                if ($btn->isHidden() === false) {
+                    $newPropUxon = $condProp->exportUxonObject();
+                    if (null !== $ownProp = $btn->getHiddenIf()) {
+                        $newPropUxon = new UxonObject([
+                            'operator' => EXF_LOGICAL_OR,
+                            'condition_groups' => [
+                                $newPropUxon->toArray(),
+                                $ownProp->exportUxonObject()->toArray()
+                            ]
+                        ]);
+                    }
+                    $btn->setHiddenIf($newPropUxon);
                 }
             }
         }
         if ($condProp = $this->getWidget()->getDisabledIf()) {
             foreach ($this->getWidget()->getButtons() as $btn) {
                 // Do not override setting of the button itself!
-                if ($btn->isDisabled() === false && $btn->getDisabledIf() === null) {
-                    $btn->setDisabledIf($condProp->exportUxonObject());
+                if ($btn->isDisabled() === false) {
+                    $newPropUxon = $condProp->exportUxonObject();
+                    if (null !== $ownProp = $btn->getDisabledIf()) {
+                        $newPropUxon = new UxonObject([
+                            'operator' => EXF_LOGICAL_OR,
+                            'condition_groups' => [
+                                $newPropUxon->toArray(),
+                                $ownProp->exportUxonObject()->toArray()
+                            ]
+                        ]);
+                    }
+                    $btn->setDisabledIf($newPropUxon);
                 }
             }
         }
