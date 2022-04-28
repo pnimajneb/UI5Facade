@@ -53,7 +53,7 @@ class UI5DataColumn extends UI5AbstractElement
         $widthMin = $col->getWidthMin();
         $widthJson = json_encode([
             'auto' => $col->getNowrap() && ($width->isUndefined() || strtolower($width->getValue()) === 'auto'),
-            'fixed' => $this->escapeString($width->getValue()),
+            'fixed' => $width->getValue(),
             'min' => $widthMin->isFacadeSpecific() ? $widthMin->getValue() : null,
             'max' => $widthMax->isFacadeSpecific() ? $widthMax->getValue() : null
         ]);

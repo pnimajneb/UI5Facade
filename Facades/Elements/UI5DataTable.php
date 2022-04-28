@@ -865,6 +865,10 @@ JS;
             // TODO would be better to have an event, but none seemed suitable...
             // 3) Since the optimizer works asynchronously, it will break if while it is running the
             // underlying data changes. In an attempt to avoid this, we do not optimize empty data.
+            // 4) It seems, that the empty space on the right side of the table (if it is not occupied
+            // with columns completely) is a column too. Optimizing that column will stretch some of
+            // the others again as it does not have any data. So we check if each column has a DOM
+            // element (that special column does not) and only optimize it then.
             // 4) The optimizer does not take the column header into account, so on narrow columns
             // the header gets truncated. We need to double-check this after all columns are resized
             // 5) Also need to make sure, the maximum width of the column is not exceeded
@@ -877,9 +881,9 @@ JS;
                 if (! $oModelJs.getData().rows || $oModelJs.getData().rows.length === 0) {
                     return;
                 }
-                oTable.getColumns().reverse().forEach(function(oCol) {
+                oTable.getColumns().reverse().forEach(function(oCol, i) {
                     var oWidth = oCol.data('_exfWidth');
-                    if (! oWidth) return;
+                    if (! oWidth || $('#'+oCol.getId()).length === 0) return;
                     if (oCol.getVisible() === true && oWidth.auto === true) {
                         bResized = true;
                         oCol.applyFocusInfo({preventScroll: true});
