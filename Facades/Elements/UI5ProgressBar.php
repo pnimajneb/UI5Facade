@@ -26,6 +26,7 @@ class UI5ProgressBar extends UI5Display
         // NOTE: displayOnly:true makes the progressbar look nice inside responsive table 
         // cells! Otherwise it has top and bottom margins and is displayed uneven with the
         // caption.
+        
         return <<<JS
         
         new sap.m.ProgressIndicator("{$this->getid()}", {
@@ -38,6 +39,7 @@ class UI5ProgressBar extends UI5Display
             {$this->buildJsPropertyState()}
             {$this->buildJsPropertyDisplayAnimation()}
     	})
+        {$this->buildJsPseudoEventHandlers()}
     	
 JS;
     }
@@ -163,12 +165,17 @@ JS;
             $oControlJs.data('_exfColor', $sColorJs);
             $oControlJs.$().find('.sapMPIBar').css('background-color', $sColorJs); 
             if ($oControlJs.data('_exfColored') !== true) {
+                $oControlJs.addEventDelegate({
+                    onAfterRendering: function(){
+                        $oControlJs.$().find('.sapMPIBar').css('background-color', $oControlJs.data('_exfColor'));
+                    }
+                });/*
                 sap.ui.core.ResizeHandler.register($oControlJs, function(){
                     $oControlJs.$().find('.sapMPIBar').css('background-color', $oControlJs.data('_exfColor'));
                     setTimeout(function(){
                         $oControlJs.$().find('.sapMPIBar').css('background-color', $oControlJs.data('_exfColor'));
                     }, 10);
-                });
+                });*/
                 $oControlJs.data('_exfColored', true);
             } 
         }, 20);
