@@ -27,6 +27,7 @@ class UI5Html extends UI5Value
         if ($js = $this->getWidget()->getJavascript()) {
             $this->getController()->addOnInitScript($js);
         }
+        
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
     
@@ -54,12 +55,12 @@ class UI5Html extends UI5Value
         if ($this->isValueBoundToModel()) {
             $content = '{' . $this->getValueBindingPath() . '}';
         } else {
-            $content = $this->escapeJsTextValue($html);
+            $content = $html;
         }
         
         return <<<JS
         new sap.ui.core.HTML("{$this->getId()}", {
-            content: "<div class=\"exf-html\">{$content}</div>",
+            content: {$this->escapeString($this->buildHtmlContent($content))},
             afterRendering: function() {
                 {$scripts}
                 if ($('#{$this->getId()}_styles').length === 0) {
@@ -68,6 +69,16 @@ class UI5Html extends UI5Value
             }
         })
 JS;
+    }
+    
+    /**
+     * 
+     * @param string $innerHtml
+     * @return string
+     */
+    protected function buildHtmlContent(string $innerHtml = '') : string
+    {
+        return '<div class="exf-html">' . $innerHtml . '</div>';
     }
                 
     protected function escapeJsTextValue($text)
@@ -111,5 +122,20 @@ JS;
     public function buildJsValueGetterMethod()
     {
         return "getContent()";
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValueSetterMethod()
+     */
+    public function buildJsValueSetterMethod($valueJs)
+    {
+        return "setContent({$valueJs} || '')";
+    }
+    
+    public function buildJsValueBindingPropertyName() : string
+    {
+        return 'content';
     }
 }
