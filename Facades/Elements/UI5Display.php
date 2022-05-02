@@ -246,6 +246,7 @@ JS;
                     var oCtrl = this;
                     if (sColor.startsWith('~')) {
                         var oColorScale = {$semColsJs};
+                        {$this->buildJsColorCssSetter('oCtrl', 'null')}
                         return oColorScale[sColor];
                     } else if (sColor) {
                         {$this->buildJsColorCssSetter('oCtrl', 'sColor')}
