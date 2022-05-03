@@ -41,8 +41,16 @@ JS;
      */
     public function buildJsProperties()
     {
+        return parent::buildJsProperties() . $this->buildJsPropertyItems();
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsPropertyItems() : string
+    {
         $widget = $this->getWidget();
-        
         $items = '';
         foreach ($widget->getSelectableOptions() as $key => $value) {
             if ($widget->getMultiSelect() && $key === '') {
@@ -56,12 +64,11 @@ JS;
 JS;
         }
         
-        $options = parent::buildJsProperties() . '
+        return <<<JS
             items: [
-                ' . $items . '
-            ]
-';
-        return $options;
+                {$items}
+            ],
+JS;
     }
     
     /**
@@ -174,7 +181,11 @@ JS;
         }
     }
     
-    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsPropertyChange()
+     */
     protected function buildJsPropertyChange()
     {
         $eventName = $this->getWidget()->getMultiSelect() === true ? 'selectionChange' : 'change';
