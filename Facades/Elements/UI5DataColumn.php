@@ -7,6 +7,7 @@ use exface\Core\Widgets\DataTable;
 use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\DataTypes\StringDataType;
+use exface\Core\Widgets\DataColumnResponsive;
 
 /**
  *
@@ -157,7 +158,16 @@ JS;
     {
         $col = $this->getWidget();
         $alignment = 'hAlign: ' . $this->buildJsAlignment() . ',';
-        $popinDisplay = $col->getHideCaption() || $col->getCellWidget()->getHideCaption() ? 'sap.m.PopinDisplay.WithoutHeader' : 'sap.m.PopinDisplay.Inline';
+        
+        switch (true) {
+            case $col->getHideCaption():
+            case $col->getCellWidget()->getHideCaption():
+            case ($col instanceof DataColumnResponsive) && $col->getHideCaptionOnSmartphone():
+                $popinDisplay = 'sap.m.PopinDisplay.WithoutHeader';
+                break;
+            default:
+                $popinDisplay = 'sap.m.PopinDisplay.Inline';
+        }
         
         return <<<JS
         
