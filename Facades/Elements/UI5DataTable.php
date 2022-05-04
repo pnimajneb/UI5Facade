@@ -878,17 +878,22 @@ JS;
             setTimeout(function(){
                 var bResized = false;
                 var domFocused = document.activeElement;
+                var oInitWidths = {};
                 if (! $oModelJs.getData().rows || $oModelJs.getData().rows.length === 0) {
                     return;
                 }
-                oTable.getColumns().reverse().forEach(function(oCol, i) {
+                oTable.getColumns().forEach(function(oCol, i) {
                     var oWidth = oCol.data('_exfWidth');
                     if (! oWidth || $('#'+oCol.getId()).length === 0) return;
+                    oInitWidths[oTable.indexOfColumn(oCol)] = $('#'+oCol.getId()).width();
                     if (oCol.getVisible() === true && oWidth.auto === true) {
                         bResized = true;
                         oCol.applyFocusInfo({preventScroll: true});
                         oTable.autoResizeColumn(oTable.indexOfColumn(oCol));
                         document.activeElement.blur();
+                    }
+                    if (oWidth.fixed) {
+                        oCol.setWidth(oWidth.fixed);
                     }
                 });
                 if (bResized) {
@@ -904,6 +909,9 @@ JS;
                             var jqLabel = jqCol.find('label');
                             var iWidth = null;
                             if (! oWidth) return;
+                            if (! oCol.getWidth() && oWidth.auto === true) {
+                                oCol.setWidth(oInitWidths[oTable.indexOfColumn(oCol)] + 'px');
+                            }
                             if (oCol.getVisible() === true && oWidth.auto === true) {
                                 if (! jqLabel[0]) return;
                                 if (jqLabel[0].scrollWidth > jqLabel.width()) {
