@@ -908,9 +908,11 @@ JS;
                             var jqCol = $('#'+oCol.getId());
                             var jqLabel = jqCol.find('label');
                             var iWidth = null;
+                            var iColIdx = oTable.indexOfColumn(oCol);
+
                             if (! oWidth) return;
-                            if (! oCol.getWidth() && oWidth.auto === true) {
-                                oCol.setWidth(oInitWidths[oTable.indexOfColumn(oCol)] + 'px');
+                            if (! oCol.getWidth() && oWidth.auto === true && oInitWidths[iColIdx] !== undefined) {
+                                oCol.setWidth(oInitWidths[iColIdx] + 'px');
                             }
                             if (oCol.getVisible() === true && oWidth.auto === true) {
                                 if (! jqLabel[0]) return;
