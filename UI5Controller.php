@@ -165,7 +165,7 @@ class UI5Controller implements UI5ControllerInterface
                 unset($scripts['__eventName']);
             }
             if (empty($scripts) === false) {
-                $js = implode("\n", array_unique($scripts));
+                $js = implode(";\n", array_unique($scripts));
                 if ($element !== null) {
                     $js = $element->buildJsOnEventScript($eventName, $js, 'oEvent');
                 }
@@ -554,7 +554,7 @@ JS;
     {
         $js = '';
         foreach ($this->pseudo_events as $event => $code_array) {
-            $code = implode("\n", array_unique($code_array));
+            $code = implode(";\n", array_unique($code_array));
             $js .= <<<JS
             
             {$event}: function(oEvent) {
@@ -862,7 +862,7 @@ JS;
     
     protected function buildJsOnDefineScript() : string
     {
-        return implode("\n", array_unique($this->onDefineScripts));
+        return implode(";\n", array_unique($this->onDefineScripts));
     }
     
     /**
