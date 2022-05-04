@@ -125,6 +125,8 @@
 	"WIDGET.INPUTCOMPBOTABLE.ERROR_INVALID_KEY": "ist kein valider Wert! Bitte einen existierenden Wert aus der Liste wählen!",
 	"WIDGET.INPUTCOMPBOTABLE.ERROR_KEYS_VALUES_MISMATCH": "enthält einen oder mehrere unbekannte Werte: bitte nur existierende Wert aus der Liste wählen!",
 	
+	"WIDGET.IMAGEGALLERY.CANNOT_DOWNLOAD_WITHOUT_URL": "Datei kann nicht herutergeladen werden: sie ist entweder noch nicht komplett hochgeladen worden or hat keine Download-URL",
+	
 	"WIDGET.PAGINATOR.NEXT_PAGE": "Nächste Seite",
 	"WIDGET.PAGINATOR.PREVIOUS_PAGE": "Vorherige Seite"
 }

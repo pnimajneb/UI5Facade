@@ -123,6 +123,8 @@
 	"WIDGET.INPUTCOMPBOTABLE.ERROR_INVALID_KEY": "is not a valid value! Please select an existing value from the list!",
 	"WIDGET.INPUTCOMPBOTABLE.ERROR_KEYS_VALUES_MISMATCH": "includes one or more invalid values: please select existing values from the list only!",
 	
+	"WIDGET.IMAGEGALLERY.CANNOT_DOWNLOAD_WITHOUT_URL": "Cannot download file: it is either not uploaded correctly or has is no download URL",
+	
 	"WIDGET.PAGINATOR.NEXT_PAGE": "Next Page",
 	"WIDGET.PAGINATOR.PREVIOUS_PAGE": "Previous Page"
 }
