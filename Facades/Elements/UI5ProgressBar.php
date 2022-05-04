@@ -1,12 +1,12 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\ProgressBar;
 use exface\Core\Interfaces\Widgets\iHaveColorScale;
 
 /**
- *
- * @method ProgressBar getWidget()
+ * Renders a sap.m.ProgressIndicator for a ProgressBar widget
+ * 
+ * @method \exface\Core\Widgets\ProgressBar getWidget()
  *        
  * @author Andrej Kabachnik
  *        
@@ -22,7 +22,11 @@ class UI5ProgressBar extends UI5Display
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        // Register stuff here, that is needed for in-table rendering where buildJsConstructor()
+        // is not called
         $this->registerExternalModules($this->getController());
+        $this->registerColorClasses();
+        
         // NOTE: displayOnly:true makes the progressbar look nice inside responsive table 
         // cells! Otherwise it has top and bottom margins and is displayed uneven with the
         // caption.
@@ -152,35 +156,62 @@ JS;
      */
     protected function buildJsColorCssSetter(string $oControlJs, string $sColorJs) : string
     {
-        // Set the color explicitly and make sure it is set again every time the progressbar
-        // is resized - this happens very often in tables: e.g. after navigating back from
-        // a large-dialog-view. It also turned out, that we need to save the color value
-        // in the controls data() - otherwise the value changes unexpectedly when in-table
-        // controls are resized (don't know why...)
-        // Unfortunately, just the on-resize is not enough - need to repeat coloring a little
-        // later - e.g. when the browser window is maximized.
+        // The only way to git a sap.m.ProgressIndicator a custom color seems to be giving it a
+        // CSS class. So we add custom CSS classes to the page via registerColorClasses() and use 
+        // them here then.
         return <<<JS
-        
-        setTimeout(function(){ 
-            var oBar = $oControlJs;
-            oBar.data('_exfColor', $sColorJs);
-            oBar.$().find('.sapMPIBar').css('background-color', $sColorJs); 
-            if (oBar.data('_exfColored') !== true) {
-                oBar.addEventDelegate({
-                    onAfterRendering: function(oEvent){
-                        oEvent.srcControl.$().find('.sapMPIBar').css('background-color', oEvent.srcControl.data('_exfColor'));
-                    }
-                });/*
-                sap.ui.core.ResizeHandler.register(oBar, function(){
-                    oBar.$().find('.sapMPIBar').css('background-color', oBar.data('_exfColor'));
-                    setTimeout(function(){
-                        oBar.$().find('.sapMPIBar').css('background-color', oBar.data('_exfColor'));
-                    }, 10);
-                });*/
-                oBar.data('_exfColored', true);
-            } 
-        }, 20);
+
+        if ($sColorJs === null) {
+            $oControlJs.removeStyleClass('exf-custom-color');
+            ($oControlJs.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
+                if (sClass.startsWith('exf-color-')) {
+                    $oControlJs.removeStyleClass(sClass);
+                }
+            });
+        } else {
+            $oControlJs.addStyleClass('exf-custom-color exf-color-' + $sColorJs.replace("#", ""));
+        }
 JS;
+    }
+    
+    /**
+     * @return void
+     */
+    protected function registerColorClasses()
+    {
+        if (! $this->getWidget()->hasColorScale()) {
+            return;
+        }
+        $css = '';
+        foreach ($this->getWidget()->getColorScale() as $color) {
+            if (substr($color, 0, 1) === '~') {
+                continue;
+            }
+            $css .= '.exf-custom-color.exf-color-' . trim(trim($color), "#") . ' .sapMPIBar {background-color: ' . $color . '}';
+        }
+        
+        $cssId = $this->getId();
+        if (! $this->getUseWidgetId()) {
+            $this->setUseWidgetId(true);
+            $cssId = $this->getId();
+            $this->setUseWidgetId(false);
+        }
+        $cssId .= '_color_css';
+        
+        $this->getController()->addOnShowViewScript(<<<JS
+            
+(function(){
+    var jqTag = $('#{$cssId}');
+    if (jqTag.length === 0) {
+        $('head').append($('<style type="text/css" id="{$cssId}"></style>').text('$css'));
+    }
+})();
+
+JS, false);
+        
+        $this->getController()->addOnHideViewScript("$('#{$cssId}').remove();");
+        
+        return;
     }
     
     /**

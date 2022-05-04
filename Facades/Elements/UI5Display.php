@@ -45,7 +45,10 @@ class UI5Display extends UI5Value
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        // Register stuff here, that is needed for in-table rendering where buildJsConstructor()
+        // is not called
         $this->registerExternalModules($this->getController());
+        
         $widget = $this->getWidget();
         if ($widget->getValueDataType() instanceof BooleanDataType) {
             if ($this->getWidget()->isInTable() === true) {
@@ -299,4 +302,3 @@ JS;
         return $this;
     }
 }
-?>
