@@ -8,6 +8,7 @@ use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\DataTypes\StringDataType;
 use exface\Core\Widgets\DataColumnResponsive;
+use exface\Core\Interfaces\Widgets\iCanWrapText;
 
 /**
  *
@@ -130,6 +131,9 @@ JS;
         // Force element to use model binding if the widget "knows" it's column
         if ($cellWidget->getDataColumnName() !== '' && $cellWidget->getDataColumnName() !== null) {
             $tpl->setValueBoundToModel(true);
+        }
+        if ($cellWidget instanceof iCanWrapText) {
+            $cellWidget->setNowrap($widget->getNowrap());
         }
         
         $modelPrefix = $modelName ? $modelName . '>' : '';

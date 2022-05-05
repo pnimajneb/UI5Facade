@@ -8,6 +8,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Interfaces\Widgets\iHaveColorScale;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\DataTypes\TextDataType;
+use exface\Core\Interfaces\Widgets\iCanWrapText;
 
 /**
  * Generates sap.m.Text controls for Display widgets.
@@ -280,6 +281,10 @@ JS;
     protected function getWrapping() : bool
     {
         if ($this->wrap === null) {
+            $widget = $this->getWidget();
+            if ($widget->isInTable() && $widget->getParent() instanceof iCanWrapText) {
+                return ! $widget->getParent()->getNowrap();
+            }
             return ($this->getWidget()->getValueDataType() instanceof TextDataType);
         }
         return $this->wrap;
