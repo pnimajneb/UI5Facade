@@ -323,14 +323,24 @@ JS;
         return $this;
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsPropertyWidth()
     {
         $dim = $this->getWidget()->getWidth();
-        if ($dim->isFacadeSpecific() || $dim->isPercentual()) {
-            $val = $dim->getValue();
-        } else {
-            // TODO add support for relative units
-            $val = $this->buildCssWidthDefaultValue();
+        switch (true) {
+            case $dim->isFacadeSpecific():
+            case $dim->isPercentual():
+                $val = $dim->getValue();
+                break;
+            case $dim->isRelative():
+                $val = ($this->getWidthRelativeUnit() * $dim->getValue()) . 'px';
+                break;
+            default:
+                $val = $this->buildCssWidthDefaultValue();
+                break;
         }
         if (! is_null($val) && $val !== '') {
             return 'width: "' . $val . '",';
@@ -344,14 +354,24 @@ JS;
         return '100%';
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsPropertyHeight()
     {
         $dim = $this->getWidget()->getHeight();
-        if ($dim->isFacadeSpecific() || $dim->isPercentual()) {
-            $val = $dim->getValue();
-        } else {
-            // TODO add support for relative units
-            $val = $this->buildCssHeightDefaultValue();
+        switch (true) {
+            case $dim->isFacadeSpecific():
+            case $dim->isPercentual():
+                $val = $dim->getValue();
+                break;
+            case $dim->isRelative():
+                $val = ($this->getHeightRelativeUnit() * $dim->getValue()) . 'px';
+                break;
+            default:
+                $val = $this->buildCssHeightDefaultValue();
+                break;
         }
         if (! is_null($val) && $val !== '') {
             return 'height: "' . $val . '",';
