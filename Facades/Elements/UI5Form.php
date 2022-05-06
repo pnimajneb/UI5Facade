@@ -61,8 +61,34 @@ class UI5Form extends UI5Panel
             }
             foreach ($widget->getInputWidgets() as $input) {
                 $inputEl = $this->getFacade()->getElement($input);
+                // Trigger the primary action by enter on any input, but with some exceptions
+                // @see similar logic in UI5DataConfigurator::buildJsFilter()
+                
+                // If the control has an explicit setting for focus management, pay attention to it
                 if (method_exists($inputEl, 'getAdvanceFocusOnEnter') && $inputEl->getAdvanceFocusOnEnter() === true) {
                     continue;
+                }
+                // sap.m.Input fires enter events on itself when an autosuggest item is
+                // selected via enter, so we need to wrap the primary action call in an
+                // IF here and find out if the event was triggered in the autosuggest.
+                // Fortunately the Input loses its focus-frame (CSS class `sapMFocus`)
+                // when navigating to the autosuggest, so we check for its presence. If
+                // the control does not have the class, we don't trigger the primary action
+                // but return the focus to the Input with a little hack. Now if the user
+                // presses enter again, the primary action will be triggered
+                if ($inputEl instanceof UI5InputComboTable) {
+                    $primaryActionCall = <<<JS
+
+(function(){
+    var oInput = oEvent.srcControl;
+    if (! oInput.$().hasClass('sapMFocus')){
+        oInput.$().find('input').focus();
+        return;
+    }
+    $primaryActionCall
+})();
+
+JS;
                 }
                 
                 $inputEl->addPseudoEventHandler('onsapenter', $primaryActionCall);

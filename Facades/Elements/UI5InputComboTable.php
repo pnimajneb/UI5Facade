@@ -163,6 +163,10 @@ JS;
             // work once, because after that one time, there will be a text (value) and it won't change
             // with the model. To avoid this, the following code will empty the value of the input every
             // time the selectedKey changes to empty. This happens at least before every prefill.
+            // The logic is different for Input and MultiInput: while Input can just be emptied if 
+            // the current selectedKey is empty, the MultiInput selectedKey is also empty if there are
+            // only tokens and no non-token text. For the MultiSelect we need to double check if the
+            // value in the model is really empty then.
             // NOTE: without setTimeout() the oInput is sometimes not initialized yet when init() of the
             // view is called in dialogs. In particular, this happens if the InputComboTable is a filter
             // in a table, that is the only direct child of a dialog.
@@ -173,12 +177,19 @@ JS;
                 var oInput = sap.ui.getCore().byId('{$this->getId()}');
                 var oModel = oInput.getModel();
                 var oKeyBinding = new sap.ui.model.Binding(oModel, '{$this->getValueBindingPath()}', oModel.getContext('{$this->getValueBindingPath()}'));
-                oKeyBinding.attachChange(function(){
-                    if (oInput.getSelectedKey() == '') {
-                        if (oInput.destroyTokens !== undefined) {
-                            oInput.destroyTokens();
+                oKeyBinding.attachChange(function(oEvent){
+                    var sBindingPath, mModelVal;
+                    if (oInput.getSelectedKey() === '') {
+                        if (oInput.getTokens !== undefined) {
+                            sBindingPath = oInput.getBinding('selectedKey').sPath;
+                            mModelVal = oEvent.getSource().getModel().getProperty(sBindingPath);
+                            if (mModelVal === undefined || mModelVal === undefined) {
+                                oInput.destroyTokens();
+                                oInput.setValue('');
+                            }
+                        } else {
+                            oInput.setValue('');
                         }
-                        oInput.setValue('');
                     }
                 });
             }, 0);
@@ -300,12 +311,21 @@ JS;
     {
         // Remember to trigger the change event here as it is not triggered automatically.
         // The `buildJsSetSelectedKeyMethod()` does not trigger change either!
+        // For MultiInput make sure not to add duplicate tokens as this might cause unexpected
+        // behavior and is not usefull anyway.
         return <<<JS
             function(oEvent){
                 var oItem = oEvent.getParameter("selectedRow");
                 if (! oItem) return;
 				var aCells = oEvent.getParameter("selectedRow").getCells();
                 var oInput = oEvent.getSource();
+                if (oInput.getTokens !== undefined) {
+                    if (oInput.getTokens().filter(function(oToken){
+                            return oToken.getKey() === aCells[ {$valueColIdx} ].getText();
+                        }).length > 0) {
+                        return;
+                    }
+                }
                 oInput.{$this->buildJsSetSelectedKeyMethod("aCells[ {$valueColIdx} ].getText()", "aCells[ {$textColIdx} ].getText()")};
                 oInput.setValueState(sap.ui.core.ValueState.None);
                 oInput.fireChange({value: aCells[ {$valueColIdx} ].getText()});
@@ -320,34 +340,6 @@ JS;
      */
     protected function buildJsPropertyValueHelpRequest($oControllerJs = 'oController') : string
     {
-        // Currently, the value-help-button will simply trigger the autosuggest by firing the suggest
-        // event with a special callback, that forces the input to show suggestions. This callback
-        // is needed because just firing the suggest event will only show the suggestions if the
-        // current text differs from the previous suggestion - don't know if this is a feature or
-        // a bug. But with an explicit .showItems() it works well.
-/*        return <<<JS
-            function(oEvent) {
-                var oInput = oEvent.getSource();
-                {$this->buildJsBusyIconShow()};
-                
-                var sVal = oInput.getValue();
-                if (sVal === undefined || sVal === '') {
-                    sVal = ' ';
-                }
-                
-                oInput.fireSuggest({
-                    suggestValue: sVal, 
-                    onLoaded: function(){
-                        sap.ui.getCore().byId('{$this->getId()}')
-                        .showItems(function(oItem){
-                            return oItem;
-                        })
-                    }
-                });
-            },
-
-JS;
-*/
         $btn = $this->getWidget()->getLookupButton();
         /* @var $btnEl \exface\UI5Facade\Facades\Elements\UI5Button */
         $btnEl = $this->getFacade()->getElement($btn);
@@ -410,6 +402,10 @@ JS;
                 var aFoundKeys = [];
                 var bNewKeysAllowed = {$allowNewValues};
                 var aNewKeys = [];
+                var curTokens = [];
+                if (oInput.getTokens !== undefined) {
+                    curTokens = oInput.getTokens();
+                }
 
                 if (silent) {
                     if (iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
@@ -472,10 +468,27 @@ JS;
                 }
 
                 if (bAutoSelectSingle && iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
-                    if (oInput.destroyTokens !== undefined) {
-                        oInput.destroyTokens();
+                    // For MultiInput make sure to remove eventual duplicate tokens before
+                    // Adding the current value
+                    if (oInput.getTokens !== undefined) {
+                        oInput
+                            .getTokens()
+                            .filter(function(oToken){
+                                return oToken.getKey() === data[0]['{$widget->getValueColumn()->getDataColumnName()}'];
+                            })
+                            .forEach(function(oToken){
+                                oInput.removeToken(oToken);
+                            });
                     }
+
                     oInput.{$this->buildJsSetSelectedKeyMethod("data[0]['{$widget->getValueColumn()->getDataColumnName()}']", "data[0]['{$widget->getTextColumn()->getDataColumnName()}']")}
+                    
+                    // In MultiSelect curText is the string being searched for, so empty it
+                    // otherwise it will remain sitting next to the freshly added token
+                    if (oInput.getTokens !== undefined && (curText || '').toString().length > 0) {
+                        oInput.setValue();
+                    }
+
                     oInput.setValueState(sap.ui.core.ValueState.None);
                     setTimeout(function(){
                         oInput.closeSuggestions();

@@ -498,7 +498,44 @@ JS;
      */
     protected function buildJsFilter(UI5Filter $element) : string
     {
-        $element->addPseudoEventHandler('onsapenter', $this->getFacade()->getElement($this->getWidget()->getWidgetConfigured())->buildJsRefresh());
+        $primaryActionCall = $this->getFacade()->getElement($this->getWidget()->getWidgetConfigured())->buildJsRefresh();
+        $inputEl = $this->getFacade()->getElement($element->getWidget()->getInputWidget());
+        
+        // Trigger the primary action by enter on any input, but with some exceptions
+        // @see similar logic in UI5Form::registerSubmitOnEnter()
+        
+        // sap.m.Input fires enter events on itself when an autosuggest item is
+        // selected via enter, so we need to wrap the primary action call in an
+        // IF here and find out if the event was triggered in the autosuggest.
+        // Fortunately the Input loses its focus-frame (CSS class `sapMFocus`)
+        // when navigating to the autosuggest, so we check for its presence. If
+        // the control does not have the class, we don't trigger the primary action
+        // but return the focus to the Input with a little hack. Now if the user
+        // presses enter again, the primary action will be triggered
+        if ($inputEl instanceof UI5InputComboTable) {
+            $primaryActionCall = <<<JS
+            
+(function(){
+    var oInput = oEvent.srcControl;
+    if (! oInput.$().hasClass('sapMFocus')){
+        oInput.$().find('input').focus();
+        return;
+    }
+    $primaryActionCall
+})();
+
+JS;
+        }
+        
+        if ($element instanceof UI5RangeFilter) {
+            $element->addPseudoEventHandler('onsapenter', $primaryActionCall);
+        } else {
+            // If the control has an explicit setting for focus management, pay attention to it
+            if (! (method_exists($inputEl, 'getAdvanceFocusOnEnter') && $inputEl->getAdvanceFocusOnEnter() === true)) {
+                $inputEl->addPseudoEventHandler('onsapenter', $primaryActionCall);
+            }
+        }
+        
         return <<<JS
         
                         new sap.ui.layout.VerticalLayout({
