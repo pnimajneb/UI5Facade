@@ -159,18 +159,40 @@ JS;
         // The only way to git a sap.m.ProgressIndicator a custom color seems to be giving it a
         // CSS class. So we add custom CSS classes to the page via registerColorClasses() and use 
         // them here then.
+        // However, if the ProgressIndicator is used inside a sap.ui.table.Table, the DOM
+        // element might not be there yet, when the color setter is called. In this case,
+        // an onAfterRendering-handler is registered to add the CSS class and removed right
+        // after this. The trouble with sap.ui.table.Table is that it instantiates its
+        // cells at some obscure moment and reuses them when scrolling, so we need to 
+        // be prepared for different situations here.
         return <<<JS
 
-        ($oControlJs.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
-            if (sClass.startsWith('exf-color-')) {
-                $oControlJs.removeStyleClass(sClass);
+        (function(oBar, sColor){
+            var fnStyler = function(){
+                (oBar.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
+                    if (sClass.startsWith('exf-color-')) {
+                        oBar.removeStyleClass(sClass);
+                    }
+                });
+                if (sColor === null) {
+                    oBar.removeStyleClass('exf-custom-color');
+                } else {
+                    oBar.addStyleClass('exf-custom-color exf-color-' + sColor.replace("#", ""));
+                }
+            };
+            var oDelegate = {
+                onAfterRendering: function() {
+                    fnStyler();
+                    oBar.removeEventDelegate(oDelegate);
+                }
+            };
+
+            fnStyler();
+            if (oBar.$().length === 0) {
+                oBar.addEventDelegate(oDelegate);
             }
-        });
-        if ($sColorJs === null) {
-            $oControlJs.removeStyleClass('exf-custom-color');
-        } else {
-            $oControlJs.addStyleClass('exf-custom-color exf-color-' + $sColorJs.replace("#", ""));
-        }
+        })($oControlJs, $sColorJs);
+
 JS;
     }
     
