@@ -161,13 +161,13 @@ JS;
         // them here then.
         return <<<JS
 
+        ($oControlJs.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
+            if (sClass.startsWith('exf-color-')) {
+                $oControlJs.removeStyleClass(sClass);
+            }
+        });
         if ($sColorJs === null) {
             $oControlJs.removeStyleClass('exf-custom-color');
-            ($oControlJs.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
-                if (sClass.startsWith('exf-color-')) {
-                    $oControlJs.removeStyleClass(sClass);
-                }
-            });
         } else {
             $oControlJs.addStyleClass('exf-custom-color exf-color-' + $sColorJs.replace("#", ""));
         }
