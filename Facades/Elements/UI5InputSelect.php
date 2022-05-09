@@ -1,13 +1,12 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\InputSelect;
 use exface\Core\Interfaces\DataTypes\DataTypeInterface;
 
 /**
  * Generates OpenUI5 CobmoBox or MultiComboBox to represent a select widget
  *
- * @method InputSelect getWidget()
+ * @method \exface\Core\Widgets\InputSelect getWidget()
  * 
  * @author Andrej Kabachnik
  *        
