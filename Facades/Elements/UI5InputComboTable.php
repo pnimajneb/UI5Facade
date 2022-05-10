@@ -388,12 +388,13 @@ JS;
         $serverAdapter = $this->getFacade()->getElement($widget->getTable())->getServerAdapter();
         $delim = json_encode($widget->getMultiSelectValueDelimiter());
         $allowNewValues = $widget->getAllowNewValues() ? 'true' : 'false';
+        $autoSelectSingleJs = $widget->getAutoselectSingleSuggestion() ? 'true' : 'false';
         
         // NOTE: in sap.m.MultiInput there are no tokens yet, so we tell the getter
         // method not to rely on the explicitly!!!
         $onSuggestLoadedJs = <<<JS
                             
-                var bAutoSelectSingle = {$widget->getAutoselectSingleSuggestion()} ? true : false;
+                var bAutoSelectSingle = {$autoSelectSingleJs};
                 var data = oModel.getProperty('/rows');
                 var curKey = oInput.{$this->buildJsValueGetterMethod(false)};
                 var curText = oInput.getValue();
