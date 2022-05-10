@@ -611,25 +611,32 @@ JS;
     
     public function buildJsValueGetter($column = null, $row = null)
     {
-        $selectedKeyGetter = parent::buildJsValueGetter();
-        if (($column === null || $column == $this->getWidget()->getValueAttributeAlias()) && ($row === null || $row === 0)) {
-            return $selectedKeyGetter;
-        }
-        
+        $allowNewValuesJs = $this->getWidget()->getAllowNewValues() ? 'true' : 'false';
         return <<<JS
 function(){
-    var sSelectedKey = {$selectedKeyGetter};
-    if (sSelectedKey === undefined || sSelectedKey === undefined === '' || sSelectedKey === null) {
+    var oInput = sap.ui.getCore().byId('{$this->getId()}');
+    var sSelectedKey = oInput.{$this->buildJsValueGetterMethod()};
+    var sColName = '$column';
+    var bAllowNewValues = $allowNewValuesJs;
+    var oModel, oItem;
+
+    if (sSelectedKey === undefined || sSelectedKey === '' || sSelectedKey === null) {
+        if (bAllowNewValues && oInput.getValue()) {
+            return oInput.getValue();
+        }
         return undefined;
     }
-    var oInput = sap.ui.getCore().byId('{$this->getId()}');
-    var oModel = oInput.getModel('{$this->getModelNameForAutosuggest()}');
+
+    if (sColName === '') {
+        return sSelectedKey;
+    }
     
-    var oItem = (oModel.getData().rows || []).find(function(element, index, array){
+    oModel = oInput.getModel('{$this->getModelNameForAutosuggest()}');
+    oItem = (oModel.getData().rows || []).find(function(element, index, array){
         return element['{$this->getWidget()->getValueAttributeAlias()}'] == sSelectedKey;
     });
 
-    return oItem === undefined ? undefined : oItem['$column'];
+    return oItem === undefined ? undefined : oItem[sColName];
 }()
 
 JS;
@@ -874,7 +881,7 @@ JS;
             $delim = str_replace("'", "\\'", $this->getWidget()->getMultiSelectTextDelimiter());
             $rows = <<<JS
                             function(){
-                                var aVals = ({$this->buildJsValueGetter()}).split('{$delim}');
+                                var aVals = ({$this->buildJsValueGetter()} || '').split('{$delim}');
                                 var aRows = [];
                                 aVals.forEach(function(sVal) {
                                     if (sVal !== undefined && sVal !== null && sVal !== '') {
