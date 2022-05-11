@@ -882,7 +882,7 @@ JS;
                 if (! $oModelJs.getData().rows || $oModelJs.getData().rows.length === 0) {
                     return;
                 }
-                oTable.getColumns().forEach(function(oCol, i) {
+                oTable.getColumns().reverse().forEach(function(oCol, i) {
                     var oWidth = oCol.data('_exfWidth');
                     if (! oWidth || $('#'+oCol.getId()).length === 0) return;
                     oInitWidths[oTable.indexOfColumn(oCol)] = $('#'+oCol.getId()).width();
