@@ -404,6 +404,7 @@ JS;
                 var bNewKeysAllowed = {$allowNewValues};
                 var aNewKeys = [];
                 var curTokens = [];
+                var sMultiValDelim = {$this->escapeString($widget->getMultipleValuesDelimiter())};
                 if (oInput.getTokens !== undefined) {
                     curTokens = oInput.getTokens();
                 }
@@ -445,11 +446,17 @@ JS;
                         }
                     } else {
                         switch (true) {
-                            case bNewKeysAllowed:
+                            case bNewKeysAllowed === true:
                                 oInput.setValueState(sap.ui.core.ValueState.None);
                                 oInput.{$this->buildJsSetSelectedKeyMethod('curKey', 'curKey', false)};
                                 break;
                             case curKey === '' && (! curText || curText.trim() === ''):
+                                oInput
+                                    .{$this->buildJsEmptyMethod()}
+                                    .setValueState(sap.ui.core.ValueState.None);
+                                break;
+                            // If it is not a MultiInput, but the value is a delimited list, do not use it!
+                            case oInput.getTokens === undefined && (curKey + '').includes(sMultiValDelim):
                                 oInput
                                     .{$this->buildJsEmptyMethod()}
                                     .setValueState(sap.ui.core.ValueState.None);
