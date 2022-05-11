@@ -632,7 +632,7 @@ function(){
         if (bAllowNewValues && oInput.getValue()) {
             return oInput.getValue();
         }
-        return undefined;
+        return null;
     }
 
     if (sColName === '') {
@@ -783,7 +783,7 @@ JS;
         } else {
             $partValidator = parent::buildJsValidatorCheckDataType('part', $onFailJs, $type);
             return <<<JS
-if ($valueJs !== undefined) {
+if ($valueJs !== undefined && $valueJs !== null) {
     $valueJs.toString().split("{$widget->getMultiSelectValueDelimiter()}").forEach(part => {
         $partValidator
     });
