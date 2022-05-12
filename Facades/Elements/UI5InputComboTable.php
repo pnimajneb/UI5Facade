@@ -456,7 +456,7 @@ JS;
                                     .setValueState(sap.ui.core.ValueState.None);
                                 break;
                             // If it is not a MultiInput, but the value is a delimited list, do not use it!
-                            case oInput.getTokens === undefined && (curKey + '').includes(sMultiValDelim):
+                            case oInput.getTokens === undefined && curKey != null && (curKey + '').includes(sMultiValDelim):
                                 oInput
                                     .{$this->buildJsEmptyMethod()}
                                     .setValueState(sap.ui.core.ValueState.None);
