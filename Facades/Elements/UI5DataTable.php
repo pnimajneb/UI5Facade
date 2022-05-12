@@ -11,6 +11,7 @@ use exface\Core\Widgets\DataButton;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\DataTypes\SortingDirectionsDataType;
+use exface\Core\Exceptions\Widgets\WidgetLogicError;
 
 /**
  *
@@ -557,28 +558,81 @@ JS;
     
     public function buildJsDataGetter(ActionInterface $action = null)
     {
-        if ($action === null) {
-            $rows = "sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows || []";
-        } elseif ($action instanceof iReadData) {
+        $widget = $this->getWidget();
+        $dataObj = $this->getMetaObjectForDataGetter($action);
+        
+        $data = <<<JS
+{
+            oId: '{$this->getWidget()->getMetaObject()->getId()}',
+            rows: aRows
+        }
+JS;
+        
+        switch (true) {
+            // If no action is specified, return the entire row model
+            case $action === null:
+                $aRowsJs = "oTable.getModel().getData().rows || []";
+                break;
+                
             // If we are reading, than we need the special data from the configurator
             // widget: filters, sorters, etc.
-            return $this->getConfiguratorElement()->buildJsDataGetter($action);
-        } elseif ($this->isEditable() && $action->implementsInterface('iModifyData')) {
-            $rows = "oTable.getModel().getData().rows || []";
-        } else {
-            // NOTE: selected indices are not neccessarily the row indices in the model!
-            // The table sometimes sorts the rows differently (e.g. when grouping in used).
-            // This is why getContextByIndex() must be used instead of direct access to 
-            // the rows array.
+            case $action instanceof iReadData:
+                return $this->getConfiguratorElement()->buildJsDataGetter($action);
+                
+            // Editable tables with modifying actions return all rows either directly or as subsheet
+            case $this->isEditable() 
+            && $action->implementsInterface('iModifyData'):
+                $aRowsJs = "oTable.getModel().getData().rows || []";
+                switch (true) {
+                    case $dataObj->is($widget->getMetaObject()):
+                    case $action->getInputMapper($widget->getMetaObject()) !== null:
+                        break;
+                    default:
+                        // If the data is intended for another object, make it a nested data sheet
+                        // If the action is based on the same object as the widget's parent, use the widget's
+                        // logic to find the relation to the parent. Otherwise try to find a relation to the
+                        // action's object and throw an error if this fails.
+                        if ($widget->hasParent() && $dataObj->is($widget->getParent()->getMetaObject()) && $relPath = $widget->getObjectRelationPathFromParent()) {
+                            $relAlias = $relPath->toString();
+                        } elseif ($relPath = $dataObj->findRelationPath($widget->getMetaObject())) {
+                            $relAlias = $relPath->toString();
+                        }
+                        
+                        if ($relAlias === null || $relAlias === '') {
+                            throw new WidgetLogicError($widget, 'Cannot use editable table with object "' . $widget->getMetaObject()->getName() . '" (alias ' . $widget->getMetaObject()->getAliasWithNamespace() . ') as input widget for action "' . $action->getName() . '" with object "' . $dataObj->getName() . '" (alias ' . $dataObj->getAliasWithNamespace() . '): no forward relation could be found from action object to widget object!', '7B7KU9Q');
+                        }
+                        $data = <<<JS
+{
+            oId: '{$dataObj->getId()}',
+            rows: [
+                {
+                    '{$relAlias}': {
+                        oId: '{$widget->getMetaObject()->getId()}',
+                        rows: aRows
+                    }
+                }
+            ]
+        }
             
-            // NOTE: if there are total rows at the bottom, they can be selected too and will
-            // even match data rows as the totals are appended to the data by the loader. This
-            // is why we need to chek if the selected index is greater than the number of
-            // real data rows (excluding the totals).
-            // TODO: this might not work correctly with row grouping. Need some more testing!
-            if ($this->isUiTable()) {
-                $rows = '[];' . <<<JS
-        
+JS;
+                }
+                break;
+                
+            // In all other cases the data are the selected rows
+            default:
+                // NOTE: selected indices are not neccessarily the row indices in the model!
+                // The table sometimes sorts the rows differently (e.g. when grouping in used).
+                // This is why getContextByIndex() must be used instead of direct access to
+                // the rows array.
+                
+                // NOTE: if there are total rows at the bottom, they can be selected too and will
+                // even match data rows as the totals are appended to the data by the loader. This
+                // is why we need to chek if the selected index is greater than the number of
+                // real data rows (excluding the totals).
+                // TODO: this might not work correctly with row grouping. Need some more testing!
+                if ($this->isUiTable()) {
+                    $aRowsJs = '[];' . <<<JS
+                    
         var aSelectedIndices = oTable.getSelectedIndices();
         var oModel = oTable.getModel();
         var oCxt;
@@ -589,38 +643,55 @@ JS;
             }
             oCxt = oTable.getContextByIndex(aSelectedIndices[i]);
             if (oCxt) {
-                rows.push(oModel.getProperty(oCxt.sPath));
+                aRows.push(oModel.getProperty(oCxt.sPath));
             }
-        }
-
-JS;
-            } else {
-                $rows = '[];' . <<<JS
-                
-        var aSelectedContexts = oTable.getSelectedContexts();
-        for (var i in aSelectedContexts) {
-            rows.push(aSelectedContexts[i].getObject());
         }
         
 JS;
+                } else {
+                    $aRowsJs = '[];' . <<<JS
+                    
+        var aSelectedContexts = oTable.getSelectedContexts();
+        for (var i in aSelectedContexts) {
+            aRows.push(aSelectedContexts[i].getObject());
+        }
+        
+JS;
+                }
+                
+        }
+        
+        // Get rid of readonly columns
+        $readOnlyColNames = [];
+        foreach ($widget->getColumns() as $col) {
+            if ($col->isReadonly()) {
+                $readOnlyColNames[] = $col->getDataColumnName();
             }
         }
+        $readOnlyColNamesJs = json_encode($readOnlyColNames);
+        
+        // TODO Get rid of model columns, that are neither in the widgets columns (e.g. sorting, etc.) nor system
+        
         return <<<JS
     function() {
         var oTable = sap.ui.getCore().byId('{$this->getId()}');
         var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
-        var rows = {$rows}
+        var aReadOnlyColNames = $readOnlyColNamesJs;
+        var aRows = {$aRowsJs}
 
         if (oTable.getModel().getProperty('/_dirty') || (oDirtyColumn && oDirtyColumn.getVisible() === true)) {
-            for (var i = 0; i < rows.length; i++) {
-                delete rows[i]['{$this->getDirtyFlagAlias()}'];
+            for (var i = 0; i < aRows.length; i++) {
+                delete aRows[i]['{$this->getDirtyFlagAlias()}'];
             }
         }
+
+        aReadOnlyColNames.forEach(function(sColName){
+            for (var i = 0; i < aRows.length; i++) {
+                delete aRows[i][sColName];
+            }
+        });
         
-        return {
-            oId: '{$this->getWidget()->getMetaObject()->getId()}',
-            rows: rows
-        };
+        return $data;
     }()
 JS;
     }
