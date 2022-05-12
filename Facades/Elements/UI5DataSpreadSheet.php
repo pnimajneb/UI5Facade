@@ -180,4 +180,17 @@ JS;
     {
         return "{$this->buildJsJqueryElement()}[0].exfWidget.hasChanges()";
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
+     */
+    public function registerConditionalProperties() : UI5AbstractElement
+    {
+        parent::registerConditionalProperties();
+        $this->registerConditionalPropertiesOfColumns();
+        $this->getController()->addOnPrefillDataChangedScript("{$this->buildJsJqueryElement()}[0].exfWidget.refreshConditionalProperties()");
+        return $this;
+    }
 }
