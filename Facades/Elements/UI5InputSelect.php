@@ -160,18 +160,18 @@ JS;
     /**
      *
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsValidatorCheckDataType()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsValidatorConstraints()
      */
-    protected function buildJsValidatorCheckDataType(string $valueJs, string $onFailJs, DataTypeInterface $type) : string
+    protected function buildJsValidatorConstraints(string $valueJs, string $onFailJs, DataTypeInterface $type) : string
     {
         $widget = $this->getWidget();
         if ($widget->getMultiSelect() === false) {
-            return parent::buildJsValidatorCheckDataType($valueJs, $onFailJs, $type);
+            return parent::buildJsValidatorConstraints($valueJs, $onFailJs, $type);
         } else {
-            $partValidator = parent::buildJsValidatorCheckDataType('part', $onFailJs, $type);
+            $partValidator = parent::buildJsValidatorConstraints('part', $onFailJs, $type);
             return <<<JS
-if ($valueJs !== undefined) {
-    $valueJs.toString().split("{$widget->getMultiSelectValueDelimiter()}").forEach(part => {
+if ($valueJs !== undefined && $valueJs !== null) {
+    $valueJs.toString().split("{$widget->getMultiSelectValueDelimiter()}").forEach(function(part){
         $partValidator
     });
 }
