@@ -14,7 +14,7 @@ class UI5InputHidden extends UI5Input
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::isVisible()
      */
-    protected function isVisible()
+    protected function isVisible() : bool
     {
         return false;
     }

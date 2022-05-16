@@ -188,9 +188,33 @@ JS;
         return parent::buildJsPropertyTooltip();
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValueSetterMethod()
+     */
     public function buildJsValueSetterMethod($value)
     {
         return "setText({$value})";
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueSetter()
+     */
+    public function buildJsValueSetter($valueJs)
+    {
+        // If we are not bound to the model, we need to do the value formatting by hand here
+        // TODO Actually, this is probably not a very good idea as this implies, that the
+        // value getter needs to do the opposite conversion. Maybe it would be smarter to
+        // always use the value binding and set that via value setter. This would cause
+        // quite some refactoring though...
+        // #value-binding
+        if (! $this->isValueBoundToModel()) {
+            $valueJs = $this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatter($valueJs);
+        }
+        return parent::buildJsValueSetter($valueJs);
     }
     
     /**
@@ -202,7 +226,27 @@ JS;
     {
         return "getText()";
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueGetter()
+     */
+    public function buildJsValueGetter()
+    {
+        // #value-binding
+        // See comment in buildJsValueSetter()
+        $rawValueGetter = parent::buildJsValueGetter();
+        if (! $this->isValueBoundToModel()) {
+            $rawValueGetter = $this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatParser($rawValueGetter);
+        }
+        return $rawValueGetter;
+    }
         
+    /**
+     * 
+     * @return string[]
+     */
     protected function getColorSemanticMap() : array
     {
         $semCols = [];
@@ -264,11 +308,21 @@ JS;
         return $value;
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsColorValueNoColor() : string
     {
         return 'sap.ui.core.ValueState.None';
     }
     
+    /**
+     * 
+     * @param string $oControlJs
+     * @param string $sColorJs
+     * @return string
+     */
     protected function buildJsColorCssSetter(string $oControlJs, string $sColorJs) : string
     {
         return "setTimeout(function(){ $oControlJs.$().css('color', $sColorJs); }, 0)";
@@ -301,6 +355,11 @@ JS;
         return $this;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerExternalModules()
+     */
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
     {
         $this->getValueBindingFormatter()->registerExternalModules($controller);

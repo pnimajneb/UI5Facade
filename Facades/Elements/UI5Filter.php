@@ -33,12 +33,14 @@ class UI5Filter extends UI5AbstractElement
     }
     
     /**
-     * A filter is considered not visible if it is hidden or it's input widget is an InputHidden
+     * A filter is considered not visible if it is hidden or it's input widget is an InputHidden.
+     * 
+     * The method must be public as the UI5DataConfigurator needs to access it.
      * 
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::isVisible()
      */
-    public function isVisible()
+    public function isVisible() : bool
     {
         $filter = $this->getWidget();
         if ($filter->isHidden() || $filter->getInputWidget() instanceof InputHidden) {
