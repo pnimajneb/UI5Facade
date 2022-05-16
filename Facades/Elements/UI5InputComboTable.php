@@ -326,6 +326,10 @@ JS;
                         return;
                     }
                 }
+                if (aCells.length === 0) {
+                    var oSuggestTable = sap.ui.getCore().byId('{$this->getId()}-popup-table');
+                    aCells = oSuggestTable.getItems()[0].getCells();
+                }
                 oInput.{$this->buildJsSetSelectedKeyMethod("aCells[ {$valueColIdx} ].getText()", "aCells[ {$textColIdx} ].getText()")};
                 oInput.setValueState(sap.ui.core.ValueState.None);
                 oInput.fireChange({value: aCells[ {$valueColIdx} ].getText()});
