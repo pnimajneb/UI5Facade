@@ -2,7 +2,6 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Widgets\ColorIndicator;
-use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\Core\CommonLogic\Constants\Colors;
 
 /**
@@ -24,13 +23,8 @@ class UI5ColorIndicator extends UI5Display
     {
         $this->registerExternalModules($this->getController());
         $widget = $this->getWidget();
-        $colorOnly = true;
-        if ($widget instanceof ColorIndicator) {
-            // See if the user forced to not use color-only mode
-            $colorOnly = $widget->getColorOnly($colorOnly);
-        }
             
-        if ($colorOnly === true) {
+        if ($this->isIcon()) {
             return <<<JS
         
         new sap.ui.core.Icon("{$this->getid()}", {
@@ -49,6 +43,17 @@ JS;
             }
             return $objStatus->buildJsConstructorForMainControl($oControllerJs);
         }
+    }
+    
+    protected function isIcon() : bool
+    {
+        $widget = $this->getWidget();
+        $colorOnly = true;
+        if ($widget instanceof ColorIndicator) {
+            // See if the user forced to not use color-only mode
+            $colorOnly = $widget->getColorOnly($colorOnly);
+        }
+        return $colorOnly;
     }
     
     /**
@@ -95,7 +100,11 @@ JS;
      */
     protected function buildJsColorValueNoColor() : string
     {
-        return '"transparent"';
+        if ($this->isIcon()) {
+            return '"transparent"';
+        } else {
+            return parent::buildJsColorValueNoColor();
+        }
     }
     
     /**
@@ -121,14 +130,18 @@ JS;
     protected function getColorSemanticMap() : array
     {
         $semCols = [];
-        foreach (Colors::getSemanticColors() as $semCol) {
-            switch ($semCol) {
-                case Colors::SEMANTIC_ERROR: $ui5Color = 'Negative'; break;
-                case Colors::SEMANTIC_WARNING: $ui5Color = 'Critical'; break;
-                case Colors::SEMANTIC_OK: $ui5Color = 'Positive'; break;
-                case Colors::SEMANTIC_INFO: $ui5Color = 'Neutral'; break;
+        if ($this->isIcon()) {
+            foreach (Colors::getSemanticColors() as $semCol) {
+                switch ($semCol) {
+                    case Colors::SEMANTIC_ERROR: $ui5Color = 'Negative'; break;
+                    case Colors::SEMANTIC_WARNING: $ui5Color = 'Critical'; break;
+                    case Colors::SEMANTIC_OK: $ui5Color = 'Positive'; break;
+                    case Colors::SEMANTIC_INFO: $ui5Color = 'Neutral'; break;
+                }
+                $semCols[$semCol] = $ui5Color;
             }
-            $semCols[$semCol] = $ui5Color;
+        } else {
+            $semCols = parent::getColorSemanticMap();
         }
         return $semCols;
     }
@@ -146,5 +159,40 @@ JS;
         }
         
         return parent::buildJsPropertyTooltip();
+    }
+    
+    
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsValueSetter()
+     */
+    public function buildJsValueSetter($valueJs)
+    {
+        if (! $this->isValueBoundToModel() && $this->getWidget()->hasColorScale()) {
+            $semColsJs = json_encode($this->getColorSemanticMap());
+            if ($this->isIcon()) {
+                $setValueJs = "";
+            } else {
+                $setValueJs = "oControl.setText(mValFormatted)";
+            }
+            return <<<JS
+(function(mVal){
+    var oControl = sap.ui.getCore().byId('{$this->getId()}');
+    var mValFormatted = {$this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatter('mVal')};
+    var sColor = {$this->buildJsScaleResolver('mVal', $this->getWidget()->getColorScale(), $this->getWidget()->isColorScaleRangeBased())};
+    var sColorVal;
+    {$setValueJs};
+    if (sColor.startsWith('~')) {
+        var oColorScale = {$semColsJs};
+        oControl.setState(oColorScale[sColor]);
+    } 
+    {$this->buildJsColorCssSetter('oControl', "sColor || {$this->buildJsColorValueNoColor()}")};
+})({$valueJs})
+
+JS;
+        }
+        return parent::buildJsValueSetter($valueJs);
     }
 }

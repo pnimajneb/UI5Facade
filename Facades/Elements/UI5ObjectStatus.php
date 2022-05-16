@@ -162,4 +162,32 @@ JS;
         
         return parent::buildJsPropertyTooltip();
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsValueSetter()
+     */
+    public function buildJsValueSetter($valueJs)
+    {
+        if (! $this->isValueBoundToModel() && $this->getWidget()->hasColorScale()) {
+            $semColsJs = json_encode($this->getColorSemanticMap());
+            return <<<JS
+(function(mVal){
+    var oControl = sap.ui.getCore().byId('{$this->getId()}');
+    var mValFormatted = {$this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatter('mVal')};
+    var sColor = {$this->buildJsScaleResolver('mVal', $this->getWidget()->getColorScale(), $this->getWidget()->isColorScaleRangeBased())};
+    var sColorVal;
+    oControl.setText(mValFormatted);
+    if (sColor.startsWith('~')) {
+        var oColorScale = {$semColsJs};
+        oControl.setState(oColorScale[sColor]);
+    }
+    {$this->buildJsColorCssSetter('oControl', "sColor || {$this->buildJsColorValueNoColor()}")};
+})({$valueJs})
+
+JS;
+        }
+        return parent::buildJsValueSetter($valueJs);
+    }
 }
