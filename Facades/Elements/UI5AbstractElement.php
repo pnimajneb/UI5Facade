@@ -284,7 +284,7 @@ JS;
      * Returns TRUE if the element is visible and FALSE otherwise
      * @return boolean
      */
-    protected function isVisible()
+    protected function isVisible() : bool
     {
         return ! $this->getWidget()->isHidden();
     }
