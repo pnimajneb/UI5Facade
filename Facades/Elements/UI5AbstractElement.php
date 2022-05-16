@@ -552,6 +552,9 @@ JS;
     public function registerConditionalProperties() : UI5AbstractElement
     {
         // hidden_if
+        if ($this->getWidget()->isHidden()) {
+            return $this;
+        }
         if ($condProp = $this->getWidget()->getHiddenIf()) {
             $this->registerConditionalPropertyUpdaterOnLinkedElements(
                 $condProp,
