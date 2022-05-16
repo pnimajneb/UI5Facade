@@ -290,13 +290,17 @@ JS;
     }
     
     /**
+     * Retruns the JS code, that hides or shows the control depending on the $visible argument
+     * 
+     * Additionally the DOM element MUST fire the custom `visibleChange` event, so other controls
+     * can react to visibility changes. UI5 itself does not seem to provide a hide/show event.
      * 
      * @param bool $visible
      * @return string
      */
     protected function buildJsVisibilitySetter(bool $visible) : string
     {
-        return "sap.ui.getCore().byId('{$this->getId()}').setVisible(" . ($visible ? 'true' : 'false') . ");";
+        return "sap.ui.getCore().byId('{$this->getId()}').setVisible(" . ($visible ? 'true' : 'false') . ").$()?.trigger('visibleChange', [{visible: " . ($visible ? 'true' : 'false') . "}]);";
     }
     
     /**
@@ -552,7 +556,7 @@ JS;
     public function registerConditionalProperties() : UI5AbstractElement
     {
         // hidden_if
-        if ($this->getWidget()->isHidden()) {
+        if (! $this->isVisible()) {
             return $this;
         }
         if ($condProp = $this->getWidget()->getHiddenIf()) {

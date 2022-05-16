@@ -28,6 +28,7 @@ class UI5MenuButton extends UI5AbstractElement
     new sap.m.MenuButton("{$this->getId()}", {
         text: "{$this->getCaption()}",
         {$this->buildJsPropertyIcon()}
+        {$this->buildJsProperties()}
         menu: [
             new sap.m.Menu({
                 items: [
@@ -36,8 +37,30 @@ class UI5MenuButton extends UI5AbstractElement
             })
 		]
 	})
+    .addStyleClass("{$this->buildCssElementClass()}")
+    {$this->buildJsPseudoEventHandlers()}
 
 JS;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::isVisible()
+     */
+    protected function isVisible() : bool
+    {
+        $selfVisible = parent::isVisible();
+        $itemsVisible = false;
+        if ($selfVisible === true) {
+            foreach($this->getWidget()->getButtons() as $btn) {
+                if ($btn->isHidden() === false) {
+                    $itemsVisible = true;
+                    break;
+                }
+            }
+        }
+        return $selfVisible && $itemsVisible;
     }
         
     /**
@@ -82,7 +105,7 @@ JS;
                 
                 $btnElement->setStartsSection($start_section);
                 
-                $js .= $btnElement->buildJsConstructor();
+                $js .= $btnElement->buildJsConstructor() . ',';
             }
         }
         return $js;
@@ -106,5 +129,41 @@ JS;
     protected function buildJsCloseDialog($widget, $input_element)
     {
         return '';
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
+     */
+    public function registerConditionalProperties() : UI5AbstractElement
+    {
+        // Make sure, the MenuButton is hidden if no menu items are visible.
+        // TODO Should probably make it visible again once at least one item is visible?
+        if ($this->isVisible()) {
+            foreach ($this->getWidget()->getButtons() as $btn) {
+                $btnEl = $this->getFacade()->getElement($btn);
+                if ($btnId = $btnEl->getId()) {
+                    $this->addPseudoEventHandler('onAfterRendering', <<<JS
+    
+                    sap.ui.getCore().byId('$btnId').$().on('visibleChange', function(oEvent){
+                        var oMenuButton = sap.ui.getCore().byId('{$this->getId()}');
+                        var bItemsVisible = false;
+                        oMenuButton.getMenu().getItems().forEach(function(oItem){
+                            if (oItem.getVisible() === true){
+                                bItemsVisible = true;
+                            }
+                        });
+                        if (bItemsVisible === false) {
+                            oMenuButton.setVisible(bItemsVisible);
+                        }
+                    });
+                        
+JS);
+                }
+            }
+        }
+        
+        return parent::registerConditionalProperties();
     }
 }

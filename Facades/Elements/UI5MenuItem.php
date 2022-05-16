@@ -43,7 +43,8 @@ class UI5MenuItem extends UI5Button
                             {$this->buildJsPropertyTooltip()}
                             {$this->buildJsPropertyVisibile()}
                             {$press}
-                        }),
+                        })
+                        {$this->buildJsPseudoEventHandlers()}
                         
 JS;
     }
