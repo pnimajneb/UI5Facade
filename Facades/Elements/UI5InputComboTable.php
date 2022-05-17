@@ -313,6 +313,10 @@ JS;
         // The `buildJsSetSelectedKeyMethod()` does not trigger change either!
         // For MultiInput make sure not to add duplicate tokens as this might cause unexpected
         // behavior and is not usefull anyway.
+        // The if (aCells.length) is a special treatment for autoselect_single_suggestion - if the single
+        // suggestion is selected automatically (see buildJsDataLoader()), aCells is not set yet, so
+        // we need to fetch the first row of the suggestion table - in this case we know, that there
+        // is only a single row!
         return <<<JS
             function(oEvent){
                 var oItem = oEvent.getParameter("selectedRow");
@@ -625,10 +629,9 @@ JS;
     {
         $allowNewValuesJs = $this->getWidget()->getAllowNewValues() ? 'true' : 'false';
         return <<<JS
-function(){
+function(sColName){
     var oInput = sap.ui.getCore().byId('{$this->getId()}');
     var sSelectedKey = oInput.{$this->buildJsValueGetterMethod()};
-    var sColName = '$column';
     var bAllowNewValues = $allowNewValuesJs;
     var oModel, oItem;
 
@@ -649,7 +652,7 @@ function(){
     });
 
     return oItem === undefined ? undefined : oItem[sColName];
-}()
+}('$column')
 
 JS;
     }
@@ -685,9 +688,8 @@ JS;
         // above will recognize this and use merge this object with the request parameters, so
         // we can directly tell it to use our input as a value column filter instead of a regular
         // suggest string.
-        return "(function(){
+        return "(function(val){
             var oInput = sap.ui.getCore().byId('{$this->getId()}');
-            var val = {$valueJs};
             if (val === undefined || val === null || val === '') {
                 oInput.{$this->buildJsEmptyMethod('val', '""')};
             } else {
@@ -700,9 +702,9 @@ JS;
             }
             oInput.fireChange({
                 value: val
-            });
+            }); 
             return oInput;
-        })()";
+        })($valueJs)";
     }
     
     /**
@@ -816,47 +818,44 @@ JS;
         $parentSetter = parent::buildJsDataSetter($jsData);
         $colName = $this->getWidget()->getValueAttributeAlias();
     
-        // The '!' in front of the IFFE is required because it would not get executed stand alone
-        // resulting in a "SyntaxError: Function statements require a function name" instead.
+        // Make sure to populate the suggest-model in case the data is based on the table-object
+        // This is important, so that value- and data-getters can access additional columns
         return <<<JS
 
-!function() {
-    var oData = {$jsData};
+(function(oData) {
+    var oInput = sap.ui.getCore().byId("{$this->getId()}");
+    var mVal;
+    var aVals = [];
     if (oData !== undefined && Array.isArray(oData.rows) && oData.rows.length > 0) {
-        if (oData.oId == "{$this->getWidget()->getTable()->getMetaObject()->getId()}") {
-
-             if (oData.rows[0]['{$widget->getTextColumn()->getDataColumnName()}'] != undefined){
-                var oInput = sap.ui.getCore().byId("{$this->getId()}");
+        if (oData.oId == "{$this->getWidget()->getTable()->getMetaObject()->getId()}" || oData.oId === "{$this->getWidget()->getTable()->getMetaObject()->getAliasWithNamespace()}") {
+            oInput.getModel('{$this->getModelNameForAutosuggest()}').setData(oData);
+            if (oData.rows[0]['{$widget->getTextColumn()->getDataColumnName()}'] != undefined){
                 oInput.{$this->buildJsEmptyMethod()};
-                var vals = [];
                 oData.rows.forEach(function(oRow){
                     oInput.{$this->buildJsSetSelectedKeyMethod("oRow['{$colName}']", "oRow['{$widget->getTextColumn()->getDataColumnName()}']")};
-                    vals.push(oRow['{$colName}']);
+                    aVals.push(oRow['{$colName}']);
                 });
-                val = vals.join('{$widget->getAttribute()->getValueListDelimiter()}');                
+                mVal = aVals.join('{$widget->getAttribute()->getValueListDelimiter()}');                
                 oInput.fireChange({
-                    value: val
+                    mValue: mVal
                 });              
             } else {
-                var val;
                 if (oData.rows.length === 1) {
-                   val = oData.rows[0]['{$colName}'];
+                   mVal = oData.rows[0]['{$colName}'];
                 } else if (oData.rows.length > 1) {
-                    var vals = [];
+                    aVals = [];
                     oData.rows.forEach(function(oRow) {
-                        vals.push(oRow['{$colName}']);
+                        aVals.push(oRow['{$colName}']);
                     });
-                    val = vals.join('{$widget->getAttribute()->getValueListDelimiter()}');
+                    mVal = aVals.join('{$widget->getAttribute()->getValueListDelimiter()}');
                 }
-                {$this->buildJsValueSetter("val")}
+                {$this->buildJsValueSetter("mVal")}
             }
-    
-    
         } else {
             $parentSetter;
         }
     }
-}()
+})({$jsData})
 
 JS;
     }
