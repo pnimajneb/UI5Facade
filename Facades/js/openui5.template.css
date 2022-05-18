@@ -29,8 +29,10 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 .sapMTB-Info-CTX .sapMBtnTransparent>.sapMBtnIcon {color: #fff}
 /* Fix for too narrow progress bars in mobile sap.m.Table */
 .sapMListTblSubCntValInline > .sapMPI {min-width: 150px}
-/* Fis missing border on navigatable sap.m.GroupHeaderListItem */
+/* Fix missing border on navigatable sap.m.GroupHeaderListItem */
 .sapMGHLICell + .sapMListTblNavCol { border-top: 2px solid #ccc !important; }
+/* FIx misaligned text on smartphones if table inside an editable form */
+.sapUiFormEdit .sapMListTblSubCnt .sapMText {min-height: inherit; padding-bottom: inherit; line-height: inherit;}
 
 /* Panels */
 .exf-panel-no-border > .sapMPanelContent {border-bottom: none;}
