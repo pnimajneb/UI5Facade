@@ -48,9 +48,9 @@ JS;
                     layoutData: new sap.m.FlexItemData({
                         growFactor: 1
                     }),
-                }).setModel(new sap.ui.model.json.JSONModel({}), 'action_result'){$this->buildJsPseudoEventHandlers()},
+                }).setModel(new sap.ui.model.json.JSONModel({}), 'action_result')
+                {$this->buildJsPseudoEventHandlers()},
                 {$btnElement->buildJsConstructor()}
-                
             ],
             {$this->buildJsPropertyWidth()}
             {$this->buildJsPropertyHeight()}
@@ -63,7 +63,7 @@ JS;
     {
         $widget = $this->getWidget();
         
-        if ($dataColumnName === null || $dataColumnName === $widget->getDataColumnName()) {
+        if ($dataColumnName === null || $dataColumnName === '' || $dataColumnName === $widget->getDataColumnName()) {
             return parent::buildJsValueGetter();
         }
         
@@ -73,14 +73,14 @@ JS;
         
         return <<<JS
 
-function(){
+function(sColName, iRowIdx){
     var aData = sap.ui.getCore().byId('{$this->getId()}').getModel('action_result').getData().data;
     if (aData !== undefined && aData.length > 0) {
-        return aData[{$iRowJs}]['{$dataColumnName}'];
+        return aData[iRowIdx][sColName];
     } else {
         return '';
     }
-}()
+}('$dataColumnName', $iRowJs)
 
 JS;
     }
