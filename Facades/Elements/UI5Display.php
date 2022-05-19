@@ -59,7 +59,7 @@ class UI5Display extends UI5Value
             } else {
                 $icon_yes = "'sap-icon://message-success'";
                 $icon_no = "'sap-icon://border'";
-                $icon_width = "'14px'";
+                $icon_width = "'16px'";
             }
             $js = <<<JS
 
