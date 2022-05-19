@@ -1972,6 +1972,9 @@ JS;
         $widget = $this->getDataWidget();
         $rows = $this->buildJsGetSelectedRows('oTable');
         if ($dataColumnName !== null) {
+            if (mb_strtolower($dataColumnName) === '~rowcount') {
+                return "(sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows || []).length";
+            }
             /* @var $col \exface\Core\Widgets\DataColumn */
             if (! $col = $widget->getColumnByDataColumnName($dataColumnName)) {
                 if ($col = $widget->getColumnByAttributeAlias($dataColumnName)) {

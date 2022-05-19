@@ -556,6 +556,11 @@ JS;
         }
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsDataGetter()
+     */
     public function buildJsDataGetter(ActionInterface $action = null)
     {
         $widget = $this->getWidget();
