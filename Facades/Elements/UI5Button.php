@@ -673,4 +673,19 @@ JS;
         
         return $this;
     }
+    
+    /**
+     *
+     * @param string $functionName
+     * @return string
+     */
+    public function buildJsCallFunction(string $functionName = null, array $parameters = []) : string
+    {
+        switch (true) {
+            case $functionName === null:
+            case $functionName === Button::FUNCTION_PRESS:
+                return $this->buildJsClickEventHandlerCall();
+        }
+        return parent::buildJsCallFunction($functionName, $parameters);
+    }
 }
