@@ -31,8 +31,9 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 .sapMListTblSubCntValInline > .sapMPI {min-width: 150px}
 /* Fix missing border on navigatable sap.m.GroupHeaderListItem */
 .sapMGHLICell + .sapMListTblNavCol { border-top: 2px solid #ccc !important; }
-/* FIx misaligned text on smartphones if table inside an editable form */
+/* Fix misaligned text on smartphones if table inside an editable form */
 .sapUiFormEdit .sapMListTblSubCnt .sapMText {min-height: inherit; padding-bottom: inherit; line-height: inherit;}
+.sapUiFormEdit .sapMListTblCell .sapMText {min-height: inherit; padding-bottom: inherit; line-height: inherit; padding-top: inherit; } 
 
 /* Panels */
 .exf-panel-no-border > .sapMPanelContent {border-bottom: none;}
