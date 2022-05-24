@@ -1592,7 +1592,7 @@ JS;
     public function buildJsResetter() : string
     {
         $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
-        return $this->buildJsDataResetter() . ';' . $this->buildJsEditableChangesWatcherReset() . ';' . $configuratorElement->buildJsResetter();
+        return $this->buildJsDataResetter() . ';' . ($this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '') . ';' . $configuratorElement->buildJsResetter();
     }
     
     public function needsContainerHeight() : bool
