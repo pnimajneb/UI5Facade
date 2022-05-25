@@ -325,7 +325,7 @@ JS;
      */
     protected function buildJsColorCssSetter(string $oControlJs, string $sColorJs) : string
     {
-        return "setTimeout(function(){ $oControlJs.$().css('color', $sColorJs); }, 0)";
+        return "if ($sColorJs === null) { $oControlJs.$().css('color', null);} else {setTimeout(function(){ $oControlJs.$().css('color', $sColorJs); }, 0)}";
     }
     
     /**

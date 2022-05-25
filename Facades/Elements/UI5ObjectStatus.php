@@ -116,7 +116,7 @@ JS;
     protected function buildJsColorCssSetter(string $oControlJs, string $sColorJs) : string
     {
         $cssProperty = $this->getInverted() ? 'background-color' : 'color';
-        return "setTimeout(function(){ $oControlJs.$().find('.sapMObjStatusText').css('$cssProperty', $sColorJs); }, 0)";
+        return "if ($sColorJs === null) { $oControlJs.$().css('color', null);} else {setTimeout(function(){ $oControlJs.$().find('.sapMObjStatusText').css('$cssProperty', $sColorJs); }, 0)}";
     }
     
     /**
