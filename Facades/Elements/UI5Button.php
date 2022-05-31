@@ -685,6 +685,8 @@ JS;
             case $functionName === null:
             case $functionName === Button::FUNCTION_PRESS:
                 return $this->buildJsClickEventHandlerCall();
+            case $functionName === Button::FUNCTION_FOCUS:
+                return "sap.ui.getCore().byId('{$this->getId()}').focus()";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
     }

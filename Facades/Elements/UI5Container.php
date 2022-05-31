@@ -3,6 +3,7 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryContainerTrait;
 use exface\Core\Widgets\Container;
+use exface\Core\Widgets\Input;
 
 /**
  * Renders a sap.m.Panel with no margins or paddings for a simple Container widget.
@@ -215,27 +216,16 @@ JS;
      */
     public function buildJsFocusFirstInput() : string
     {
-        $firstInput = null;
-        $firstInputFocusJs = '';
         foreach ($this->getWidget()->getInputWidgets() as $input) {
             if ($input->isHidden() || $input->isDisabled()) {
                 continue;
             }
-            if ($firstInput === null) {
-                $firstInput = $input;
-                $firstInputFocusJs = <<<JS
-
-                (function(){
-                    var oFirstInput = sap.ui.getCore().byId('{$this->getFacade()->getElement($firstInput)->getId()}');
-                    if (oFirstInput && oFirstInput.focus !== undefined) {
-                        oFirstInput.focus();
-                    }
-                })();                    
-JS;
-                break;
+            if (! $input->hasFunction(Input::FUNCTION_FOCUS)) {
+                continue;
             }
+            return $this->getFacade()->getElement($input)->buildJsCallFunction(Input::FUNCTION_FOCUS);
         }
         
-        return $firstInputFocusJs;
+        return '';
     }
 }

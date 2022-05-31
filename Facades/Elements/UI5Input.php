@@ -6,6 +6,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryInputValidationTrait;
 use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\Widgets\Filter;
+use exface\Core\Widgets\Input;
 
 /**
  * Generates sap.m.Input fow `Input` widgets.
@@ -397,5 +398,19 @@ JS;
     public function buildJsValueGetterMethod()
     {
         return "getValue()";
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsCallFunction()
+     */
+    public function buildJsCallFunction(string $functionName = null, array $parameters = []) : string
+    {
+        switch (true) {
+            case $functionName === Input::FUNCTION_FOCUS:
+                return "sap.ui.getCore().byId('{$this->getId()}').focus()";
+        }
+        return parent::buildJsCallFunction($functionName, $parameters);
     }
 }
