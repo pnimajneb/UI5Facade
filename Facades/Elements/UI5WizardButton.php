@@ -32,14 +32,17 @@ class UI5WizardButton extends UI5Button
         
         $goToStepJs = '';
         $validateJs = '';
-        if (($nextStep = $widget->getGoToStepIndex()) !== null) {
-            $stepElement = $this->getFacade()->getElement($widget->getWizardStep());
+        /* @var $nextStep \exface\Core\Widgets\WizardStep */
+        if (($nextStepIdx = $widget->getGoToStepIndex()) !== null) {
+            $nextStep = $widget->getWizard()->getStep($nextStepIdx);
+            $firstInputFocusJs = $this->getFacade()->getElement($nextStep)->buildJsFocusFirstInput();
+            $thisStepElement = $this->getFacade()->getElement($widget->getWizardStep());
             
             if ($widget->getValidateCurrentStep() === true) {
                 $validateJs = <<<JS
             
-                    if({$stepElement->buildJsValidator()} === false) {
-                        {$stepElement->buildJsValidationError()}
+                    if({$thisStepElement->buildJsValidator()} === false) {
+                        {$thisStepElement->buildJsValidationError()}
                         return;
                     }
                     
@@ -48,14 +51,15 @@ JS;
                         $goToStepJs = <<<JS
                     var wizard = sap.ui.getCore().byId('{$tabsElement->getId()}');
 
-                    if ($nextStep < wizard.getProgress()){
-                        var destStep = wizard.getSteps()[{$nextStep}];
+                    if ($nextStepIdx < wizard.getProgress()){
+                        var destStep = wizard.getSteps()[{$nextStepIdx}];
                         wizard.goToStep(destStep);
                     } else {
-                        while (wizard.getProgress() <= $nextStep){
+                        while (wizard.getProgress() <= $nextStepIdx){
                             wizard.nextStep();
                         }
                     }
+                    {$firstInputFocusJs}
                     
 JS;
                         

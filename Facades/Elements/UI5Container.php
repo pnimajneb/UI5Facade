@@ -207,4 +207,35 @@ JS;
         }
         return $output;
     }
+    
+    /**
+     * Returns the JS code to give focus on the first input widget within the container
+     * 
+     * @return string
+     */
+    public function buildJsFocusFirstInput() : string
+    {
+        $firstInput = null;
+        $firstInputFocusJs = '';
+        foreach ($this->getWidget()->getInputWidgets() as $input) {
+            if ($input->isHidden() || $input->isDisabled()) {
+                continue;
+            }
+            if ($firstInput === null) {
+                $firstInput = $input;
+                $firstInputFocusJs = <<<JS
+
+                (function(){
+                    var oFirstInput = sap.ui.getCore().byId('{$this->getFacade()->getElement($firstInput)->getId()}');
+                    if (oFirstInput && oFirstInput.focus !== undefined) {
+                        oFirstInput.focus();
+                    }
+                })();                    
+JS;
+                break;
+            }
+        }
+        
+        return $firstInputFocusJs;
+    }
 }

@@ -11,7 +11,7 @@ namespace exface\UI5Facade\Facades\Elements;
  * of the first step (see `registerHeightFix()`) to make sure the first step does not
  * need scrolling, while the scroll-behavior of the next/previous buttons still works.
  * 
- * @method \exface\Core\Widgets\WizardWizard getWidget()
+ * @method \exface\Core\Widgets\Wizard getWidget()
  * @author tmc
  * @author Andrej Kabachnik
  *
@@ -115,6 +115,7 @@ JS;
         (function(){
             var oWizard = sap.ui.getCore().byId('{$this->getId()}');
             oWizard.discardProgress(oWizard.getSteps()[0]);
+            {$this->getFacade()->getElement($this->getWidget()->getStep(0))->buildJsFocusFirstInput()}
         }());
 
 JS;
