@@ -490,7 +490,25 @@ JS;
             $initialValueJs = json_encode($staticDefault);
             $js = $this->buildJsValueSetter($initialValueJs);
         } else {
-            // FIXME #ui5-resetter reset properly if value is bound to model
+            
+            $js = <<<JS
+            
+(function(){
+    var oInput = sap.ui.getCore().byId('{$this->getId()}');
+    var oViewModel = {$this->getController()->getView()->buildJsViewGetter($this)}.getModel('view');
+    var sPath = "{$this->getValueBindingPath()}";
+    var mVal = null;
+    if (oViewModel && sPath !== '') {
+        mVal = oViewModel.getProperty(sPath);
+    }
+    {$this->buildJsValueSetter('mVal')};
+    if (oInput.setValueState !== undefined) {
+        oInput.setValueState('None');
+    }
+    return oInput;
+})()
+
+JS;
         }
         
         return $js;

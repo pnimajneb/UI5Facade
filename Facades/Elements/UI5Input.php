@@ -313,15 +313,13 @@ JS;
             $staticDefault = $widget->getValueWithDefaults();
             $initialValueJs = json_encode($staticDefault);
             $js = $this->buildJsValueSetter($initialValueJs);
+            // The value-setter automatically performs validation. We don't need this unless the new value
+            // is actually not empty.
+            if ($staticDefault === null || $staticDefault === '') {
+                $js .= ".setValueState('None')";
+            }
         } else {
-            $js = "sap.ui.getCore().byId('{$this->getId()}')";
-            // FIXME #ui5-resetter reset properly if value is bound to model
-        }
-        
-        // The value-setter automatically performs validation. We don't need this unless the new value
-        // is actually not empty.
-        if ($staticDefault === null || $staticDefault === '') {
-            $js .= ".setValueState('None')";
+            $js = parent::buildJsResetter();
         }
         
         return $js;
