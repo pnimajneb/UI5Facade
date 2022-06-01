@@ -70,4 +70,14 @@ JS;
     {
         return '';
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::registerOnChangeValidation()
+     */
+    protected function registerOnChangeValidation()
+    {
+        return;
+    }
 }
