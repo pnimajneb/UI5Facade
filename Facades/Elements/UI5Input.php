@@ -409,7 +409,7 @@ JS;
     {
         switch (true) {
             case $functionName === Input::FUNCTION_FOCUS:
-                return "console.log('focus {$this->getWidget()->getAttributeAlias()}'); sap.ui.getCore().byId('{$this->getId()}').focus();";
+                return "sap.ui.getCore().byId('{$this->getId()}').focus();";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
     }
