@@ -1,7 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Interfaces\DataTypes\DataTypeInterface;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 
 /**
@@ -79,5 +78,22 @@ JS;
     protected function registerOnChangeValidation()
     {
         return;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5InputSelect::buildJsValueSetterMethod()
+     */
+    public function buildJsValueSetter($value)
+    {
+        return <<<JS
+
+            (function(mVal) {
+                var oCtrl = sap.ui.getCore().byId('{$this->getId()}');
+                oCtrl.setSelectedKey({$value});
+                oCtrl.fireSelectionChange({item: oCtrl.getSelectedItem()});
+            })($value);
+JS;
     }
 }

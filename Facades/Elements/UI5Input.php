@@ -317,7 +317,7 @@ JS;
             // The value-setter automatically performs validation. We don't need this unless the new value
             // is actually not empty.
             if ($staticDefault === null || $staticDefault === '') {
-                $js .= ".setValueState('None')";
+                $js .= "\n\t(function(){var oCtrl = sap.ui.getCore().byId('{$this->getId()}'); if (oCtrl.setValueState !== undefined) {oCtrl.setValueState('None');} })();";
             }
         } else {
             $js = parent::buildJsResetter();
@@ -409,7 +409,7 @@ JS;
     {
         switch (true) {
             case $functionName === Input::FUNCTION_FOCUS:
-                return "sap.ui.getCore().byId('{$this->getId()}').focus()";
+                return "console.log('focus {$this->getWidget()->getAttributeAlias()}'); sap.ui.getCore().byId('{$this->getId()}').focus();";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
     }
