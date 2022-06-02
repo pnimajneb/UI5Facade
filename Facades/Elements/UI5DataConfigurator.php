@@ -576,8 +576,8 @@ function(){
     var aFilters = sap.ui.getCore().byId('{$this->getId()}_AdvancedSearchPanel').getFilterItems();
     var i = 0;
     if (aFilters.length > 0) {
-        var includeGroup = {operator: "AND", conditions: []};
-        var excludeGroup = {operator: "NAND", conditions: []};
+        var includeGroup = {operator: "AND", ignore_empty_values: true, conditions: []};
+        var excludeGroup = {operator: "NAND", ignore_empty_values: true, conditions: []};
         var oComponent = {$this->getController()->buildJsComponentGetter()};
         var oFilter, oCondition;
         for (i in aFilters) {
