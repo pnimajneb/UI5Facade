@@ -2,6 +2,7 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Widgets\WizardButton;
+use exface\Core\Interfaces\Actions\ActionInterface;
 
 /**
  *
@@ -25,7 +26,7 @@ class UI5WizardButton extends UI5Button
      * {@inheritdoc}
      * @see UI5Button::buildJsClickFunction()
      */
-    public function buildJsClickFunction()
+    public function buildJsClickFunction(ActionInterface $action = null, string $jsRequestData = null) : string
     {
         $widget = $this->getWidget();
         $tabsElement = $this->getFacade()->getElement($widget->getWizardStep()->getParent());
@@ -69,7 +70,7 @@ JS;
         // the action is complete!
         if ($this->getWidget()->hasAction() === true) {
             $this->addOnSuccessScript($goToStepJs);
-            $actionJs = parent::buildJsClickFunction();
+            $actionJs = parent::buildJsClickFunction($action, $jsRequestData);
             $goToStepJs = '';
         }
         

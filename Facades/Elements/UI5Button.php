@@ -216,7 +216,7 @@ JS;
      * @param AbstractJqueryElement $input_element
      * @return string
      */
-    protected function buildJsClickShowDialog(ActionInterface $action, AbstractJqueryElement $input_element)
+    protected function buildJsClickShowDialog(ActionInterface $action, string $jsRequestData) : string
     {
         $widget = $this->getWidget();
         
@@ -228,24 +228,23 @@ JS;
             }
         }
         
-        $output = $this->buildJsRequestDataCollector($action, $input_element);
         $targetWidget = $widget->getAction()->getWidget();
         
         // Close the dialog on action success only if it navigates to a view.
         // If it opens a sap.m.Dialog, the parent dialog will be closed after
         // the user closes this new dialog - see JS attachAfterClose() below
         if ($this->opensDialogPage()) {
-            $closeDialogJs = $this->buildJsCloseDialog($widget, $input_element);
+            $closeDialogJs = $this->buildJsCloseDialog();
         } else {
             $closeDialogJs = '';
         }
         
         // Build the AJAX request
-        $output .= <<<JS
+        $output = <<<JS
                         {$this->buildJsBusyIconShow()}
                         var xhrSettings = {
 							data: {
-								data: requestData
+								data: {$jsRequestData}
 								{$prefill}
 							},
                             success: function(data, textStatus, jqXHR) {
@@ -365,7 +364,7 @@ JS;
                                         			oEvent.data = {};
                                         			oEvent.backData = {};
                                         			oView._handleEvent(oEvent);
-                                                    {$this->buildJsCloseDialog($widget, $input_element)}
+                                                    {$this->buildJsCloseDialog()}
                                                 })
                                                 .addEventDelegate({
                                                     "onBeforeRendering": function () {
@@ -486,8 +485,9 @@ JS;
         return $output;
     }
     
-    protected function buildJsCloseDialog($widget, $input_element)
+    protected function buildJsCloseDialog() : string
     {
+        $widget = $this->getWidget();
         if ($widget instanceof DialogButton && $widget->getCloseDialogAfterActionSucceeds()) {
             return $this->getFacade()->getElement($widget->getDialog())->buildJsCloseDialog();
         }
@@ -525,22 +525,23 @@ JS;
         return parent::buildJsBusyIconHide(true);
     }
     
-    protected function buildJsClickCallServerAction(ActionInterface $action, AbstractJqueryElement $input_element)
+    protected function buildJsClickCallServerAction(ActionInterface $action, string $jsRequestData, string $jsOnSuccess = '') : string
     {
         $widget = $this->getWidget();
+        $input_element = $this->getInputElement();
         
         $onModelLoadedJs = <<<JS
 
 								
 								{$this->buildJsBusyIconHide()}
                                 if (sap.ui.getCore().byId("{$this->getId()}") !== undefined) {
-                                    {$this->buildJsCloseDialog($widget, $input_element)}
+                                    {$this->buildJsCloseDialog()}
 								    {$this->buildJsTriggerActionEffects($action)}
                                 }
 		                       	{$this->buildJsBusyIconHide()}
 
                                 if (oResultModel.getProperty('/success') !== undefined || oResultModel.getProperty('/undoURL')){
-		                       		{$this->buildJsShowMessageSuccess("oResultModel.getProperty('/success') + (response.undoable ? ' <a href=\"" . $this->buildJsUndoUrl($action, $input_element) . "\" style=\"display:block; float:right;\">UNDO</a>' : '')")}
+		                       		{$this->buildJsShowMessageSuccess("oResultModel.getProperty('/success') + (response.undoable ? ' <a href=\"" . $this->buildJsUndoUrl($action) . "\" style=\"display:block; float:right;\">UNDO</a>' : '')")}
 									/* TODO redirects do not work in UI5 that easily. Additionally server adapters don't return any response variable.*/
                                     var sRedirect;
                                     if((sRedirect = oResultModel.getProperty('/redirect')) !== undefined){
@@ -567,6 +568,7 @@ JS;
                                         a.click();
                                         document.body.removeChild(a);
                    					}
+                                    {$jsOnSuccess}
 								}
 JS;
 		                       		
@@ -578,15 +580,13 @@ JS;
                         var oResultModel = new sap.ui.model.json.JSONModel();
                         var params = {
     							{$this->buildJsRequestCommonParams($widget, $action)}
-    							data: requestData
+    							data: {$jsRequestData}
     					}
                         {$this->getServerAdapter()->buildJsServerRequest($action, 'oResultModel', 'params', $onModelLoadedJs, $this->buildJsBusyIconHide())}	    
     				} else {
     					{$input_element->buildJsValidationError()}
     				}
                 };
-
-                {$this->buildJsRequestDataCollector($action, $input_element)}
 
                 fnRequest();
 				
@@ -629,23 +629,21 @@ JS;
     
     /**
      * 
-     * @param SendToWidget $action
-     * @param AbstractJqueryElement $input_element
-     * @return string
+     * @see JqueryButtonTrait::buildJsClickSendToWidget()
      */
-    protected function buildJsClickSendToWidget(SendToWidget $action, AbstractJqueryElement $input_element) : string
+    protected function buildJsClickSendToWidget(SendToWidget $action, string $jsRequestData) : string
     {
         $this->getFacade()->createController($this->getFacade()->getElement($this->getWidget()->getPage()->getWidgetRoot()));
-        return $this->buildJsClickSendToWidgetViaTrait($action, $input_element);
+        return $this->buildJsClickSendToWidgetViaTrait($action, $jsRequestData);
     }
     
     /**
      * 
      * @see JqueryButtonTrait::buildJsRequestDataCollector()
      */
-    protected function buildJsRequestDataCollector(ActionInterface $action, AbstractJqueryElement $input_element)
+    protected function buildJsRequestDataCollector(ActionInterface $action, AbstractJqueryElement $input_element, string $jsVariable = 'requestData')
     {
-        $js = $this->buildJsRequestDataCollectorViaTrait($action, $input_element);
+        $js = $this->buildJsRequestDataCollectorViaTrait($action, $input_element, $jsVariable);
         
         if ($facadeOptUxon = $this->getWidget()->getFacadeOptions($this->getFacade())) {
             if ($facadeOptUxon->hasProperty('custom_request_data_script')) {
