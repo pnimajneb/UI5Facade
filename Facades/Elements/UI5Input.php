@@ -409,7 +409,7 @@ JS;
     {
         switch (true) {
             case $functionName === Input::FUNCTION_FOCUS:
-                return "sap.ui.getCore().byId('{$this->getId()}').focus();";
+                return "setTimeout(function(){sap.ui.getCore().byId('{$this->getId()}').focus();}, 0);";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
     }
