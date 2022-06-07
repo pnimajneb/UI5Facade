@@ -1504,7 +1504,7 @@ JS;
      */
     public function buildJsEditableChangesChecker(string $oTableJs = null) : string
     {
-        return "({$this->buildJsEditableChangesModelGetter($oTableJs)}.getProperty('/changes').length > 0)";
+        return "(Object.keys({$this->buildJsEditableChangesModelGetter($oTableJs)}.getProperty('/changes')).length > 0)";
     }
     
     protected function buildJsEditableChangesModelGetter(string $oTableJs = null) : string
