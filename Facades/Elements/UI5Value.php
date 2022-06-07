@@ -7,6 +7,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryLiveReferenceTrait;
 use exface\Core\Widgets\Input;
 use exface\Core\Interfaces\Widgets\iShowDataColumn;
 use exface\Core\Interfaces\Widgets\iHaveValue;
+use exface\Core\DataTypes\NumberDataType;
 
 /**
  * Generates sap.m.Text controls for Value widgets
@@ -335,8 +336,8 @@ JS;
             case $dim->isPercentual():
                 $val = $dim->getValue();
                 break;
-            case $dim->isRelative():
-                $val = ($this->getWidthRelativeUnit() * $dim->getValue()) . 'px';
+            case $dim->isRelative() && $factor = NumberDataType::cast($dim->getValue()):
+                $val = ($this->getWidthRelativeUnit() * $factor) . 'px';
                 break;
             default:
                 $val = $this->buildCssWidthDefaultValue();
