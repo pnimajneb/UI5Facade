@@ -103,7 +103,7 @@ JS;
      */
     public function buildJsValueSetterMethod($valueJs)
     {
-        return parent::buildJsValueSetterMethod($valueJs) . '.fireSearch({query: ' . $valueJs . '})';
+        return "setValue({$valueJs}).fireSearch({query: $valueJs})";
     }
     
     /**
