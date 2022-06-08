@@ -571,6 +571,12 @@ JS;
                                     {$jsOnSuccess}
 								}
 JS;
+                                    
+        $onErrorJs = <<<JS
+
+                            {$this->buildJsBusyIconHide()}
+                            {$this->buildJsOnErrorScript()}
+JS;
 		                       		
    		return <<<JS
 
@@ -582,7 +588,7 @@ JS;
     							{$this->buildJsRequestCommonParams($widget, $action)}
     							data: {$jsRequestData}
     					}
-                        {$this->getServerAdapter()->buildJsServerRequest($action, 'oResultModel', 'params', $onModelLoadedJs, $this->buildJsBusyIconHide())}	    
+                        {$this->getServerAdapter()->buildJsServerRequest($action, 'oResultModel', 'params', $onModelLoadedJs, $onErrorJs)}	    
     				} else {
     					{$input_element->buildJsValidationError()}
     				}

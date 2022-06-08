@@ -1,6 +1,8 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
+use exface\Core\Widgets\Input;
+
 /**
  * Generates OpenUI5 inputs
  *
@@ -18,6 +20,7 @@ class UI5InputButton extends UI5Input
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
+        $widget = $this->getWidget();
         $btnElement = $this->getFacade()->getElement($this->getWidget()->getButton());
         $saveDataToModelJs = <<<JS
 
@@ -30,9 +33,14 @@ JS;
         // Press the button on enter in the input
         $this->getController()->addOnInitScript("sap.ui.getCore().byId('{$this->getId()}').onsapenter = (function(oEvent){{$btnElement->buildJsClickEventHandlerCall()}});");
         // Press the button initially
-        if ($this->getWidget()->getButtonPressOnStart() === true) {
-            $this->getController()->addOnInitScript("sap.ui.getCore().byId('{$btnElement->getId()}').firePress();");
+        if ($widget->getButtonPressOnStart() === true) {
+            $this->getController()->addOnPrefillDataChangedScript("sap.ui.getCore().byId('{$btnElement->getId()}').firePress();");
         }
+        // Empty input if action fails
+        if ($widget->getEmptyAfterActionFails() === true) {
+            $btnElement->addOnErrorScript($this->buildJsCallFunction(Input::FUNCTION_EMPTY));
+        }
+        
         return <<<JS
 
         new sap.m.HBox({
