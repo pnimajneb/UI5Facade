@@ -36,6 +36,7 @@ use exface\Core\Exceptions\Facades\FacadeLogicError;
 use GuzzleHttp\Psr7\Response;
 use exface\UI5Facade\Facades\Templates\UI5CustomPlaceholders;
 use exface\Core\Facades\AbstractAjaxFacade\Templates\FacadePageTemplateRenderer;
+use exface\Core\Interfaces\Selectors\FacadeSelectorInterface;
 
 /**
  * Renders SAP Fiori apps using OpenUI5 or SAP UI5.
@@ -97,15 +98,10 @@ class UI5Facade extends AbstractAjaxFacade
      * @var array [ action_alias => true/false ]
      */
     private $config_maximize_dialog_on_actions = [];
-
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::init()
-     */
-    public function init()
+    
+    public function __construct(FacadeSelectorInterface $selector)
     {
-        parent::init();
+        parent::__construct($selector);
         $this->setClassPrefix('ui5');
         $this->setClassNamespace(__NAMESPACE__);
     }
@@ -115,7 +111,7 @@ class UI5Facade extends AbstractAjaxFacade
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::handle()
      */
-    public function handle(ServerRequestInterface $request, $useCacheKey = null) : ResponseInterface
+    public function handle(ServerRequestInterface $request) : ResponseInterface
     {
         /* @var $task \exface\Core\CommonLogic\Tasks\HttpTask */
         if ($task = $request->getAttribute($this->getRequestAttributeForTask())) {
