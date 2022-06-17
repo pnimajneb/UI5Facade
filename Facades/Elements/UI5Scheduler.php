@@ -6,6 +6,7 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ValueBindingInterface;
+use exface\Core\Widgets\Parts\DataTimeline;
 
 /**
  * 
@@ -31,12 +32,20 @@ class UI5Scheduler extends UI5AbstractElement
         $this->initConfiguratorControl($controller);
         
         $showRowHeaders = $this->getWidget()->hasResources() ? 'true' : 'false';
+        switch ($this->getWidget()->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOUR)) {
+            case DataTimeline::GRANULARITY_DAY: $viewKey = 'sap.ui.unified.CalendarIntervalType.Day'; break;
+            case DataTimeline::GRANULARITY_HOUR: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
+            case DataTimeline::GRANULARITY_WEEK: $viewKey = 'sap.ui.unified.CalendarIntervalType.Week'; break;
+            case DataTimeline::GRANULARITY_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.Month'; break;
+            default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
+        }
         
         return <<<JS
 
 new sap.m.PlanningCalendar("{$this->getId()}", {
 	startDate: "{/_scheduler/startDate}",
 	appointmentsVisualization: "Filled",
+    viewKey: $viewKey,
 	showRowHeaders: {$showRowHeaders},
     showEmptyIntervalHeaders: false,
 	showWeekNumbers: true,
@@ -119,6 +128,10 @@ JS;
         $endTime = $calItem->hasEndTime() ? "oDataRow['{$calItem->getEndTimeColumn()->getDataColumnName()}']" : "''";
         $subtitle = $calItem->hasSubtitle() ? "{$calItem->getSubtitleColumn()->getDataColumnName()}: oDataRow['{$calItem->getSubtitleColumn()->getDataColumnName()}']," : '';
         
+        if ($widget->hasUidColumn()) {
+            $uid = "{$widget->getUidColumn()->getDataColumnName()}: oDataRow['{$widget->getUidColumn()->getDataColumnName()}'],";
+        }
+        
         if ($workdayStart = $widget->getTimelineConfig()->getWorkdayStartTime()){
             $workdayStartSplit = explode(':', $workdayStart);
             $workdayStartSplit = array_map('intval', $workdayStartSplit);
@@ -173,8 +186,8 @@ JS;
                 oRows[sRowKey].items.push({
                     _start: dStart,
                     _end: dEnd,
-                    {$widget->getMetaObject()->getUidAttributeAlias()}: oDataRow["{$widget->getMetaObject()->getUidAttributeAlias()}"],
                     {$calItem->getTitleColumn()->getDataColumnName()}: oDataRow["{$calItem->getTitleColumn()->getDataColumnName()}"],
+                    {$uid}
                     {$subtitle}
                 });
             }
