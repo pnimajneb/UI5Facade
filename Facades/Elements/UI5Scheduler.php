@@ -1,16 +1,17 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\Scheduler;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Interfaces\WidgetInterface;
-use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ValueBindingInterface;
 use exface\Core\Widgets\Parts\DataTimeline;
+use exface\Core\DataTypes\DateTimeDataType;
+use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
+use exface\Core\Widgets\Parts\DataCalendarItem;
 
 /**
  * 
- * @method Scheduler getWidget()
+ * @method \exface\Core\Widgets\Scheduler getWidget()
  * 
  * @author Andrej Kabachnik
  *
@@ -20,6 +21,8 @@ class UI5Scheduler extends UI5AbstractElement
     use UI5DataElementTrait {
         buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
     }
+    
+    use JsValueScaleTrait;
     
     /**
      * 
@@ -36,19 +39,31 @@ class UI5Scheduler extends UI5AbstractElement
             case DataTimeline::GRANULARITY_DAY: $viewKey = 'sap.ui.unified.CalendarIntervalType.Day'; break;
             case DataTimeline::GRANULARITY_HOUR: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
             case DataTimeline::GRANULARITY_WEEK: $viewKey = 'sap.ui.unified.CalendarIntervalType.Week'; break;
-            case DataTimeline::GRANULARITY_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.Month'; break;
+            case DataTimeline::GRANULARITY_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.OneMonth'; break;
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
+        
+        if ($this->getWidget()->isPaged()) {
+            $refreshOnNavigation = <<<JS
+
+    startDateChange: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
+    viewChange: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
+JS;
+        }
+        
+        $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
+        $startDateProp = $this->getWidget()->getStartDate() ? "startDate: exfTools.date.parse('{$this->getWidget()->getStartDate()}')," : '';
         
         return <<<JS
 
 new sap.m.PlanningCalendar("{$this->getId()}", {
-	startDate: "{/_scheduler/startDate}",
+    {$startDateProp}
 	appointmentsVisualization: "Filled",
     viewKey: $viewKey,
 	showRowHeaders: {$showRowHeaders},
     showEmptyIntervalHeaders: false,
 	showWeekNumbers: true,
+    {$refreshOnNavigation}
     appointmentSelect: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
 	toolbarContent: [
 		{$this->buildJsToolbarContent($oControllerJs)}
@@ -77,7 +92,7 @@ JS;
             if ($resource->hasSubtitle()) {
                 $rowProps .= 'text: ' . $this->buildJsValueBindingForWidget($resource->getSubtitleColumn()->getCellWidget()) . ',';
             }
-        } 
+        }
         
         return <<<JS
 
@@ -91,14 +106,15 @@ JS;
 					endDate: "{_end}",
 					icon: "{pic}",
 					title: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
+					tooltip: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
 					text: {$subtitleBinding},
 					key: "{{$this->getMetaObject()->getUidAttributeAlias()}}",
 					type: "{type}",
-					tentative: "{tentative}",
+                    {$this->buildJsRowPropertyColor($calItem)}
 				})
             },
 			intervalHeaders: {
-                path: '_scheduler/headers', 
+                path: 'headers', 
                 templateShareable: true,
                 template: new sap.ui.unified.CalendarAppointment({
 					startDate: "{start}",
@@ -112,6 +128,33 @@ JS;
 		})
 
 JS;
+    }
+    
+    protected function buildJsRowPropertyColor(DataCalendarItem $calItem) : string
+    {
+        switch (true) {
+            case $colorCol = $calItem->getColorColumn();
+                return <<<JS
+                    color: {
+                        path: "{$colorCol->getDataColumnName()}",
+                        formatter: function(value){
+                            var sColor = {$this->buildJsScaleResolver('value', $calItem->getColorScale(), $calItem->isColorScaleRangeBased())};
+                            var sValueColor;
+                            var oCtrl = this;
+                            var sCssColor = '';
+                            if (sColor.startsWith('~')) {
+                                console.error('semantic colors not supported in calendar items yet!');
+                            } else if (sColor) {
+                                sCssColor = sColor;
+                            }console.log(sColor, sCssColor);
+                            return sCssColor;
+                        }
+                    },
+JS;
+            case null !== $colorVal = $calItem->getColor():
+                return 'color: ' . $this->escapeString($colorVal) . ',';
+        }
+        return '';
     }
         
     protected function buildJsDataResetter() : string
@@ -191,11 +234,49 @@ JS;
                     {$subtitle}
                 });
             }
+
+            if (dMin !== undefined && {$oModelJs}.getProperty('/_scheduler') === undefined) {
+                sap.ui.getCore().byId('{$this->getId()}').setStartDate(dMin);
+            }
             {$oModelJs}.setProperty('/_scheduler', {
-                startDate: dMin,
                 rows: Object.values(oRows),
             });
 			
+JS;
+    }
+    
+    /**
+     *
+     * @param string $oControlEventJsVar
+     * @param string $oParamsJs
+     * @param string $keepPagePosJsVar
+     * @return string
+     */
+    protected function buildJsDataLoaderParams(string $oControlEventJsVar = 'oControlEvent', string $oParamsJs = 'params', $keepPagePosJsVar = 'bKeepPagingPos') : string
+    {
+        $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
+        return <<<JS
+        
+            var oPCal = sap.ui.getCore().byId('{$this->getId()}');
+            var oSchedulerModel = oPCal.getModel().getProperty('/_scheduler');
+            var oStartDate = oPCal.getStartDate();
+            var oEndDate = oPCal.getEndDate !== undefined ? oPCal.getEndDate() : oPCal._getFirstAndLastRangeDate().oEndDate.oDate;
+            if (oSchedulerModel !== undefined) {
+                if ($oParamsJs.data.filters === undefined) {
+                    $oParamsJs.data.filters = {operator: "AND", conditions: []};
+                }
+                $oParamsJs.data.filters.conditions.push({
+                    expression: '{$this->getWidget()->getItemsConfig()->getStartTimeColumn()->getDataColumnName()}',
+                    comparator: '>=',
+                    value: exfTools.date.format(oStartDate, '$dateFormat')
+                });
+                $oParamsJs.data.filters.conditions.push({
+                    expression: '{$this->getWidget()->getItemsConfig()->getStartTimeColumn()->getDataColumnName()}',
+                    comparator: '<=',
+                    value: exfTools.date.format(oEndDate, '$dateFormat')
+                });
+            }
+            
 JS;
     }
     
