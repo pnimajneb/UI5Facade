@@ -2001,6 +2001,20 @@ JS;
     }
     
     /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::addOnChangeScript()
+     */
+    public function addOnChangeScript($js)
+    {
+        if (strpos($js, $this->buildJsValueGetter('~rowcount')) !== false) {
+            $this->addOnRefreshScript("setTimeout(function(){ $js }, 0);");
+            return $this;
+        }
+        return parent::addOnChangeScript($js);
+    }
+    
+    /**
      * Returns an inline-snippet (without `;`) to get an array of the currently selected data rows.
      * 
      * If no data is selected, the JS snippet must resolve to an empty array.
