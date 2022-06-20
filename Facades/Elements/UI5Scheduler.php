@@ -20,9 +20,12 @@ class UI5Scheduler extends UI5AbstractElement
 {
     use UI5DataElementTrait {
         buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
+        buildJsValueGetter as buildJsValueGetterViaTrait;
     }
     
     use JsValueScaleTrait;
+
+    const EVENT_NAME_TIMELINE_SHIFT = 'timeline_shift';
     
     /**
      * 
@@ -51,7 +54,6 @@ class UI5Scheduler extends UI5AbstractElement
 JS;
         }
         
-        $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
         $startDateProp = $this->getWidget()->getStartDate() ? "startDate: exfTools.date.parse('{$this->getWidget()->getStartDate()}')," : '';
         
         return <<<JS
@@ -146,7 +148,7 @@ JS;
                                 console.error('semantic colors not supported in calendar items yet!');
                             } else if (sColor) {
                                 sCssColor = sColor;
-                            }console.log(sColor, sCssColor);
+                            }
                             return sCssColor;
                         }
                     },
@@ -157,12 +159,21 @@ JS;
         return '';
     }
         
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsDataResetter() : string
     {
         // TODO
         return '';
     }
     
+    /**
+     * 
+     * @param string $oModelJs
+     * @return string
+     */
     protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
     {
         $widget = $this->getWidget();
@@ -235,12 +246,16 @@ JS;
                 });
             }
 
-            if (dMin !== undefined && {$this->escapeString($this->getWidget()->getStartDate())} != '' && {$oModelJs}.getProperty('/_scheduler') === undefined) {
+            if (dMin !== undefined && ! {$this->escapeString($this->getWidget()->getStartDate())} && {$oModelJs}.getProperty('/_scheduler') === undefined) {
                 sap.ui.getCore().byId('{$this->getId()}').setStartDate(dMin);
             }
             {$oModelJs}.setProperty('/_scheduler', {
                 rows: Object.values(oRows),
             });
+
+            setTimeout(function(){
+                {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
+            }, 0);
 			
 JS;
     }
@@ -368,5 +383,33 @@ JS;
     protected function hasPaginator() : bool
     {
         return false;
+    }
+    
+    public function buildJsValueGetter($dataColumnName = null, $rowNr = null)
+    {
+        if ($dataColumnName !== null) {
+            $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
+            if (mb_strtolower($dataColumnName) === '~start_date') {
+                return "exfTools.date.format(sap.ui.getCore().byId('{$this->getId()}').getStartDate(), '$dateFormat')";
+            }
+            if (mb_strtolower($dataColumnName) === '~end_date') {
+                return "exfTools.date.format(function(oPCal){return oPCal.getEndDate !== undefined ? oPCal.getEndDate() : oPCal._getFirstAndLastRangeDate().oEndDate.oDate}(sap.ui.getCore().byId('{$this->getId()}')), '$dateFormat')";
+            }
+        }
+        return $this->buildJsValueGetterViaTrait($dataColumnName, $rowNr);
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::addOnChangeScript()
+     */
+    public function addOnChangeScript($js)
+    {
+        if (strpos($js, $this->buildJsValueGetter('~start_date')) !== false || strpos($js, $this->buildJsValueGetter('~end_date')) !== false) {
+            $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, $js);
+            return $this;
+        }
+        return parent::addOnChangeScript($js);
     }
 }
