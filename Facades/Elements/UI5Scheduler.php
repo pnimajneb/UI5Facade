@@ -235,7 +235,7 @@ JS;
                 });
             }
 
-            if (dMin !== undefined && {$oModelJs}.getProperty('/_scheduler') === undefined) {
+            if (dMin !== undefined && {$this->escapeString($this->getWidget()->getStartDate())} != '' && {$oModelJs}.getProperty('/_scheduler') === undefined) {
                 sap.ui.getCore().byId('{$this->getId()}').setStartDate(dMin);
             }
             {$oModelJs}.setProperty('/_scheduler', {
