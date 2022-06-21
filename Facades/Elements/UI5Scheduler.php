@@ -269,8 +269,13 @@ JS;
      */
     protected function buildJsDataLoaderParams(string $oControlEventJsVar = 'oControlEvent', string $oParamsJs = 'params', $keepPagePosJsVar = 'bKeepPagingPos') : string
     {
-        $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
-        return <<<JS
+        // Don't call the parent here as we don't want "regular" pagination. 
+        $js = '';
+        
+        // If we are paging, page via start/end dates of the currently visible timeline
+        if ($this->getWidget()->isPaged()) {
+            $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
+            return <<<JS
         
             var oPCal = sap.ui.getCore().byId('{$this->getId()}');
             var oSchedulerModel = oPCal.getModel().getProperty('/_scheduler');
@@ -293,6 +298,8 @@ JS;
             }
             
 JS;
+        }
+        return $js;
     }
     
     /**
