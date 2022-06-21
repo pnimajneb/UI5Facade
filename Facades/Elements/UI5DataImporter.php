@@ -2,30 +2,24 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JExcelTrait;
-use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
+use exface\UI5Facade\Facades\Elements\Traits\UI5HelpButtonTrait;
 
-class UI5DataSpreadSheet extends UI5AbstractElement
+class UI5DataImporter extends UI5AbstractElement
 {    
     use JExcelTrait;
-    use UI5DataElementTrait {
-        UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
-        UI5DataElementTrait::buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
-        JExcelTrait::buildJsDataResetter as buildJsJExcelResetter;
-        JExcelTrait::buildJsDataGetter insteadof UI5DataElementTrait;
-        JExcelTrait::buildJsValueGetter insteadof UI5DataElementTrait;
-    }
+    use UI5HelpButtonTrait;
     
     /**
      *
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsConstructor()
      */
-    public function buildJsConstructorForControl($oControllerJs = 'oController') : string
+    public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->registerFiltersWithApplyOnChange($this);
-        
-        $this->registerReferencesAtLinkedElements();
+        if ($this->getWidget()->hasPreview() === true) {
+            $this->getFacade()->getElement($this->getWidget()->getPreviewButton())->addOnSuccessScript($this->buildJsDataSetter('response'));
+        }
         
         $controller = $this->getController();
         $controller->addOnDefineScript($this->buildJsFixJqueryImportUseStrict());
@@ -41,7 +35,6 @@ class UI5DataSpreadSheet extends UI5AbstractElement
                     afterRendering: function(oEvent) {
                         {$this->buildJsDestroy()}
                         {$this->buildJsJExcelInit()}
-                        {$this->buildJsRefresh()}
                         {$this->buildJsFixOverflowVisibility()}
                     }
                 })
@@ -49,6 +42,75 @@ class UI5DataSpreadSheet extends UI5AbstractElement
 JS;
                             
         return $this->buildJsPanelWrapper($table, $oControllerJs) . ".addStyleClass('sapUiNoContentPadding exf-panel-no-border')";
+    }
+    
+    /**
+     * 
+     * @param string $contentConstructorsJs
+     * @param string $oControllerJs
+     * @param string $toolbar
+     * @return string
+     */
+    protected function buildJsPanelWrapper(string $contentConstructorsJs, string $oControllerJs = 'oController', string $toolbar = null)  : string
+    {
+        $toolbar = $toolbar ?? $this->buildJsToolbar($oControllerJs);
+        $hDim = $this->getWidget()->getHeight();
+        if (! $hDim->isUndefined()) {
+            $height = $this->getHeight();
+        } else {
+            $height = $this->buildCssHeightDefaultValue();
+        }
+        return <<<JS
+        new sap.m.Panel({
+            height: "$height",
+            headerToolbar: [
+                {$toolbar}.addStyleClass("sapMTBHeader-CTX")
+            ],
+            content: [
+                {$contentConstructorsJs}
+            ]
+        })
+        
+JS;
+    }
+    
+    /**
+     * 
+     * @param string $oControllerJsVar
+     * @param string $leftExtras
+     * @param string $rightExtras
+     * @return string
+     */
+    protected function buildJsToolbar($oControllerJsVar = 'oController', string $leftExtras = null, string $rightExtras = null)
+    {
+        $widget = $this->getWidget();
+        
+        $visible = $widget->getHideCaption() === true || ($this->getCaption() === '' && $widget->hasButtons() === false) ? 'false' : 'true';
+        $heading = $widget->getHideCaption() === true ? '' : 'new sap.m.Label({text: ' . json_encode($this->getCaption()) . '}),';
+        
+        $buttons = '';
+        foreach ($widget->getToolbarMain()->getButtonGroups() as $btn_group) {
+            $buttons .= ($buttons && $btn_group->getVisibility() > EXF_WIDGET_VISIBILITY_OPTIONAL ? ",\n new sap.m.ToolbarSeparator()" : '');
+            foreach ($btn_group->getButtons() as $btn) {
+                $buttons .= $this->getFacade()->getElement($btn)->buildJsConstructor() . ",\n";
+            }
+        }
+        
+        return <<<JS
+        
+			new sap.m.OverflowToolbar({
+                design: "Transparent",
+                visible: {$visible},
+				content: [
+					{$heading}
+                    {$leftExtras}
+			        new sap.m.ToolbarSpacer(),
+                    {$buttons}
+                    {$this->buildJsHelpButtonConstructor()}
+				]
+			})
+			
+JS;
     }
     
     /**
@@ -79,25 +141,6 @@ JS;
         return "$('#{$this->getId()}_jexcel')";
     }
     
-    /**
-     *
-     * {@inheritdoc}
-     * @see UI5DataElementTrait::buildJsDataLoaderOnLoaded()
-     */
-    protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
-    {
-        return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
-
-        {$this->buildJsDataSetter('oModel.getData()')}
-        {$this->buildJsFooterRefresh('data', 'jqSelf')}
-
-JS;
-    }
-    
-    /**
-     * 
-     * @return string
-     */
     protected function buildJsFixedFootersSpread() : string
     {
         return $this->getController()->buildJsMethodCallFromController('onFixedFooterSpread', $this, '');
@@ -132,44 +175,6 @@ JS;
     }
     
     /**
-     *
-     * {@inheritdoc}
-     * @see UI5DataElementTrait::isEditable()
-     */
-    protected function isEditable()
-    {
-        return true;
-    }
-
-    /**
-     *
-     * {@inheritdoc}
-     * @see UI5DataElementTrait::buildJsGetSelectedRows()
-     */
-    protected function buildJsGetSelectedRows(string $oTableJs): string
-    {
-        return '[]';
-    }
-
-    /**
-     * 
-     * @return string
-     */
-    protected function buildJsDataResetter() : string
-    {
-        return $this->buildJsDataResetterViaTrait() . ';' . $this->buildJsJExcelResetter();
-    }
-    
-    /**
-     * 
-     * @see JExcelTrait::buildJsFixAutoColumnWidth()
-     */
-    protected function buildJsFixAutoColumnWidth() : string
-    {
-        return '';
-    }
-    
-    /**
      * 
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsBusyIconShow()
@@ -195,16 +200,6 @@ JS;
         } else {
             return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusy(false);';
         }
-    }
-    
-    /**
-     * @see UI5DataElementTrait::buildJsEditableChangesChecker()
-     * @param string $oTableJs
-     * @return string
-     */
-    public function buildJsEditableChangesChecker(string $oTableJs = null) : string
-    {
-        return "{$this->buildJsJqueryElement()}[0].exfWidget.hasChanges()";
     }
     
     /**
