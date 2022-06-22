@@ -10,8 +10,7 @@ use exface\Core\Widgets\Parts\Maps\DataSelectionMarkerLayer;
 use exface\Core\Interfaces\Widgets\iUseData;
 use exface\Core\CommonLogic\DataSheets\DataColumn;
 use exface\Core\Factories\WidgetFactory;
-use exface\Core\Widgets\Parts\Maps\Interfaces\MapLayerInterface;
-use exface\Core\Widgets\Parts\Maps\DataMarkersLayer;
+use exface\Core\Widgets\Parts\Maps\Interfaces\LatLngWidgetLinkMapLayerInterface;
 
 /**
  * 
@@ -46,8 +45,8 @@ class UI5Map extends UI5AbstractElement
         
         $controller = $this->getController(); 
         $this->registerExternalModules($controller);
-        
         $this->registerLiveReferenceAtLinkedElements();
+        $this->getController()->addOnPrefillDataChangedScript($this->buildJsRefresh());
         
         // Add a single data loader controller method for all layers. However, give it an additional
         // parameter oLeafletParams so each layer can override request params if needed. The content
@@ -109,11 +108,10 @@ JS;
         $this->leafletVarTemp = null;
         
         foreach ($this->getWidget()->getLayers() as $layer) {
-            if ($layer instanceof DataMarkersLayer) {
+            if ($layer instanceof LatLngWidgetLinkMapLayerInterface) {
                 if (($linkLat = $layer->getLatitudeWidgetLink()) && ($linkLng = $layer->getLongitudeWidgetLink())) {
                     $this->getFacade()->getElement($linkLat->getTargetWidget())->addOnChangeScript($this->buildJsRefresh());
                     $this->getFacade()->getElement($linkLng->getTargetWidget())->addOnChangeScript($this->buildJsRefresh());
-                    $this->getController()->addOnPrefillDataChangedScript($this->buildJsRefresh());
                 }
             }
         }
