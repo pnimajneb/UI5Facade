@@ -448,10 +448,6 @@ JS;
             $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, $js);
             return $this;
         }
-        if (strpos($js, $this->buildJsValueGetter('~start_date')) !== false || strpos($js, $this->buildJsValueGetter('~end_date')) !== false) {
-            $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, $js);
-            return $this;
-        }
         if (strpos($js, $this->buildJsValueGetter('~resources_title')) !== false) {
             $this->getController()->addOnEventScript($this, SELF::EVENT_NAME_ROW_SELECTION_CHANGE, $js);
             return $this;
