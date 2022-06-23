@@ -27,6 +27,8 @@ class UI5Scheduler extends UI5AbstractElement
 
     const EVENT_NAME_TIMELINE_SHIFT = 'timeline_shift';
     
+    const EVENT_NAME_ROW_SELECTION_CHANGE = 'row_selection_change';
+    
     /**
      * 
      * {@inheritDoc}
@@ -67,6 +69,7 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
 	showWeekNumbers: true,
     {$refreshOnNavigation}
     appointmentSelect: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
+    rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_ROW_SELECTION_CHANGE, true)},
 	toolbarContent: [
 		{$this->buildJsToolbarContent($oControllerJs)}
 	],
@@ -256,6 +259,10 @@ JS;
             setTimeout(function(){
                 {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
             }, 0);
+            // fire selection change as selected rows are reseted
+            setTimeout(function(){                
+                sap.ui.getCore().byId('{$this->getId()}').fireRowSelectionChange();
+            }, 0);
 			
 JS;
     }
@@ -401,7 +408,27 @@ JS;
             }
             if (mb_strtolower($dataColumnName) === '~end_date') {
                 return "exfTools.date.format(function(oPCal){return oPCal.getEndDate !== undefined ? oPCal.getEndDate() : oPCal._getFirstAndLastRangeDate().oEndDate.oDate}(sap.ui.getCore().byId('{$this->getId()}')), '$dateFormat')";
+            }            
+            if (mb_strtolower($dataColumnName) === '~resources_title') {
+                $col = $this->getWidget()->getResourcesConfig()->getTitleColumn();
+                $delim = $col && $col->isBoundToAttribute() ? $col->getAttribute()->getValueListDelimiter() : EXF_LIST_SEPARATOR;
+                return <<<JS
+                
+(function(){
+    var oPCal = sap.ui.getCore().byId('{$this->getId()}');
+    var aSelectedRows = oPCal.getSelectedRows();
+    var aTitles = [];
+    for (var i = 0; i < aSelectedRows.length; i++) {
+        if (aSelectedRows[i].getTitle() !== '' && aSelectedRows[i].getTitle() !== undefined) {
+            aTitles.push(aSelectedRows[i].getTitle());
+        }    
+    }
+    return aTitles.join('{$delim}');
+}() || '')
+
+JS;
             }
+            
         }
         return $this->buildJsValueGetterViaTrait($dataColumnName, $rowNr);
     }
@@ -415,6 +442,14 @@ JS;
     {
         if (strpos($js, $this->buildJsValueGetter('~start_date')) !== false || strpos($js, $this->buildJsValueGetter('~end_date')) !== false) {
             $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, $js);
+            return $this;
+        }
+        if (strpos($js, $this->buildJsValueGetter('~start_date')) !== false || strpos($js, $this->buildJsValueGetter('~end_date')) !== false) {
+            $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, $js);
+            return $this;
+        }
+        if (strpos($js, $this->buildJsValueGetter('~resources_title')) !== false) {
+            $this->getController()->addOnEventScript($this, SELF::EVENT_NAME_ROW_SELECTION_CHANGE, $js);
             return $this;
         }
         return parent::addOnChangeScript($js);
