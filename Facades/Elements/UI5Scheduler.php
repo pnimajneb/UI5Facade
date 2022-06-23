@@ -21,6 +21,7 @@ class UI5Scheduler extends UI5AbstractElement
     use UI5DataElementTrait {
         buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
         buildJsValueGetter as buildJsValueGetterViaTrait;
+        buildJsDataResetter as buildJsDataResetterViaTrait;
     }
     
     use JsValueScaleTrait;
@@ -78,6 +79,7 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
         template: {$this->buildJsRowsConstructors()}
 	}
 })
+.data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())})
 {$this->buildJsClickHandlers($oControllerJs)}
 
 JS;
@@ -139,6 +141,8 @@ JS;
     {
         switch (true) {
             case $colorCol = $calItem->getColorColumn();
+                $semanticColors = $this->getFacade()->getSemanticColors();
+                $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
                 return <<<JS
                     color: {
                         path: "{$colorCol->getDataColumnName()}",
@@ -147,8 +151,9 @@ JS;
                             var sValueColor;
                             var oCtrl = this;
                             var sCssColor = '';
+                            var oSemanticColors = $semanticColorsJs;
                             if (sColor.startsWith('~')) {
-                                console.error('semantic colors not supported in calendar items yet!');
+                                sCssColor = oSemanticColors[sColor] || '';
                             } else if (sColor) {
                                 sCssColor = sColor;
                             }
@@ -168,8 +173,7 @@ JS;
      */
     protected function buildJsDataResetter() : string
     {
-        // TODO
-        return '';
+        return $this->buildJsDataResetterViaTrait() . "; sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())})";
     }
     
     /**
@@ -249,8 +253,8 @@ JS;
                 });
             }
 
-            if (dMin !== undefined && ! {$this->escapeString($this->getWidget()->getStartDate())} && {$oModelJs}.getProperty('/_scheduler') === undefined) {
-                sap.ui.getCore().byId('{$this->getId()}').setStartDate(dMin);
+            if (dMin !== undefined && ! sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate') && {$oModelJs}.getProperty('/_scheduler') === undefined) {
+                sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate', dMin).setStartDate(dMin);
             }
             {$oModelJs}.setProperty('/_scheduler', {
                 rows: Object.values(oRows),
