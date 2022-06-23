@@ -650,4 +650,22 @@ JS;
         $this->themeHeaderTextColor = $value;
         return $this;
     }
+    
+    /**
+     *
+     * {@inheritdoc}
+     * @see AbstractAjaxFacade::getSemanticColors()
+     */
+    public function getSemanticColors() : array
+    {
+        $colors = parent::getSemanticColors();
+        if (empty($colors)) {
+            $colors = [
+                '~OK' => '#107e3e',
+                '~WARNING' => '#df6e0c',
+                '~ERROR' => '#b00'
+            ];
+        }
+        return $colors;
+    }
 }

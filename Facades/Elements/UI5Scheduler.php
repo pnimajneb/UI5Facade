@@ -136,6 +136,8 @@ JS;
     {
         switch (true) {
             case $colorCol = $calItem->getColorColumn();
+                $semanticColors = $this->getFacade()->getSemanticColors();
+                $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
                 return <<<JS
                     color: {
                         path: "{$colorCol->getDataColumnName()}",
@@ -144,8 +146,9 @@ JS;
                             var sValueColor;
                             var oCtrl = this;
                             var sCssColor = '';
+                            var oSemanticColors = $semanticColorsJs;
                             if (sColor.startsWith('~')) {
-                                console.error('semantic colors not supported in calendar items yet!');
+                                sCssColor = oSemanticColors[sColor] || '';
                             } else if (sColor) {
                                 sCssColor = sColor;
                             }
