@@ -146,7 +146,7 @@ JS;
             return parent::buildJsValueGetterMethod();
         }
         
-        return "(getHtmlText()+'').replace(/<\\s*\\/?br\\s*[\\/]?>/gi, \"\\n\")";
+        return "getHtmlText().replace(/<\\s*\\/?br\\s*[\\/]?>/gi, \"\\n\")";
     }
     
     /**
