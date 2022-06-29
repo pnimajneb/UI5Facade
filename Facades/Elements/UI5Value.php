@@ -547,13 +547,29 @@ JS;
      */
     protected function buildJsVisibilitySetter(bool $visible) : string
     {
-        $showHideLabelJs = '';
+        $showHideLabelJs = '';        
         if ($this->labelRendered === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
                 $showHideLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setVisible(" . ($visible ? 'true' : 'false') . ");";
             }
-        } 
-        return parent::buildJsVisibilitySetter($visible) . ' ' . $showHideLabelJs;
+        }
+        $js = parent::buildJsVisibilitySetter($visible) . ' ' . $showHideLabelJs;
+        
+        //when value element is nested in a form element we have to hide the form element
+        //so it doesnt occupy space even so the element inside is hidden
+        $vis = $visible ? 'true' : 'false';
+        $fixJs = <<<JS
+        
+            var vis = {$vis};
+            var oElem = sap.ui.getCore().byId('{$this->getId()}');
+            if (oElem.getParent().getMetadata().getName() == 'sap.ui.layout.form.FormElement') {
+                oElem.getParent().setVisible(vis);
+                oElem.$()?.trigger('visibleChange', [{visible: vis}]);
+            } else {
+                {$js}
+            }
+JS;
+        return $fixJs;
     }
     
     /**
