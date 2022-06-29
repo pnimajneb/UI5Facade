@@ -1,12 +1,10 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\WizardStep;
-
 /**
  * A special form to be used within `UI5Wizard` widgets.
  * 
- * method WizardStep getWidget()
+ * @method \exface\Core\Widgets\WizardStep getWidget()
  * @author tmc
  *
  */
@@ -33,7 +31,15 @@ class UI5WizardStep extends UI5Form
     protected function buildJsWizardStep()
     {
         $widget = $this->getWidget();
-        $caption = $this->escapeJsTextValue($this->getCaption());
+        $cssClasses = '';
+        $caption = $this->getCaption();
+        // `hide_caption` should not hide the text in the IconTabBar! It should rather hide the <h3> DOM
+        // element, that is displayed on the top of each step. This is why we add a CSS class to the entire
+        // step, that will set `visibility:hidden`. NOTE: `display:none` did not work because if set for
+        // the first step, the second steps title would get the number `1.` instead of `2.`!
+        if ($widget->getHideCaption()) {
+            $cssClasses .= ' exf-wizard-step-hide-caption';
+        }
         $toolbar = $widget->getToolbarMain();
         $icon = $widget->getIcon() && $widget->getShowIcon(true) ? $this->getIconSrc($widget->getIcon()) : '';
         $optional = $widget->isOptional() === true ? "optional: true," : '';
@@ -68,7 +74,7 @@ JS;
                 
         return <<<JS
     new sap.m.WizardStep("{$this->getId()}", {
-        title: "{$caption}",
+        title: {$this->escapeString($caption)},
         icon: "{$icon}",
         {$optional}
         activate: function(oEvent) {
@@ -81,10 +87,17 @@ JS;
             {$this->buildJsLayoutConstructor()},
             {$this->getFacade()->getElement($toolbar)->buildJsConstructor()}.setStyle('Clear')
         ]
-    })
+    }).addStyleClass('{$cssClasses}')
 JS;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::getCaption()
+     */
+    protected function getCaption() : string
+    {
+        return $this->getWidget()->getCaption() ?? '';
+    }
 }
-
-?>
