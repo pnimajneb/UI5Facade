@@ -855,7 +855,7 @@ JS;
             {$this->buildJsDataLoaderOnLoadedHandleWidgetLinks($oModelJs)}
             {$editableTableWatchChanges}          
             {$this->buildJsMarkRowsAsDirty($oModelJs)}
-            setTimeout(function(){ console.log('onrefresh {$this->getWidget()->getMetaObject()->getAliasWithNamespace()}');
+            setTimeout(function(){
                 {$this->getController()->buildJsEventHandler($this, UI5AbstractElement::EVENT_NAME_REFRESH, false)}
             }, 0);
 		
