@@ -23,7 +23,6 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
-use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -154,7 +153,7 @@ trait UI5DataElementTrait {
         // Add placeholders for the custom events here. If not done so, at least the select-event will be
         // added too late and won't be there in the generated controller.
         $this->getController()->addOnEventScript($this, 'select', '');
-        $this->getController()->addOnEventScript($this, 'refresh', '');
+        $this->getController()->addOnEventScript($this, UI5AbstractElement::EVENT_NAME_REFRESH, '');
         
         $controller->addMethod('onUpdateFilterSummary', $this, '', $this->buildJsFilterSummaryUpdater());
         $controller->addMethod('onLoadData', $this, 'oControlEvent, bKeepPagingPos', $this->buildJsDataLoader());
@@ -856,7 +855,9 @@ JS;
             {$this->buildJsDataLoaderOnLoadedHandleWidgetLinks($oModelJs)}
             {$editableTableWatchChanges}          
             {$this->buildJsMarkRowsAsDirty($oModelJs)}
-            {$this->getController()->buildJsEventHandler($this, 'refresh', false)}
+            setTimeout(function(){
+                {$this->getController()->buildJsEventHandler($this, UI5AbstractElement::EVENT_NAME_REFRESH, false)}
+            }, 0);
 		
 JS;
     }
@@ -1933,17 +1934,6 @@ JS;
     
     /**
      *
-     * @param string $js
-     * @return UI5AbstractElement
-     */
-    public function addOnRefreshScript(string $js) : UI5AbstractElement
-    {
-        $this->getController()->addOnEventScript($this, 'refresh', $js);
-        return $this;
-    }
-    
-    /**
-     *
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueGetterMethod()
      */
@@ -1970,16 +1960,24 @@ JS;
     public function buildJsValueGetter($dataColumnName = null, $rowNr = null)
     {
         $widget = $this->getDataWidget();
+        
+        /* @var $col \exface\Core\Widgets\DataColumn */
+        if ($dataColumnName !== null && ! $col = $widget->getColumnByDataColumnName($dataColumnName)) {
+            if ($col = $widget->getColumnByAttributeAlias($dataColumnName)) {
+                $dataColumnName = $col->getDataColumnName();
+            }
+        }
+        
+        // If we are looking for a specific row, get all data and select that row
+        if ($rowNr !== null) {
+            return "(function(aAllRows){ return ! aAllRows || aAllRows.length === 0 ? '' : (aAllRows[0]['{$dataColumnName}'] || '') })({$this->buildJsDataGetter(null)}.rows)";
+        }
+        // Otherwise get the selected rows and proceed
+        
         $rows = $this->buildJsGetSelectedRows('oTable');
         if ($dataColumnName !== null) {
             if (mb_strtolower($dataColumnName) === '~rowcount') {
                 return "(sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows || []).length";
-            }
-            /* @var $col \exface\Core\Widgets\DataColumn */
-            if (! $col = $widget->getColumnByDataColumnName($dataColumnName)) {
-                if ($col = $widget->getColumnByAttributeAlias($dataColumnName)) {
-                    $dataColumnName = $col->getDataColumnName();
-                }
             }
             if (! $col && ! ($widget->getMetaObject()->getUidAttributeAlias() === $dataColumnName)) {
                 throw new WidgetConfigurationError($this->getWidget(), 'Cannot build live value getter for ' . $this->getWidget()->getWidgetType() . ': column "' . $dataColumnName . '" not found!');
@@ -2008,7 +2006,7 @@ JS;
     public function addOnChangeScript($js)
     {
         if (strpos($js, $this->buildJsValueGetter('~rowcount')) !== false) {
-            $this->addOnRefreshScript("setTimeout(function(){ $js }, 0);");
+            $this->addOnRefreshScript($js);
             return $this;
         }
         return parent::addOnChangeScript($js);
