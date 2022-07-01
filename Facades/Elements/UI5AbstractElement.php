@@ -14,6 +14,7 @@ use exface\UI5Facade\Facades\Interfaces\UI5ViewInterface;
 use exface\Core\Interfaces\Widgets\iHaveIcon;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
+use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
 
 /**
  *
@@ -27,6 +28,8 @@ abstract class UI5AbstractElement extends AbstractJqueryElement
     use JsConditionalPropertyTrait;
     
     const EVENT_NAME_CHANGE = 'change';
+    
+    const EVENT_NAME_REFRESH = 'refresh';
     
     private $jsVarName = null;
     
@@ -475,6 +478,18 @@ JS;
     {
         parent::addOnChangeScript($string);
         $this->getController()->addOnEventScript($this, self::EVENT_NAME_CHANGE, $string);
+        return $this;
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::addOnRefreshScript()
+     */
+    public function addOnRefreshScript(string $js) : AjaxFacadeElementInterface
+    {
+        parent::addOnChangeScript($js);
+        $this->getController()->addOnEventScript($this, self::EVENT_NAME_REFRESH, $js);
         return $this;
     }
     
