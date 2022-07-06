@@ -95,6 +95,8 @@ JS;
             new sap.ui.core.Icon({
                 {$iconSrc}
                 {$size}
+                {$this->buildJsPropertyWidth()}
+                {$this->buildJsPropertyHeight()}
             })
 
 JS;
