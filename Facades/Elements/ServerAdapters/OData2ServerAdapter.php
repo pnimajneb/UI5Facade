@@ -1370,7 +1370,7 @@ JS;
             var oDataActionParams = {};
             var rowCount = {$oParamsJs}.data.rows.length;
             mParameters.groupId = "batchGroup";
-            {$this->buildJsServerResponseHandling($onModelLoadedJs, 'mParameters', 'aResponses', 'rowCount')}
+            {$this->buildJsServerResponseHandling($onModelLoadedJs, 'mParameters', 'aResponses', 'rowCount', $onErrorJs)}
 
             if (rowCount !== 0) {                
                 for (var j = 0; j < rowCount; j++) {
