@@ -429,6 +429,7 @@ JS;
      */
     protected function buildJsConfiguratorButtonConstructor(string $oControllerJs = 'oController', string $buttonType = 'Default') : string
     {
+        $btnPriorityJs = $this->getDynamicPageShowToolbar() ? '"AlwaysOverflow"' : '"High"';
         return <<<JS
         
                     new sap.m.OverflowToolbarButton({
@@ -436,7 +437,9 @@ JS;
                         icon: "sap-icon://action-settings",
                         text: "{$this->translate('WIDGET.DATATABLE.SETTINGS_DIALOG.TITLE')}",
                         tooltip: "{$this->translate('WIDGET.DATATABLE.SETTINGS_DIALOG.TITLE')}",
-                        layoutData: new sap.m.OverflowToolbarLayoutData({priority: "High"}),
+                        layoutData: new sap.m.OverflowToolbarLayoutData({
+                            priority: {$btnPriorityJs}
+                        }),
                         press: function() {
                 			{$this->getController()->buildJsDependentControlSelector('oConfigurator', $this, $oControllerJs)}.open();
                 		}
@@ -1051,7 +1054,7 @@ JS;
         $titleAreaShrinkRatio = '';
         if ($this->getDynamicPageShowToolbar() === true) {
             if ($qsEl = $this->getQuickSearchElement()) {
-                $qsEl->setWidthCollapsed('200px');
+                $qsEl->setWidthCollapsed('160px');
             }
             $toolbar = $this->buildJsToolbar($oControllerJs, $this->buildJsQuickSearchConstructor($oControllerJs), $top_buttons);
 
