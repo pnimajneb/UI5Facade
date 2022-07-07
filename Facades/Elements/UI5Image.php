@@ -158,4 +158,30 @@ JS;
         }
         return "setSrc({$valueJs})";
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsPropertyWidth()
+     */
+    protected function buildJsPropertyWidth()
+    {
+        if ($this->getWidget()->getWidth()->isUndefined() && ! $this->getWidget()->getHeight()->isUndefined()) {
+            return 'width: "auto",';
+        }
+        return parent::buildJsPropertyWidth();
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsPropertyHeight()
+     */
+    protected function buildJsPropertyHeight()
+    {
+        if ($this->getWidget()->getHeight()->isUndefined() && ! $this->getWidget()->getWidth()->isUndefined()) {
+            return 'height: "auto",';
+        }
+        return parent::buildJsPropertyHeight();
+    }
 }
