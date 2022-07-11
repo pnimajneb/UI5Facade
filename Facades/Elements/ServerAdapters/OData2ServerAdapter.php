@@ -21,6 +21,8 @@ use exface\Core\Interfaces\Widgets\iHaveQuickSearch;
 use exface\Core\Actions\UpdateData;
 use exface\Core\Actions\SaveData;
 use exface\Core\Actions\CreateData;
+use exface\Core\Actions\ActionChain;
+use exface\Core\Actions\CustomFacadeScript;
 use exface\Core\DataTypes\TimeDataType;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\UI5Facade\Exceptions\UI5ExportUnsupportedWidgetException;
@@ -190,6 +192,14 @@ class OData2ServerAdapter implements UI5ServerAdapterInterface
                 return $this->buildJsDataWrite($action, $oModelJs, $oParamsJs, $onModelLoadedJs, $onErrorJs, $onOfflineJs);
             case get_class($action) === SaveData::class:
                 return $this->buildJsDataWrite($action, $oModelJs, $oParamsJs, $onModelLoadedJs, $onErrorJs, $onOfflineJs);
+            case get_class($action) === ActionChain::class:
+                $js = '';
+                foreach ($action->getActions() as $act) {
+                    $js .= $this->buildJsServerRequest($act, $oModelJs, $oParamsJs, $onModelLoadedJs, $onErrorJs, $onOfflineJs);
+                }
+                return $js;
+            case get_class($action) === CustomFacadeScript::class:
+                return '';
             default:
                 //throw new UI5ExportUnsupportedActionException($action, 'Action "' . $action->getAliasWithNamespace() . '" cannot be used with Fiori export!');
                 return <<<JS
@@ -1226,7 +1236,7 @@ JS;
             var rowCount = {$oParamsJs}.data.rows.length;
             var mParameters = {};
             mParameters.groupId = "batchGroup";
-            {$this->buildJsServerResponseHandling($onModelLoadedJs, 'mParameters', 'aResponses', 'rowCount', $onErrorJs)}
+            {$this->buildJsServerResponseHandling($onModelLoadedJs, $oModelJs, 'mParameters', 'aResponses', 'rowCount', $onErrorJs)}
 
             var uidAliases = {$uidAliasesJson};
             var uidAlias = '{$uidAttributeAlias}';            
@@ -1297,7 +1307,7 @@ JS;
             var aResponses = [];
             var mParameters = {};
             mParameters.groupId = "batchGroup";
-            {$this->buildJsServerResponseHandling($onModelLoadedJs, 'mParameters', 'aResponses', 'rowCount', $onErrorJs)}
+            {$this->buildJsServerResponseHandling($onModelLoadedJs, $oModelJs, 'mParameters', 'aResponses', 'rowCount', $onErrorJs)}
 
             var uidAliases = {$uidAliasesJson};
             var uidAlias = '{$uidAttributeAlias}';
@@ -1370,7 +1380,7 @@ JS;
             var oDataActionParams = {};
             var rowCount = {$oParamsJs}.data.rows.length;
             mParameters.groupId = "batchGroup";
-            {$this->buildJsServerResponseHandling($onModelLoadedJs, 'mParameters', 'aResponses', 'rowCount', $onErrorJs)}
+            {$this->buildJsServerResponseHandling($onModelLoadedJs, $oModelJs, 'mParameters', 'aResponses', 'rowCount', $onErrorJs)}
 
             if (rowCount !== 0) {                
                 for (var j = 0; j < rowCount; j++) {
@@ -1401,7 +1411,8 @@ JS;
                         oDataModel.callFunction('/{$action->getServiceName()}', mParameters);
                     }
                 }
-                if (callActions === true) {                    
+                if (callActions === true) {
+console.log('Function call');                    
                     {$this->buildJsServerSendRequest('oDataModel', $bUseBatchJs, $onModelLoadedJs, $onErrorJs)};
                 }
             } else {                
@@ -1514,7 +1525,7 @@ JS;
      * @param string $rowCount
      * @return string
      */
-    protected function buildJsServerResponseHandling (string $onModelLoadedJs, string $mParameters = 'mParameters', string $aResponses = 'aResponses', string $rowCount = 'rowCount', string $onErrorJs = '') :string
+    protected function buildJsServerResponseHandling (string $onModelLoadedJs, string $oModelJs, string $mParameters = 'mParameters', string $aResponses = 'aResponses', string $rowCount = 'rowCount', string $onErrorJs = '') :string
     {
         return <<<JS
 
@@ -1522,6 +1533,12 @@ JS;
                 {$aResponses}.push(oData);
                 if ({$aResponses}.length === {$rowCount}) {
                     var response = {};
+                    var oData = {};
+                    oData.rows = {$aResponses};
+                    oData.success = 'OK';
+                    //var {$oModelJs} = new sap.ui.model.json.JSONModel();
+                    {$oModelJs}.setData(oData);
+                    
                     {$onModelLoadedJs}
                 }
             };
