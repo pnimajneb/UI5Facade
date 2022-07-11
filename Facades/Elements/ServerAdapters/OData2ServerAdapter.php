@@ -1535,7 +1535,7 @@ JS;
                     var response = {};
                     var oData = {};
                     oData.rows = {$aResponses};
-                    oData.success = 'Erfolgreich';
+                    oData.success = 'OK';
                     //var {$oModelJs} = new sap.ui.model.json.JSONModel();
                     {$oModelJs}.setData(oData);
                     
