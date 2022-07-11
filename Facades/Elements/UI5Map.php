@@ -233,7 +233,7 @@ JS;
      */
     public function buildJsRefresh(bool $keepPagingPosition = false) : string
     {
-        return $this->buildJsLeafletRefresh();
+        return "if ({$this->buildJsLeafletVar()} !== null) { {$this->buildJsLeafletRefresh()} }";
     }
     
     /**
