@@ -156,7 +156,7 @@ JS;
     protected function buildJsPropertyTooltip()
     {
         if ($this->getWidget()->isInTable() === true && $this->isValueBoundToModel()) {
-            $value = $this->buildJsValueBinding();
+            $value = $this->buildJsValueBinding('formatter: function(value){return (value === null || value === undefined) ? value : value.toString();},');
             return 'tooltip: ' . $value .',';
         }
         
