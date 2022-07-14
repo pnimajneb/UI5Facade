@@ -713,7 +713,7 @@ JS;
                 var aSortItems = [];
                 var sCurrentRequestData = '';
                 
-                {$this->buildJsCheckRequiredFilters($this->buildJsShowMessageOverlay($widget->getAutoloadDisabledHint()) . "; return;")}
+                {$this->buildJsCheckRequiredFilters($this->buildJsShowMessageOverlay($widget->getAutoloadDisabledHint()) . "; return Promise.resolve(oModel);")}
                 
                 {$this->buildJsBusyIconShow()}
                 
