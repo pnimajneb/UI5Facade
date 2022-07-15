@@ -506,6 +506,7 @@ JS;
         if ($widget instanceof iShowData && $widget->isEditable() && $widget->getEditableChangesResetOnRefresh()) {            
             $js .= $this->buildJsEditableChangesWatcherReset();
         }
+        $js .= $this->getController()->buildJsEventHandler($this, UI5AbstractElement::EVENT_NAME_REFRESH, false);
         return $js;
     }
     
@@ -1932,6 +1933,12 @@ JS;
     public function addOnSelectScript(string $js) : UI5AbstractElement
     {
         $this->getController()->addOnEventScript($this, 'select', $js);
+        return $this;
+    }
+    
+    public function addOnRefreshScript(string $js) : UI5AbstractElement
+    {
+        $this->getController()->addOnEventScript($this, UI5AbstractElement::EVENT_NAME_REFRESH, $js);
         return $this;
     }
     
