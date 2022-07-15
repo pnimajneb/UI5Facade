@@ -21,16 +21,15 @@ use exface\Core\Exceptions\Widgets\WidgetLogicError;
  *
  */
 class UI5DataTable extends UI5AbstractElement
-{
-    use JqueryDataTableTrait;
-    
+{    
     use JsConditionalPropertyTrait;
     
-    use UI5DataElementTrait {
+    use UI5DataElementTrait, JqueryDataTableTrait {
        buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
        buildJsConstructor as buildJsConstructorViaTrait;
        getCaption as getCaptionViaTrait;
        init as initViaTrait;
+       UI5DataElementTrait::buildJsResetter insteadof JqueryDataTableTrait;
     }
     
     const EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED = 'firstVisibleRowChanged';
@@ -1582,17 +1581,6 @@ JS;
                 
 JS;
         }
-    }
-    
-    /**
-     *
-     * {@inheritdoc}
-     * @see AbstractJqueryElement
-     */
-    public function buildJsResetter() : string
-    {
-        $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
-        return $this->buildJsDataResetter() . ';' . ($this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '') . ';' . $configuratorElement->buildJsResetter();
     }
     
     public function needsContainerHeight() : bool
