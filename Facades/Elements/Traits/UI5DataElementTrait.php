@@ -2121,4 +2121,15 @@ JS;
     {
         return '100%';
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsResetter()
+     */
+    public function buildJsResetter() : string
+    {
+        $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
+        return $this->buildJsDataResetter() . ';' . ($this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '') . ';' . $configuratorElement->buildJsResetter();
+    }
 }

@@ -23,6 +23,7 @@ class UI5DataImporter extends UI5AbstractElement
         
         $controller = $this->getController();
         $controller->addOnDefineScript($this->buildJsFixJqueryImportUseStrict());
+        $controller->addOnPrefillDataChangedScript($this->buildJsResetter());
         
         $controller->addMethod('onFixedFooterSpread', $this, '', $this->buildJsFixedFootersSpreadFunctionBody());
         
@@ -213,5 +214,15 @@ JS;
         $this->registerConditionalPropertiesOfColumns();
         $this->getController()->addOnPrefillDataChangedScript("{$this->buildJsJqueryElement()}[0].exfWidget.refreshConditionalProperties()");
         return $this;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsResetter()
+     */
+    public function buildJsResetter() : string
+    {
+        return $this->buildJsDataResetter();
     }
 }
