@@ -345,24 +345,28 @@ JS;
                             var oConfigModel = oPanel.getModel('{$this->getModelNameForConfig()}');
                             if (oTableModel === undefined || oConfigModel === undefined) return;
                             setTimeout(function(){
-                                var aColsConfig = oConfigModel.getProperty('/columns');
-                                var aItems = oTableModel.getProperty('/items');
-                                var aListItems = oTable.getItems();
-                                var aItemsNew = [];
-                                aColsConfig.forEach(function(oColConfig){
-                                    aItems.forEach(function(oItem, iItemIdx){
-                                        if (oItem.columnKey === oColConfig.column_id) {
-                                            $resetSelection;
-                                            if (oColConfig.toggleable === false && aListItems[iItemIdx] !== undefined) {
-                                                aListItems[iItemIdx].setVisible(false);
+                                try {
+                                    var aColsConfig = oConfigModel.getProperty('/columns');
+                                    var aItems = oTableModel.getProperty('/items');
+                                    var aListItems = oTable.getItems();
+                                    var aItemsNew = [];
+                                    aColsConfig.forEach(function(oColConfig){
+                                        aItems.forEach(function(oItem, iItemIdx){
+                                            if (oItem.columnKey === oColConfig.column_id) {
+                                                $resetSelection;
+                                                if (oColConfig.toggleable === false && aListItems[iItemIdx] !== undefined) {
+                                                    aListItems[iItemIdx].setVisible(false);
+                                                }
+                                                aItemsNew.push(oItem);
+                                                return;
                                             }
-                                            aItemsNew.push(oItem);
-                                            return;
-                                        }
-                                    })
-                                });
-                                
-                                oTableModel.setProperty('/items', aItemsNew);
+                                        })
+                                    });
+                                    
+                                    oTableModel.setProperty('/items', aItemsNew);
+                                } catch (e) {
+                                    console.warn('Cannot properly sort columns for personalization - using default sorting: ', e);
+                                }
                             });
                         } catch (e) {
                             console.warn('Cannot properly sort columns for personalization - using default sorting: ', e);
