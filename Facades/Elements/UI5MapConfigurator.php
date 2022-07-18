@@ -52,10 +52,10 @@ JS;
      * {@inheritdoc}
      * @see JqueryContainerTrait::buildJsResetter()
      */
-    /*public function buildJsResetter() : string
+    public function buildJsResetter() : string
     {
-        return $this->buildJsResetModel() . $this->getMapElement()->buildJsResetter();
-    }*/
+        return $this->buildJsResetModel() . $this->getMapElement()->buildJsRefresh();
+    }
     
     /**
      * 
