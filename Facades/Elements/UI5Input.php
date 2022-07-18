@@ -313,7 +313,7 @@ JS;
         if (! $this->isValueBoundToModel()) {
             $staticDefault = $widget->getValueWithDefaults();
             $initialValueJs = json_encode($staticDefault);
-            $js = $this->buildJsValueSetter($initialValueJs);
+            $js = $this->buildJsValueSetter($initialValueJs) . ';';
             // The value-setter automatically performs validation. We don't need this unless the new value
             // is actually not empty.
             if ($staticDefault === null || $staticDefault === '') {
