@@ -506,7 +506,7 @@ JS;
         if ($widget instanceof iShowData && $widget->isEditable() && $widget->getEditableChangesResetOnRefresh()) {            
             $js .= $this->buildJsEditableChangesWatcherReset();
         }
-        $js .= $this->getController()->buildJsEventHandler($this, UI5AbstractElement::EVENT_NAME_REFRESH, false);
+        $js .= $this->getController()->buildJsEventHandler($this, UI5AbstractElement::EVENT_NAME_REFRESH, false) . ';';
         return $js;
     }
     
