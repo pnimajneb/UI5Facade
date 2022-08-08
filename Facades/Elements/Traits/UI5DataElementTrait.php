@@ -887,11 +887,12 @@ JS;
             }
             $valueExpr = $cellWidget->getValueExpression();
             if ($valueExpr->isReference() === true) {
-                $linkedEl = $this->getFacade()->getElement($valueExpr->getWidgetLink($cellWidget)->getTargetWidget());
+                $link = $valueExpr->getWidgetLink($cellWidget);
+                $linkedEl = $this->getFacade()->getElement($link->getTargetWidget());
                 $linkedEls[] = $linkedEl;
                 $addLocalValuesJs .= <<<JS
                 
-                                oRow["{$col->getDataColumnName()}"] = {$linkedEl->buildJsValueGetter()};
+                                oRow["{$col->getDataColumnName()}"] = {$linkedEl->buildJsValueGetter($link->getTargetColumnId())};
 JS;
             } elseif ($valueExpr->isConstant()) {
                 if ($valueExpr->isString()) {
