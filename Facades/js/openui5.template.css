@@ -227,3 +227,6 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 /* Split */
 /* No padding for tables with header (DynamicPage contents) filling a split panel */
 .sapUiLoSplitterContent > .sapUiNoContentPadding > .sapMPanelContent  > .sapFDynamicPage > .sapFDynamicPageContentWrapper > .sapFDynamicPageContent > .sapFDynamicPageContentFitContainer {padding: 0}
+
+/* Chart */
+.fullscreen {position: fixed!important; top: 0; left: 0; z-index: 250!important; width: 100vw!important; height: 100vh!important; background: rgba(255,255,255);}

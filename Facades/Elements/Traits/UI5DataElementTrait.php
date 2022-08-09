@@ -410,7 +410,7 @@ JS;
                 if ($btn_group === $search_button_group){
                     continue;
                 }
-                $buttons .= ($buttons && $btn_group->getVisibility() > EXF_WIDGET_VISIBILITY_OPTIONAL ? ",\n new sap.m.ToolbarSeparator()" : '');
+                $buttons .= ($buttons && $btn_group->getVisibility() > EXF_WIDGET_VISIBILITY_OPTIONAL ? ",\n new sap.m.ToolbarSeparator()," : '');
                 foreach ($btn_group->getButtons() as $btn) {
                     $buttons .= $this->getFacade()->getElement($btn)->buildJsConstructor() . ",\n";
                 }
@@ -1005,7 +1005,7 @@ JS;
         
         // Add the search-button
         foreach ($this->getWidget()->getToolbarMain()->getButtonGroupForSearchActions()->getButtons() as $btn) {
-            if ($btn->getAction()->isExactly('exface.Core.RefreshWidget')){
+            if ($btn->getAction() && $btn->getAction()->isExactly('exface.Core.RefreshWidget')){
                 $btn->setShowIcon(false);
                 $btn->setHint($btn->getCaption());
                 $btn->setCaption($this->translate('WIDGET.DATATABLE.GO_BUTTON_TEXT'));
