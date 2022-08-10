@@ -1903,6 +1903,10 @@ JS;
                                 var oBtn = sap.ui.getCore().byId('{$btn_element->getId()}');
                                 return oBtn ? oBtn.getEnabled() : false;
                             }(),
+                            visible: function(){
+                                var oBtn = sap.ui.getCore().byId('{$btn_element->getId()}');
+                                return oBtn ? oBtn.getVisible() : false;
+                            }(),
                             {$select}
                             {$startsSectionProperty}
                         })
