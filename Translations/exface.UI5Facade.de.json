@@ -86,6 +86,8 @@
 	"WEBAPP.SHELL.PRELOAD.MENU_RESET_TOOLTIP": "Lösche alle offline Daten für dieses Gerät.",
 	"WEBAPP.SHELL.USER.TITLE": "Aktueller Nutzer",
 	
+	"WIDGET.CHART.FULLSCREEN_MAXIMIZE": "Maximieren",
+	"WIDGET.CHART.FULLSCREEN_MINIMIZE": "Verkleinern",	
 	
 	"WIDGET.DATACAROUSEL.DETAILS_HIDE": "Details verbergen",
 	"WIDGET.DATACAROUSEL.DETAILS_PREV": "Vorheriger Eintrag",

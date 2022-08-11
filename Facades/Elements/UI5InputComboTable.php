@@ -260,12 +260,12 @@ JS;
         }
         
         $control = $widget->getMultiSelect() ? 'sap.m.MultiInput' : 'sap.m.Input';
-        
-        if ($widget->isRelation()) {
+        $vhpOptions = "showValueHelp: true, valueHelpRequest: {$this->buildJsPropertyValueHelpRequest()}";
+        /*if ($widget->isRelation()) {
             $vhpOptions = "showValueHelp: true, valueHelpRequest: {$this->buildJsPropertyValueHelpRequest()}";
         } else {
             $vhpOptions = "showValueHelp: false";
-        }
+        }*/
         
         return <<<JS
 
@@ -631,6 +631,9 @@ JS;
         return <<<JS
 function(sColName){
     var oInput = sap.ui.getCore().byId('{$this->getId()}');
+    if (oInput === undefined) {
+        return null;
+    }
     var sSelectedKey = oInput.{$this->buildJsValueGetterMethod()};
     var bAllowNewValues = $allowNewValuesJs;
     var oModel, oItem;
@@ -817,7 +820,8 @@ JS;
         
         $parentSetter = parent::buildJsDataSetter($jsData);
         $colName = $this->getWidget()->getValueAttributeAlias();
-    
+        $delim = $widget->getMultipleValuesDelimiter();
+        
         // Make sure to populate the suggest-model in case the data is based on the table-object
         // This is important, so that value- and data-getters can access additional columns
         return <<<JS
@@ -835,7 +839,7 @@ JS;
                     oInput.{$this->buildJsSetSelectedKeyMethod("oRow['{$colName}']", "oRow['{$widget->getTextColumn()->getDataColumnName()}']")};
                     aVals.push(oRow['{$colName}']);
                 });
-                mVal = aVals.join('{$widget->getAttribute()->getValueListDelimiter()}');                
+                mVal = aVals.join('{$delim}');                
                 oInput.fireChange({
                     mValue: mVal
                 });              
@@ -847,7 +851,7 @@ JS;
                     oData.rows.forEach(function(oRow) {
                         aVals.push(oRow['{$colName}']);
                     });
-                    mVal = aVals.join('{$widget->getAttribute()->getValueListDelimiter()}');
+                    mVal = aVals.join('{$delim}');
                 }
                 {$this->buildJsValueSetter("mVal")}
             }
