@@ -1854,9 +1854,7 @@ JS;
             if ($button->getParent() == $this->getWidget()->getToolbarMain()->getButtonGroupForSearchActions()) {
                 continue;
             }
-            if (! is_null($last_parent) && $button->getParent() !== $last_parent) {
-                $startSection = true;
-            }
+            $startSection = ! is_null($last_parent) && $button->getParent() !== $last_parent;
             $last_parent = $button->getParent();
             
             $context_menu_js .= ($context_menu_js ? ',' : '') . $this->buildJsContextMenuItem($button, $startSection);
