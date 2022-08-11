@@ -23,6 +23,9 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
+use exface\Core\Factories\WidgetFactory;
+use exface\Core\CommonLogic\UxonObject;
+use exface\Core\Widgets\DataButton;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -209,8 +212,10 @@ JS;
             $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$widget->getPage()->getUid()}', '{$widget->getId()}', '{$widget->getMetaObject()->getUidAttributeAlias()}', '{$widget->getMetaObject()->getName()}');");
         }
         
-        // Generate the constructor for the inner widget
+        // Generate the constructor for the inner widget        
+        $this->addFullscreenButton();
         $js = $this->buildJsConstructorForControl();
+        
         
         $initModels = <<<JS
 
@@ -406,7 +411,8 @@ JS;
             } else {
                 $search_button_group = null;
             }
-            foreach ($widget->getToolbarMain()->getButtonGroups() as $btn_group) {
+            $grps = $widget->getToolbarMain()->getButtonGroups();
+            foreach ($grps as $btn_group) {
                 if ($btn_group === $search_button_group){
                     continue;
                 }
@@ -2136,5 +2142,39 @@ JS;
     {
         $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
         return $this->buildJsDataResetter() . ';' . ($this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '') . ';' . $configuratorElement->buildJsResetter();
+    }
+    
+    protected function addFullscreenButton() : void
+    {
+        $fullscreenBtnUxon = new UxonObject([
+            'widget_type' => 'DataButton',
+            'action' => [
+                'alias' => 'exface.Core.CustomFacadeScript',
+                'script' => ''
+            ],
+            'hide_caption' => true,
+            'caption' => $this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE'),
+            'icon' => 'sap-icon://full-screen'
+        ]);
+        $widget = $this->getWidget();
+        $tb = $widget->getToolbarMain();
+        $button = $tb->createButton($fullscreenBtnUxon);
+        $tb->addButton($button);
+        $buttonEl = $this->getFacade()->getElement($button);
+        $script = <<<JS
+if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === false) {
+    $('#{$buttonEl->getId()}')[0]._originalParent = $('#{$this->getId()}').parent().parent().parent();
+    $('#{$this->getId()}').parent().parent().appendTo($('#sap-ui-static')[0]).addClass('fullscreen');
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://exit-full-screen');
+} else {
+    $('#{$this->getId()}').parent().parent().appendTo($('#{$buttonEl->getId()}')[0]._originalParent).removeClass('fullscreen');
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://full-screen');
+}
+JS;
+        $this->getController()->addOnHideViewScript("if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === true) {{$buttonEl->buildJsCallFunction(Button::FUNCTION_PRESS)}}", true);
+        $button->getAction()->setScript($script);
+    return;
     }
 }

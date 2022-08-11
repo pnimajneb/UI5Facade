@@ -39,7 +39,6 @@ class UI5Chart extends UI5AbstractElement
     public function buildJsConstructorForControl($oControllerJs = 'oController') : string
     {
         $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->registerFiltersWithApplyOnChange($this);
-        $this->addFullscreenButton();
         $controller = $this->getController();
         
         $controller->addMethod($this->buildJsDataLoadFunctionName(), $this, '', $this->buildJsDataLoadFunctionBody());
@@ -53,7 +52,7 @@ class UI5Chart extends UI5AbstractElement
         $chart = <<<JS
 
                 new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getId()}_echarts\" class=\"exf-chart\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
+                    content: "<div id=\"{$this->getId()}\" style=\"height: 100%;\"><div id=\"{$this->getId()}_echarts\" class=\"exf-chart\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div></div>",
                     afterRendering: function(oEvent) { 
                         {$this->buildJsEChartsInit($this->getFacade()->getConfig()->getOption('LIBS.ECHARTS.THEME_NAME'))}
                         {$this->buildJsEventHandlers()}
@@ -433,45 +432,5 @@ JS;
             default:
                 return parent::buildJsOnEventScript($eventName, $scriptJs, $oEventJs);
         }
-    }
-    
-    protected function addFullscreenButton() : void
-    {
-        $buttonTemplate = new UxonObject([
-            'widget_type' => 'DataButton',
-            'action' => [
-                'alias' => 'exface.Core.CustomFacadeScript',
-                'script' => ''
-            ],
-            'align' => 'right',
-            'hide_caption' => true
-        ]);        
-        $widget = $this->getWidget();
-        $tb = $widget->getToolbarMain();
-        $fullscreenBtnUxon = $buttonTemplate->copy();
-        $fullscreenBtnUxon->setProperty('caption', $this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE'));
-        $fullscreenBtnUxon->setProperty('icon', 'sap-icon://full-screen');
-        $fullscreenBtnUxon->setProperty('align', 'left');
-        $button = WidgetFactory::createFromUxon($widget->getPage(), $fullscreenBtnUxon, $tb);
-        $tb->addButton($button);
-        $buttonEl = $this->getFacade()->getElement($button);
-        $script = <<<JS
-if ($('#{$this->getId()}_echarts').parent().parent().hasClass('fullscreen') === false) {
-    $('#{$buttonEl->getId()}')[0]._originalParent = $('#{$this->getId()}_echarts').parent().parent().parent();
-    $('#{$this->getId()}_echarts').parent().parent().appendTo('body').addClass('fullscreen');
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");    
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://exit-full-screen');
-} else {
-    $('#{$this->getId()}_echarts').parent().parent().appendTo($('#{$buttonEl->getId()}')[0]._originalParent).removeClass('fullscreen');
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://full-screen'); 
-}
-setTimeout(function(){
-    {$this->buildJsEChartsResize()}
-},0);
-JS;
-    
-        $button->getAction()->setScript($script);    
-    return;
     }
 }

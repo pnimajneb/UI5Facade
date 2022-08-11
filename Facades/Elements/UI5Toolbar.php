@@ -15,6 +15,11 @@ class UI5Toolbar extends UI5AbstractElement
 {
     use JqueryToolbarTrait;
     
+    protected function init()
+    {
+        return;
+    }
+    
     /**
      * 
      * {@inheritDoc}
