@@ -2150,7 +2150,6 @@ JS;
                 'alias' => 'exface.Core.CustomFacadeScript',
                 'script' => ''
             ],
-            'hide_caption' => true,
             'caption' => $this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE'),
             'icon' => 'sap-icon://full-screen'
         ]);
@@ -2161,13 +2160,15 @@ JS;
         $buttonEl = $this->getFacade()->getElement($button);
         $script = <<<JS
 if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === false) {
-    $('#{$buttonEl->getId()}')[0]._originalParent = $('#{$this->getId()}').parent().parent().parent();
+    $('#{$this->getId()}')[0]._originalParent = $('#{$this->getId()}').parent().parent().parent();
     $('#{$this->getId()}').parent().parent().appendTo($('#sap-ui-static')[0]).addClass('fullscreen');
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");    
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
     sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://exit-full-screen');
 } else {
-    $('#{$this->getId()}').parent().parent().appendTo($('#{$buttonEl->getId()}')[0]._originalParent).removeClass('fullscreen');
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
+    $('#{$this->getId()}').parent().parent().appendTo($('#{$this->getId()}')[0]._originalParent).removeClass('fullscreen');
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");    
+    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
     sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://full-screen');
 }
 JS;
