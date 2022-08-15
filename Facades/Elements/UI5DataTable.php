@@ -269,6 +269,7 @@ JS;
             new sap.ui.table.Table("{$this->getId()}", {
                 width: "{$this->getWidth()}",
         		visibleRowCountMode: sap.ui.table.VisibleRowCountMode.Auto,
+                minAutoRowCount: 3,
                 selectionMode: {$selection_mode},
         		selectionBehavior: {$selection_behavior},
                 enableColumnReordering:true,
@@ -874,18 +875,23 @@ JS;
         $paginator = $this->getPaginatorElement();
         
         // Add single-result action to onLoadSuccess
-        if ($singleResultButton = $this->getWidget()->getButtons(function($btn) {return ($btn instanceof DataButton) && $btn->isBoundToSingleResult() === true;})[0]) {
+        if (($singleResultButton = $this->getWidget()->getButtons(function($btn) {return ($btn instanceof DataButton) && $btn->isBoundToSingleResult() === true;})[0]) || $this->getWidget()->getSelectSingleResult()) {
+            $buttonClickJs = '';
+            if ($singleResultButton) {
+                $buttonClickJs = <<<JS
+
+                if (lastRow === undefined || {$this->buildJsRowCompare('curRow', 'lastRow')} === false) {
+                    oTable._singleResultActionPerformedFor = curRow;
+                    {$this->getFacade()->getElement($singleResultButton)->buildJsClickEventHandlerCall('oController')};
+                }
+JS;
+            }
             $singleResultJs = <<<JS
             if ({$oModelJs}.getData().rows.length === 1) {
                 var curRow = {$oModelJs}.getData().rows[0];
                 var lastRow = oTable._singleResultActionPerformedFor;
-                if (lastRow === undefined || {$this->buildJsRowCompare('curRow', 'lastRow')} === false){
-                    {$this->buildJsSelectRowByIndex('oTable', '0')}
-                    oTable._singleResultActionPerformedFor = curRow;
-                    {$this->getFacade()->getElement($singleResultButton)->buildJsClickEventHandlerCall('oController')};
-                } else {
-                    oTable._singleResultActionPerformedFor = {};
-                }
+                {$this->buildJsSelectRowByIndex('oTable', '0')}
+                {$buttonClickJs}                
             }
                         
 JS;
