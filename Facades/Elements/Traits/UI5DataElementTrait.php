@@ -212,8 +212,7 @@ JS;
             $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$widget->getPage()->getUid()}', '{$widget->getId()}', '{$widget->getMetaObject()->getUidAttributeAlias()}', '{$widget->getMetaObject()->getName()}');");
         }
         
-        // Generate the constructor for the inner widget        
-        $this->addFullscreenButton();
+        // Generate the constructor for the inner widget
         $js = $this->buildJsConstructorForControl();
         
         
@@ -364,6 +363,7 @@ JS;
                     {$this->buildJsButtonsConstructors()}
                     {$rightExtras}
                     {$quickSearch}
+                    {$this->buildJsFullscreenButtonConstructor()}
 					{$this->buildJsConfiguratorButtonConstructor()}
                     {$this->buildJsHelpButtonConstructor()}
 
@@ -448,6 +448,54 @@ JS;
                         }),
                         press: function() {
                 			{$this->getController()->buildJsDependentControlSelector('oConfigurator', $this, $oControllerJs)}.open();
+                		}
+                    }),
+                    
+JS;
+    }
+    
+    /**
+     * Returns the JS constructor for the fullscreen button.
+     * 
+     * Must end with a comma unless it is an empty string!
+     * 
+     * @param string $oControllerJs
+     * @param string $buttonType
+     * @return string
+     */
+    protected function buildJsFullscreenButtonConstructor(string $oControllerJs = 'oController', string $buttonType = 'Default') : string
+    {
+        $btnPriorityJs = $this->getDynamicPageShowToolbar() ? '"AlwaysOverflow"' : '"High"';
+        $id = $this->getId() . '_fullscreenButton';
+        
+        $script = <<<JS
+if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === false) {
+    $('#{$this->getId()}')[0]._originalParent = $('#{$this->getId()}').parent().parent().parent();
+    $('#{$this->getId()}').parent().parent().appendTo($('#sap-ui-static')[0]).addClass('fullscreen');
+    sap.ui.getCore().getElementById('{$id}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
+    sap.ui.getCore().getElementById('{$id}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
+    sap.ui.getCore().getElementById('{$id}').setIcon('sap-icon://exit-full-screen');
+} else {
+    $('#{$this->getId()}').parent().parent().appendTo($('#{$this->getId()}')[0]._originalParent).removeClass('fullscreen');
+    sap.ui.getCore().getElementById('{$id}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
+    sap.ui.getCore().getElementById('{$id}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
+    sap.ui.getCore().getElementById('{$id}').setIcon('sap-icon://full-screen');
+}
+JS;
+        $this->getController()->addOnHideViewScript("if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === true) {{$script}}", true);
+        return <<<JS
+        
+                    new sap.m.OverflowToolbarButton({
+                        id: "{$id}",
+                        type: sap.m.ButtonType.{$buttonType},
+                        icon: "sap-icon://full-screen",
+                        text: "{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}",
+                        tooltip: "{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}",
+                        layoutData: new sap.m.OverflowToolbarLayoutData({
+                            priority: {$btnPriorityJs}
+                        }),
+                        press: function() {
+                			{$script}
                 		}
                     }),
                     
@@ -2140,40 +2188,5 @@ JS;
     {
         $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
         return $this->buildJsDataResetter() . ';' . ($this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '') . ';' . $configuratorElement->buildJsResetter();
-    }
-    
-    protected function addFullscreenButton() : void
-    {
-        $fullscreenBtnUxon = new UxonObject([
-            'widget_type' => 'DataButton',
-            'action' => [
-                'alias' => 'exface.Core.CustomFacadeScript',
-                'script' => ''
-            ],
-            'caption' => $this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE'),
-            'icon' => 'sap-icon://full-screen'
-        ]);
-        $widget = $this->getWidget();
-        $tb = $widget->getToolbarMain();
-        $button = $tb->createButton($fullscreenBtnUxon);
-        $tb->addButton($button);
-        $buttonEl = $this->getFacade()->getElement($button);
-        $script = <<<JS
-if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === false) {
-    $('#{$this->getId()}')[0]._originalParent = $('#{$this->getId()}').parent().parent().parent();
-    $('#{$this->getId()}').parent().parent().appendTo($('#sap-ui-static')[0]).addClass('fullscreen');
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");    
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://exit-full-screen');
-} else {
-    $('#{$this->getId()}').parent().parent().appendTo($('#{$this->getId()}')[0]._originalParent).removeClass('fullscreen');
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");    
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
-    sap.ui.getCore().getElementById('{$buttonEl->getId()}').setIcon('sap-icon://full-screen');
-}
-JS;
-        $this->getController()->addOnHideViewScript("if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === true) {{$buttonEl->buildJsCallFunction(Button::FUNCTION_PRESS)}}", true);
-        $button->getAction()->setScript($script);
-    return;
     }
 }
