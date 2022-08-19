@@ -249,6 +249,26 @@ JS;
         return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
     }
     
+    /**
+     * 
+     * @param bool $required
+     * @return string
+     */
+    protected function buildJsRequiredSetter(bool $required) : string
+    {
+        return "sap.ui.getCore().byId('{$this->getId()}').setRequired(" . ($required ? 'true' : 'false') . ");";
+    }
+    
+    /**
+     * javascript to get if an input is required or not, must not end with a semicolon!
+     *
+     * @return string
+     */
+    protected function buildJsRequiredGetter() : string
+    {
+        return "sap.ui.getCore().byId('{$this->getId()}').getRequired()";
+    }
+    
     public function registerConditionalProperties() : UI5AbstractElement
     {
         parent::registerConditionalProperties();
@@ -258,6 +278,18 @@ JS;
         $this->registerDisableConditionAtLinkedElement();
         $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
         $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
+        
+        // required_if
+        if ($requiredIf = $this->getWidget()->getRequiredIf()) {
+            $this->registerConditionalPropertyUpdaterOnLinkedElements($requiredIf, $this->buildJsRequiredSetter(true), $this->buildJsRequiredSetter(false));
+            $contoller->addOnPrefillDataChangedScript(
+                $this->buildJsConditionalPropertyInitializer(
+                    $requiredIf,
+                    $this->buildJsRequiredSetter(true),
+                    $this->buildJsRequiredSetter(false)
+                )
+            );
+        }
 
         return $this;
     }

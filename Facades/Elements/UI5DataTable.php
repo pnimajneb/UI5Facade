@@ -892,6 +892,8 @@ JS;
                 var lastRow = oTable._singleResultActionPerformedFor;
                 {$this->buildJsSelectRowByIndex('oTable', '0')}
                 {$buttonClickJs}                
+            } else {
+                oTable._singleResultActionPerformedFor = {};
             }
                         
 JS;
