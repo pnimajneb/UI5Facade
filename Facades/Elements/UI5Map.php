@@ -88,8 +88,8 @@ JS);
 
                 new sap.ui.core.HTML("{$this->getId()}", {
                     content: "<div id=\"{$this->getId()}\" style=\"height: 100%;\"><div id=\"{$this->getIdLeaflet()}\" class=\"{$this->buildCssElementClass()}\" style=\"height: 100%; min-height: 100px; overflow: hidden;\"></div></div>",
-                    afterRendering: function(oEvent) { 
-                        if (oController.$leafletVarJs === null || oController.$leafletVarJs === undefined) {  
+                    afterRendering: function(oEvent) {
+                        if (oController.$leafletVarJs === null || oController.$leafletVarJs === undefined || $('#{$this->getIdLeaflet()}').children().length === 0) {  
                             {$this->buildJsLeafletInit()};     
                         } 
 
