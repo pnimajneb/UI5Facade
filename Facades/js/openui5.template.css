@@ -228,5 +228,8 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 /* No padding for tables with header (DynamicPage contents) filling a split panel */
 .sapUiLoSplitterContent > .sapUiNoContentPadding > .sapMPanelContent  > .sapFDynamicPage > .sapFDynamicPageContentWrapper > .sapFDynamicPageContent > .sapFDynamicPageContentFitContainer {padding: 0}
 
-/* Chart */
+/* Fullscreen */
 .fullscreen {position: fixed!important; top: 0; left: 0; z-index: 15!important; width: 100vw!important; height: 100vh!important; background: rgba(255,255,255);}
+
+/* SegmentedButtons */
+.segmentedButtonsError {border-color: #b00 !important; border-width: 2px !important; color: #b00 !important;}

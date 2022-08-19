@@ -25,9 +25,23 @@ class UI5InputSelectButtons extends UI5InputSelect
             throw new FacadeUnsupportedWidgetPropertyWarning('Widget InputSelectButtons currently does not support multi_select in UI5!');
         }
         return <<<JS
-        new sap.m.SegmentedButton("{$this->getId()}", {
-			{$this->buildJsProperties()}
-        }){$this->buildJsPseudoEventHandlers()}
+        (function(){
+            var oSegmetedBtn = new sap.m.SegmentedButton("{$this->getId()}", {
+    			{$this->buildJsProperties()}
+            });
+            oSegmetedBtn.setValueState = function(state) {
+                if (state == 'Error') {
+                    $('#{$this->getId()}').find(".sapMSegBBtnInner").each(function(index, el) {el.classList.add('segmentedButtonsError')})
+                } else {
+                    $('#{$this->getId()}').find(".sapMSegBBtnInner").each(function(index, el) {el.classList.remove('segmentedButtonsError')})
+                }
+            };
+            oSegmetedBtn.setValueStateText = function(text) {
+                return;
+            }
+            return oSegmetedBtn;
+        })()
+        {$this->buildJsPseudoEventHandlers()}
 JS;
     }
 			
@@ -65,6 +79,11 @@ JS;
         return 'selectionChange: ' . $this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true) . ',';
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsPropertyRequired()
+     */
     protected function buildJsPropertyRequired()
     {
         return '';
@@ -73,11 +92,23 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Input::registerOnChangeValidation()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsPropertyEditable()
      */
-    protected function registerOnChangeValidation()
+    protected function buildJsPropertyEditable()
     {
-        return;
+        return '';
+    }
+    
+    protected function buildJsRequiredSetter(bool $required) : string
+    {
+        $val = $required ? 'true' : 'false';
+        return "sap.ui.getCore().byId('{$this->getId()}')._exfRequired = {$val};";
+    }
+    
+    protected function buildJsRequiredGetter() : string
+    {
+        $val = $this->getWidget()->isRequired() ? 'true' : 'false';
+        return "sap.ui.getCore().byId('{$this->getId()}')._exfRequired || {$val}";
     }
     
     /**
