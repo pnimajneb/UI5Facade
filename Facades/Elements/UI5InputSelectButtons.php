@@ -99,10 +99,20 @@ JS;
         return '';
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsRequiredSetter()
+     */
     protected function buildJsRequiredSetter(bool $required) : string
     {
         $val = $required ? 'true' : 'false';
-        return "sap.ui.getCore().byId('{$this->getId()}')._exfRequired = {$val};";
+        if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
+            if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
+                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setRequired($val);";
+            }
+        }
+        return "sap.ui.getCore().byId('{$this->getId()}')._exfRequired = {$val}; $requireLabelJs";
     }
     
     protected function buildJsRequiredGetter() : string

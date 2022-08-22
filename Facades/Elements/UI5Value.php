@@ -536,6 +536,15 @@ JS;
         return $this;
     }
     
+    /**
+     * 
+     * @return bool
+     */
+    protected function isLabelRendered() : bool
+    {
+        return $this->labelRendered;
+    }
+    
     protected function getIdOfLabel() : string
     {
         return $this->getUseWidgetId() ? $this->getId() . '__label' : '';
@@ -549,7 +558,7 @@ JS;
     protected function buildJsVisibilitySetter(bool $visible) : string
     {
         $showHideLabelJs = '';        
-        if ($this->labelRendered === true || $this->getRenderCaptionAsLabel()) {
+        if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
                 $showHideLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setVisible(" . ($visible ? 'true' : 'false') . ");";
             }
