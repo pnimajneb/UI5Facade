@@ -2,7 +2,7 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataTableTrait;
+;use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataTableTrait;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsUploaderTrait;
 use exface\Core\DataTypes\WidgetVisibilityDataType;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
@@ -24,8 +24,9 @@ class UI5FileList extends UI5AbstractElement
     const EVENT_NAME_AFTER_ITEM_ADDED = 'afterItemAdded';
     const EVENT_NAME_BEFORE_ITEM_REMOVED = 'beforeItemRemoved';
     
-    use UI5DataElementTrait {
+    use UI5DataElementTrait, JqueryDataTableTrait {
         buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
+        UI5DataElementTrait::buildJsResetter insteadof JqueryDataTableTrait;
     }
     
     use JqueryDataTableTrait;
