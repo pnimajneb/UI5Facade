@@ -23,6 +23,7 @@ class UI5NumberFormatter extends AbstractUI5BindingFormatter
     {
         $type = $this->getDataType();
         $options = '';
+        $otherProps = '';
         
         if (! is_null($type->getPrecisionMin())){
             $options .= <<<JS
@@ -54,12 +55,35 @@ JS;
 JS;
         }
         
+        if (($type instanceof NumberDataType) && ($type->getPrefix() || $type->getSuffix())) {
+            $prefix = $type->getPrefix();
+            $prefixJs = $prefix === '' || $prefix === null ? '""' : json_encode($prefix . ' ');
+            $suffix = $type->getSuffix();
+            $suffixJs = $suffix === '' || $suffix === null ? '""' : json_encode(' ' . $suffix);
+            
+            $otherProps = <<<JS
+
+                formatter: function(mVal) {
+                    var sPrefix = $prefixJs;
+                    var sSuffix = $suffixJs;
+                    if (mVal === '' || mVal === null || mVal === undefined) return mVal;
+                    if (sPrefix !== '') {
+                        mVal = sPrefix + mVal;
+                    }
+                    if (sSuffix !== '') {
+                        mVal = mVal + sSuffix;
+                    }
+                    return mVal;
+                },
+JS;
+        }
+        
         return <<<JS
 
                 type: '{$this->getSapDataType()}',
                 formatOptions: {
                     {$options}
-                },
+                }, $otherProps
 
 JS;
     }
