@@ -28,7 +28,7 @@ class UI5Wizard extends UI5Container
         $this->registerConditionalProperties();
         $this->registerHeightFix();
         $wizardConstructorJs = $this->buildJsConstructorForWizard($oControllerJs);
-        
+        $this->getController()->addOnHideViewScript($this->buildJsResetter());
         if ($this->hasPageWrapper() === true) {
             return $this->buildJsPageWrapper($wizardConstructorJs);
         }
