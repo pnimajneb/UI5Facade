@@ -25,7 +25,9 @@ class UI5InputButton extends UI5Input
         $saveDataToModelJs = <<<JS
 
 var oInput = sap.ui.getCore().byId("{$this->getId()}");
-oInput.getModel('action_result').setData(response);
+if (typeof response !== 'undefined') {
+    oInput.getModel('action_result').setData(response);
+}
 oInput.fireChange();
 
 JS;
