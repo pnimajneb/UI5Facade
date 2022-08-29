@@ -262,7 +262,19 @@ JS;
         } else {
             $toolbar = '';
         }
-        
+        $freezeColumnsCount = $widget->getFreezeColumns();
+        if ($freezeColumnsCount > 0) {
+            $columns = $widget->getColumns();
+            for ($i = 0; $i < $freezeColumnsCount; $i++) {
+                if ($columns[$i]->isHidden() == true) {
+                    $freezeColumnsCount++;
+                }
+            }
+            // increase the count if the DirtyFlag column is added as the first column in the table
+            if ($this->hasDirtyColumn()) {
+                $freezeColumnsCount++;
+            }
+        }
         $enableGrouping = $widget->hasRowGroups() ? 'enableGrouping: true,' : '';
         
         $js = <<<JS
@@ -273,6 +285,7 @@ JS;
                 selectionMode: {$selection_mode},
         		selectionBehavior: {$selection_behavior},
                 enableColumnReordering:true,
+                fixedColumnCount: {$freezeColumnsCount},
                 enableColumnFreeze: true,
                 {$enableGrouping}
         		filter: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
