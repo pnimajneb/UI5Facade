@@ -91,8 +91,12 @@ JS;
         }
         
         if (! $this->isValueBoundToModel()) {
-            $value = nl2br($this->getWidget()->getValue());
-            $value = '"' . $this->escapeJsTextValue($value) . '"';
+            if ($this->getWidget()->getValueExpression()->isReference()) {
+                $value = '""';
+            } else {
+                $value = nl2br($this->getWidget()->getValue());
+                $value = '"' . $this->escapeJsTextValue($value) . '"';
+            }
         } else {
             $value = $this->buildJsValueBinding();
         }
