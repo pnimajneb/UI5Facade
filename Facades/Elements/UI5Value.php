@@ -107,7 +107,7 @@ JS;
     public function buildJsValue()
     {
         if (! $this->isValueBoundToModel()) {
-            if ($this->getWidget()->getValueExpression()->isReference()) {
+            if ($this->getWidget()->hasValue() && $this->getWidget()->getValueExpression()->isReference()) {
                 $value = '""';
             } else {
                 $value = str_replace("\n", '', $this->getWidget()->getValue());

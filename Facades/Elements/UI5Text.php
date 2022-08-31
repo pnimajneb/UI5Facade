@@ -91,7 +91,7 @@ JS;
         }
         
         if (! $this->isValueBoundToModel()) {
-            if ($this->getWidget()->getValueExpression()->isReference()) {
+            if ($this->getWidget()->hasValue() && $this->getWidget()->getValueExpression()->isReference()) {
                 $value = '""';
             } else {
                 $value = nl2br($this->getWidget()->getValue());
