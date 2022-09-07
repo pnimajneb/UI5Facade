@@ -21,11 +21,12 @@ class UI5DateFormatter extends AbstractUI5BindingFormatter
      */
     public function buildJsBindingProperties()
     {
+        $dateFormatEscaped = json_encode($this->getJsFormatter()->getFormat());
         return <<<JS
 
                 type: '{$this->getSapDataType()}',
                 formatOptions: {
-                    dateFormat: '{$this->getJsFormatter()->getFormat()}'
+                    dateFormat: {$dateFormatEscaped}
                 },
 
 JS;
