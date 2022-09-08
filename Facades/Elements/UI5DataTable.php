@@ -12,6 +12,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 use exface\Core\Exceptions\Widgets\WidgetLogicError;
+use exface\Core\DataTypes\StringDataType;
 
 /**
  *
@@ -117,6 +118,7 @@ class UI5DataTable extends UI5AbstractElement
                     noDataText: "{$this->getWidget()->getEmptyText()}",
             		itemPress: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
                     selectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
+                    updateFinished: function(oEvent) { {$this->buildJsColumnStylers()} },
                     mode: {$mode},
                     headerToolbar: [
                         {$toolbar}
@@ -1026,8 +1028,18 @@ JS;
                     }, 0);
                 }
             }, 100);
-
 JS;
+            
+            // TODO #ui5-update move stylers to rowsUpdated event of sap.ui.table.Table (available since 1.86)
+            if ($stylersJs = $this->buildJsColumnStylers()) {
+                $this->getController()->addOnEventScript($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, "setTimeout(function(){ $stylersJs }, 0);");
+                $uiTablePostprocessing .= <<<JS
+
+            setTimeout(function(){
+                $stylersJs
+            }, 500);
+JS;
+            }
         }
         
         return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
@@ -1607,5 +1619,14 @@ JS;
     public function needsContainerHeight() : bool
     {
         return $this->isWrappedInDynamicPage() || $this->isUiTable();
+    }
+    
+    protected function buildJsColumnStylers() : string
+    {
+        $js = '';
+        foreach ($this->getWidget()->getColumns() as $col) {
+            $js .= StringDataType::replacePlaceholders(($col->getCellStylerScript() ?? ''), ['table_id' => $this->getId()]);
+        }
+        return $js;
     }
 }
