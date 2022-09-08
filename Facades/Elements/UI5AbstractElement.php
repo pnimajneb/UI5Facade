@@ -307,7 +307,7 @@ JS;
     }
     
     /**
-     * Returns the JS code adding pseudo event handlers to a control: e.g. .addEventDelegate(...).
+     * Returns the JS code adding pseudo event handlers to a control: i.e. .addEventDelegate(...).
      * 
      * NOTE: the string is either empty or starts with a leading dot and ends with a closing
      * brace (no semicolon!)
@@ -330,6 +330,9 @@ JS;
 JS;
         }
         
+        // .addEventdelegate actually takes a second argument, that will be the `this` in the handler
+        // we can't use that here however, as the control is not initialized yet and thus cannot be
+        // found by id :(
         if ($js) {
             $js = <<<JS
             
@@ -344,7 +347,7 @@ JS;
     }
     
     /**
-     * Registers the given JS code to be executed on a specified pseudo event for this control.
+     * Registers the given JS code to be executed on a specified pseudo event for this control: `.addEventDelegate(...)`.
      * 
      * Note: the event fired will be available via the oEvent javascript variable.
      * 

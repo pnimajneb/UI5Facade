@@ -62,7 +62,9 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
         new sap.m.Text("{$this->getId()}", {
             {$this->buildJsProperties()}
             {$this->buildJsPropertyValue()}
-        }).addStyleClass("{$this->buildCssElementClass()}")
+        })
+        .addStyleClass("{$this->buildCssElementClass()}")
+        {$this->buildJsPseudoEventHandlers()}
 
 JS;
     }
