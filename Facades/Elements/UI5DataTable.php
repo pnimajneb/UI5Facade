@@ -283,7 +283,7 @@ JS;
             new sap.ui.table.Table("{$this->getId()}", {
                 width: "{$this->getWidth()}",
         		visibleRowCountMode: sap.ui.table.VisibleRowCountMode.Auto,
-                minAutoRowCount: 3,
+                minAutoRowCount: 5,
                 selectionMode: {$selection_mode},
         		selectionBehavior: {$selection_behavior},
                 enableColumnReordering:true,
