@@ -218,11 +218,16 @@ sap.ui.define([
 					
 					// Add details if applicable
 					if (sDetails && sDetails !== sMessage) {
-						oDetailsControl = new sap.m.Text({
-								text: sDetails,
-								visible: false
-							}).addStyleClass('sapUiSmallMarginTop');
-						oDialogContent.addItem(oDetailsControl);
+						// Make sure, the error message is displayed even if the text cannot be parsed correctly!
+						try {
+							oDetailsControl = new sap.m.Text({
+									text: sDetails,
+									visible: false
+								}).addStyleClass('sapUiSmallMarginTop');
+							oDialogContent.addItem(oDetailsControl);
+						} catch (e) {
+							console.warn(e);
+						}
 					}
 					
 					// Add Log-ID reminder
