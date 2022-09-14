@@ -14,6 +14,8 @@ use exface\Core\CommonLogic\Constants\Colors;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\Core\Actions\SendToWidget;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
+use exface\Core\Factories\UiPageFactory;
+use exface\UI5Facade\Facades\UI5Facade;
 
 /**
  * Generates sap.m.Button for Button widgets.
@@ -430,7 +432,9 @@ JS;
      */
     protected function buildJsNavigateToPage(string $pageSelector, string $urlParams = '', AbstractJqueryElement $inputElement, bool $newWindow = false) : string
     {
-        if ($newWindow === true) {
+        $targetFacade = UiPageFactory::createFromModel($this->getWorkbench(), $pageSelector)->getFacade();
+        $currentFacade = $this->getFacade();
+        if ($newWindow === true || ! ($targetFacade instanceof UI5Facade) || $targetFacade->getContentDensity() !== $currentFacade->getContentDensity()) {
             return <<<JS
             
                         {$this->buildJsNavigateToPageViaTrait($pageSelector, $urlParams, $inputElement, $newWindow)}
