@@ -433,7 +433,7 @@ JS;
     protected function buildJsNavigateToPage(string $pageSelector, string $urlParams = '', AbstractJqueryElement $inputElement, bool $newWindow = false) : string
     {
         $targetFacade = UiPageFactory::createFromModel($this->getWorkbench(), $pageSelector)->getFacade();
-        $currentFacade = $this->getFacade();
+        $currentFacade = UiPageFactory::createFromModel($this->getWorkbench(), $this->getPageId())->getFacade();
         if ($newWindow === true || ! ($targetFacade instanceof UI5Facade) || $targetFacade->getContentDensity() !== $currentFacade->getContentDensity()) {
             return <<<JS
             
