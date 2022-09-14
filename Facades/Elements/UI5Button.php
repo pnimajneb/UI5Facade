@@ -432,9 +432,17 @@ JS;
      */
     protected function buildJsNavigateToPage(string $pageSelector, string $urlParams = '', AbstractJqueryElement $inputElement, bool $newWindow = false) : string
     {
-        $targetFacade = UiPageFactory::createFromModel($this->getWorkbench(), $pageSelector)->getFacade();
+        
+        $targetPage = UiPageFactory::createFromModel($this->getWorkbench(), $pageSelector);
+        $targetFacade = $targetPage->getFacade();
         $currentFacade = UiPageFactory::createFromModel($this->getWorkbench(), $this->getPageId())->getFacade();
-        if ($newWindow === true || ! ($targetFacade instanceof UI5Facade) || $targetFacade->getContentDensity() !== $currentFacade->getContentDensity()) {
+        
+        // facade in target page is set but not a UI5Facade
+        $facadeSetNotUI5 = $targetPage->isFacadeSet() && ! ($targetFacade instanceof UI5Facade);        
+        // facade in target page is UI5 but with different density or theme
+        $facadeDifferentUI5 = $targetFacade instanceof UI5Facade && (($targetFacade->getContentDensity() !== $currentFacade->getContentDensity()) || $targetFacade->getTheme() !== $currentFacade->getTheme());
+        
+        if ($newWindow === true || $facadeSetNotUI5 || $facadeDifferentUI5) {
             return <<<JS
             
                         {$this->buildJsNavigateToPageViaTrait($pageSelector, $urlParams, $inputElement, $newWindow)}
