@@ -23,7 +23,8 @@ use exface\UI5Facade\Facades\UI5Facade;
  * ## Custom facade options
  * 
  * - `custom_request_data_script` [string] - allows to process the javascript variable `requestData`
- * right before the action is actually performed. Returning FALSE will prevent the the action!
+ * right before the action is actually performed. Either return FALSE to prevent the action, or return
+ * FALSE and call the passed callback `fnRequest` explicitly at some time later.
  * 
  * Example:
  * 
@@ -32,7 +33,45 @@ use exface\UI5Facade\Facades\UI5Facade;
  *  "widget_type": "Button",
  *  "facade_options": {
  *      "exface.UI5Facade.UI5Facade": {
- *          "custom_request_data_script": "console.log(requestData);"
+ *          "custom_request_data_script": "
+ *              return (function(requestData, fnRequest){
+ *              	var sMsg = '';
+ *              	switch (true) {
+ *              	    case requestData.rows.length === 0:
+ *              	       sMsg = 'Really send empty data?';
+ *              		case fVal < 0:
+ *              	       return true; // Continue normally
+ *              	}
+ *              	if (sMsg !== '') {
+ *              		var dialog = new sap.m.Dialog({
+ *              			title: 'Wert außerhalb der Toleranzgrenze!',
+ *              			type: 'Message',
+ *              			state: 'Warning',
+ *              			content: new sap.m.Text({
+ *              				text: sMsg
+ *              			}),
+ *              			beginButton: new sap.m.Button({
+ *              				text: 'OK',
+ *              				press: function () {
+ *              					fnRequest();
+ *              					dialog.close();
+ *              				}
+ *              			}),
+ *              			endButton: new sap.m.Button({
+ *              				text: 'Cancel',
+ *              				press: function () {
+ *              					dialog.close();
+ *              				}
+ *              			}),
+ *              			afterClose: function() {
+ *              				dialog.destroy();
+ *              			}
+ *              		});
+ *              		dialog.open();
+ *              		return false;
+ *              	}
+ *              }(requestData, fnRequest) !== false);
+ *          "
  *      }
  *  }
  * }
