@@ -3,6 +3,7 @@ namespace exface\UI5Facade\Facades\Formatters;
 
 use exface\Core\Facades\AbstractAjaxFacade\Formatters\JsNumberFormatter;
 use exface\Core\DataTypes\NumberDataType;
+use exface\Core\DataTypes\PercentDataType;
 
 /**
  * 
@@ -70,6 +71,10 @@ JS;
             $suffix = $type->getSuffix();
             $suffixJs = $suffix === '' || $suffix === null ? '""' : json_encode(' ' . $suffix);
             $plusSignJs = $type->getShowPlusSign() ? 'true' : 'false';
+            $percentSignJs = 'false';
+            if ($type instanceof PercentDataType) {
+                $percentSignJs = $type->getShowPercentSign() ? 'true' : 'false';
+            }
             
             $otherProps = <<<JS
 
@@ -77,6 +82,7 @@ JS;
                     var sPrefix = $prefixJs;
                     var sSuffix = $suffixJs;
                     var bPlusSign = $plusSignJs;
+                    var bPercentSign = $percentSignJs;
 
                     if (mVal === '' || mVal === null || mVal === undefined) return mVal;
 
@@ -84,12 +90,16 @@ JS;
                         mVal = '+' + mVal;
                     }
 
+                    if (bPercentSign === true) {
+                        mVal = mVal + ' %';
+                    }
+
                     if (sPrefix !== '') {
                         mVal = sPrefix + mVal;
                     }
                     if (sSuffix !== '') {
                         mVal = mVal + sSuffix;
-                    }
+                    }                    
 
                     return mVal;
                 },
