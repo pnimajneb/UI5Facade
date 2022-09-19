@@ -71,10 +71,6 @@ JS;
             $suffix = $type->getSuffix();
             $suffixJs = $suffix === '' || $suffix === null ? '""' : json_encode(' ' . $suffix);
             $plusSignJs = $type->getShowPlusSign() ? 'true' : 'false';
-            $percentSignJs = 'false';
-            if ($type instanceof PercentDataType) {
-                $percentSignJs = $type->getShowPercentSign() ? 'true' : 'false';
-            }
             
             $otherProps = <<<JS
 
@@ -82,16 +78,11 @@ JS;
                     var sPrefix = $prefixJs;
                     var sSuffix = $suffixJs;
                     var bPlusSign = $plusSignJs;
-                    var bPercentSign = $percentSignJs;
 
                     if (mVal === '' || mVal === null || mVal === undefined) return mVal;
 
                     if (bPlusSign === true && {$this->getJsFormatter()->buildJsFormatParser('mVal')} > 0) {
                         mVal = '+' + mVal;
-                    }
-
-                    if (bPercentSign === true) {
-                        mVal = mVal + ' %';
                     }
 
                     if (sPrefix !== '') {
