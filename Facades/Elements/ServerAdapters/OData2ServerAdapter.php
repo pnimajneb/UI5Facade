@@ -756,7 +756,7 @@ JS;
                         default:
                             var sOperator = "EQ";
                     }
-                    if ({$condJs}.value !== "" && {$condJs}.value !== undefined) {
+                    if ({$condJs}.value !== "" && {$condJs}.value !== undefined && {$condJs}.value !== null) {
                         var filterPush = true;
                         if ({$oAttrsByDataTypeJs}.time.indexOf({$condJs}.expression) > -1) {
                             var d = {$condJs}.value;
