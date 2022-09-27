@@ -3,6 +3,7 @@ namespace exface\UI5Facade\Facades\Formatters;
 
 use exface\Core\Facades\AbstractAjaxFacade\Formatters\JsNumberFormatter;
 use exface\Core\DataTypes\NumberDataType;
+use exface\Core\DataTypes\PercentDataType;
 
 /**
  * 
@@ -89,7 +90,7 @@ JS;
                     }
                     if (sSuffix !== '') {
                         mVal = mVal + sSuffix;
-                    }
+                    }                    
 
                     return mVal;
                 },

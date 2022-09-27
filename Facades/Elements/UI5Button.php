@@ -629,8 +629,13 @@ JS;
                             {$this->buildJsOnErrorScript()}
 JS;
 		                       		
-   		return <<<JS
-
+        if ($facadeOptUxon = $this->getWidget()->getFacadeOptions($this->getFacade())) {
+            if ($facadeOptUxon->hasProperty('custom_request_data_script')) {
+                $customScript .= $facadeOptUxon->getProperty('custom_request_data_script');
+            }
+        }
+        return <<<JS
+                            
                 var fnRequest = function() {
                     if ({$input_element->buildJsValidator()}) {
                         {$this->buildJsBusyIconShow()}
@@ -639,11 +644,12 @@ JS;
     							{$this->buildJsRequestCommonParams($widget, $action)}
     							data: {$jsRequestData}
     					}
-                        {$this->getServerAdapter()->buildJsServerRequest($action, 'oResultModel', 'params', $onModelLoadedJs, $onErrorJs)}	    
+                        {$this->getServerAdapter()->buildJsServerRequest($action, 'oResultModel', 'params', $onModelLoadedJs, $onErrorJs)}
     				} else {
     					{$input_element->buildJsValidationError()}
     				}
                 };
+                {$customScript}
 
                 fnRequest();
 				
@@ -702,11 +708,11 @@ JS;
     {
         $js = $this->buildJsRequestDataCollectorViaTrait($action, $input_element, $jsVariable);
         
-        if ($facadeOptUxon = $this->getWidget()->getFacadeOptions($this->getFacade())) {
+        /*if ($facadeOptUxon = $this->getWidget()->getFacadeOptions($this->getFacade())) {
             if ($facadeOptUxon->hasProperty('custom_request_data_script')) {
                 $js .= $facadeOptUxon->getProperty('custom_request_data_script');
             }
-        }
+        }*/
         
         return $js;
     }
