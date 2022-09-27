@@ -82,7 +82,7 @@ class UI5DialogHeader extends UI5Container
                     {$title}
                     {$content}
                 ]
-            }),
+            })
             
 JS;
     }
