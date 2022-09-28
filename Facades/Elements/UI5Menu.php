@@ -42,17 +42,17 @@ JS;
         $js = '';
         $last_parent = null;
         
-        foreach ($this->getWidget()->getButtons() as $b) {
+        foreach ($this->getWidget()->getButtons() as $i => $b) {
             if (is_null($last_parent)){
                 $last_parent = $b->getParent();
             }
             
-            if ($b->getParent() !== $last_parent){
+            if (($i === 0 && count($this->getWidget()->getButtonGroups()) > 1) || $b->getParent() !== $last_parent){
                 $js .= <<<JS
 
             new sap.m.StandardListItem({
-				title: ""
-			}),
+				title: "{$b->getParent()->getCaption()}"
+			}).addStyleClass('sapMGHLI'),
 
 JS;
                 $last_parent = $b->getParent();
