@@ -41,13 +41,13 @@ JS;
     {
         $js = '';
         $last_parent = null;
-        
+        $hasGroups = (count($this->getWidget()->getButtonGroups()) > 1);
         foreach ($this->getWidget()->getButtons() as $i => $b) {
             if (is_null($last_parent)){
                 $last_parent = $b->getParent();
             }
             
-            if (($i === 0 && count($this->getWidget()->getButtonGroups()) > 1) || $b->getParent() !== $last_parent){
+            if (($i === 0 && $hasGroups === true) || $b->getParent() !== $last_parent){
                 $js .= <<<JS
 
             new sap.m.StandardListItem({
