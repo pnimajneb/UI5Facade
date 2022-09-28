@@ -307,7 +307,9 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
             }
             
             // Copy external includes and replace their paths in the controller
-            $controllerJs = $this->exportExternalLibs($controllerJs, $exportFolder . DIRECTORY_SEPARATOR . 'libs');
+            $libsGen = $this->exportExternalLibs($controllerJs, $exportFolder . DIRECTORY_SEPARATOR . 'libs', $msgIndent);
+            yield from $libsGen;
+            $controllerJs = $libsGen->getReturn();
             
             // Save view and controller as files
             $controllerFile = rtrim($exportFolder, "\\/") . DIRECTORY_SEPARATOR . $controller->getPath(true);
@@ -349,9 +351,16 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         return $results;
     }
     
-    protected function exportExternalLibs(string $controllerJs, string $libsFolder) : string
+    protected function exportExternalLibs(string $controllerJs, string $libsFolder, string $msgIndent) : \Generator
     {
         $filemanager = $this->getWorkbench()->filemanager();
+        
+        // See what files already exist, so we only yield exported libs once - the first time they are exported
+        // This greatly reduces useless output :)
+        $existingFiles = Filemanager::getDirContentsRecursive($libsFolder, true, true, '/');
+        // "libs/" - need to strip this off the the beginning of each $pathExported in order to search for
+        // that path in the $existingFiles
+        $libsSlash = pathinfo($libsFolder, PATHINFO_BASENAME) . '/';
         
         // Process JS files
         $matches = [];
@@ -363,6 +372,9 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
                 continue;
             }
             $pathExported = $this->exportExternalLib($path . '.js', $libsFolder, $filemanager);
+            if (! in_array(substr($pathExported, strlen($libsSlash)), $existingFiles)) {
+                yield $msgIndent . $pathExported . PHP_EOL;
+            }
             $controllerJs = str_replace($path, substr($pathExported, 0, -3), $controllerJs);
         }
         
@@ -376,6 +388,9 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
                 continue;
             }
             $pathExported = $this->exportExternalLib($path, $libsFolder, $filemanager);
+            if (! in_array(substr($pathExported, strlen($libsSlash)), $existingFiles)) {
+                yield $msgIndent . $pathExported . PHP_EOL;
+            }
             $controllerJs = str_replace($path, $pathExported, $controllerJs);
         }
         
@@ -391,10 +406,10 @@ class ExportFioriWebapp extends AbstractActionDeferred implements iModifyData, i
         }
         
         $folder = pathinfo($pathInVendorFolder, PATHINFO_DIRNAME);
-        if (! file_exists($libsFolder . DIRECTORY_SEPARATOR . $folder)) {
-            foreach ($this->getExternalLibFiles($pathInVendorFolder) as $copyFrom => $copyTo) {
-                $copyFrom = $filemanager->getPathToVendorFolder() . DIRECTORY_SEPARATOR . $copyFrom;
-                $copyTo = $libsFolder . DIRECTORY_SEPARATOR . $copyTo;
+        foreach ($this->getExternalLibFiles($pathInVendorFolder) as $copyFrom => $copyTo) {
+            $copyFrom = $filemanager->getPathToVendorFolder() . DIRECTORY_SEPARATOR . $copyFrom;
+            $copyTo = $libsFolder . DIRECTORY_SEPARATOR . $copyTo;
+            if (! file_exists($copyTo)) {
                 if (is_dir($copyFrom) === true) {
                     $filemanager->copyDir($copyFrom, $copyTo);
                 } else {
