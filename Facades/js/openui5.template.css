@@ -163,6 +163,9 @@ table.jexcel > tbody > tr > td.jexcel_dropdown { background-image: url("data:ima
 /* Dialog (non-max) */
 html.sap-phone .sapMDialog {min-width: 20rem !important}
 html.sap-tablet .sapMDialog, html.sap-desktop .sapMDialog {min-width: 25rem !important}
+/* Dialog header for small dialogs */
+.sapMDialog.exf-dialog-with-header:not(.sapMDialogWithSubHeader)>header:first-of-type .sapMIBar{box-shadow: none;}
+.sapMDialog.exf-dialog-with-header .sapUxAPObjectPageHeaderContent {padding: 0.325rem 2rem 0 2rem; box-shadow: 0 0 0.25rem 0 rgb(0 0 0 / 15%), inset 0 -0.0625rem 0 0 #d9d9d9;}
 /* Remove extra space at bottom of last WidgetGroup in a small dialog */
 .sapMDialog .sapUiRespGrid > .sapUiRespGridSpanS12:last-of-type > .sapUiRGLContainer > .sapUiRGLContainerCont > .sapUiRespGrid:last-of-type {padding-bottom: 0;}
 

@@ -364,7 +364,28 @@ JS;
         $widget = $this->getWidget();
         $icon = $widget->getIcon() ? 'icon: "' . $this->getIconSrc($widget->getIcon()) . '",' : '';
         
-        $content = $this->buildJsLayoutConstructor();
+        $contentJs = $this->buildJsLayoutConstructor();
+        $headersJs = '';
+        if ($widget->hasHeader()) {
+            $headersJs = <<<JS
+
+                new sap.uxap.ObjectPageHeader({
+					objectTitle: {$this->buildJsObjectTitle()},
+				    showMarkers: false,
+				    isObjectIconAlwaysVisible: false,
+				    isObjectTitleAlwaysVisible: false,
+				    isObjectSubtitleAlwaysVisible: false,
+                    isActionAreaAlwaysVisible: false,
+					actions: [
+						
+					]
+				}),
+                new sap.uxap.ObjectPageHeaderContent({
+                    content: {$this->getFacade()->getElement($widget->getHeader())->buildJsConstructor()}
+                }),
+
+JS;
+        }
         
         // If the dialog requires a prefill, we need to load the data once the dialog is opened.
         if ($this->needsPrefill()) {
@@ -384,7 +405,7 @@ JS;
             {$this->buildJsPropertyContentWidth()}
             stretch: jQuery.device.is.phone,
             title: {$this->escapeString($this->getCaption())},
-			content : [ {$content} ],
+			content : [ {$headersJs}{$contentJs} ],
             buttons : [new sap.m.Button()],
             beforeOpen: function(oEvent) {
                 var oDialog = oEvent.getSource();
@@ -416,7 +437,7 @@ JS;
                     oDialog.destroy();
                 }
             }
-		})
+		}).addStyleClass('{$this->buildCssElementClass()}')
         {$this->buildJsPseudoEventHandlers()}
 JS;
     }
@@ -533,6 +554,9 @@ JS;
             $prefillJs = 'this._onPrefill();';
         }
         $this->getController()->addOnRouteMatchedScript($prefillJs, 'loadPrefill');
+        if ($this->getWidget()->isCacheable() === false) {
+            $this->getController()->addOnHideViewScript("sap.ui.getCore().byId('{$this->getId()}').destroy()");
+        }
         
         return <<<JS
         
@@ -560,7 +584,7 @@ JS;
      */
     public function buildCssElementClass()
     {
-        return 'exf-dialog-page' .  ($this->getWidget()->isFilledBySingleWidget() ? ' exf-dialog-filled' : '');
+        return 'exf-dialog-page' .  ($this->getWidget()->isFilledBySingleWidget() ? ' exf-dialog-filled' : '') . ($this->getWidget()->hasHeader() ? ' exf-dialog-with-header' : '');
     }
         
     /**
