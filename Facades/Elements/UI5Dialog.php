@@ -381,7 +381,7 @@ JS;
 					]
 				}),
                 new sap.uxap.ObjectPageHeaderContent({
-                    content: {$this->getFacade()->getElement($widget->getHeader())->buildJsConstructor()}
+                    content: [{$this->getFacade()->getElement($widget->getHeader())->buildJsConstructor()}]
                 }),
 
 JS;
