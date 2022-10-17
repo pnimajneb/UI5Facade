@@ -477,9 +477,9 @@ JS;
         $currentFacade = UiPageFactory::createFromModel($this->getWorkbench(), $this->getPageId())->getFacade();
         
         // facade in target page is set but not a UI5Facade
-        $facadeSetNotUI5 = $targetPage->isFacadeSet() && ! ($targetFacade instanceof UI5Facade);        
+        $facadeSetNotUI5 = ! ($currentFacade instanceof UI5Facade) || ($targetPage->isFacadeSet() && ! ($targetFacade instanceof UI5Facade));        
         // facade in target page is UI5 but with different density or theme
-        $facadeDifferentUI5 = $targetFacade instanceof UI5Facade && (($targetFacade->getContentDensity() !== $currentFacade->getContentDensity()) || $targetFacade->getTheme() !== $currentFacade->getTheme());
+        $facadeDifferentUI5 = ($targetFacade instanceof UI5Facade) && ($currentFacade instanceof UI5Facade) && (($targetFacade->getContentDensity() !== $currentFacade->getContentDensity()) || $targetFacade->getTheme() !== $currentFacade->getTheme());
         
         if ($newWindow === true || $facadeSetNotUI5 || $facadeDifferentUI5) {
             return <<<JS
