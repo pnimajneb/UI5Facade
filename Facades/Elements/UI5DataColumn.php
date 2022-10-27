@@ -59,6 +59,7 @@ class UI5DataColumn extends UI5AbstractElement
             'min' => $widthMin->isFacadeSpecific() ? $widthMin->getValue() : null,
             'max' => $widthMax->isFacadeSpecific() ? $widthMax->getValue() : null
         ]);
+        $labelWrappingJs = $col->getNowrap() ? 'wrapping: false,' : 'wrapping: true,';
         
         // The tooltips for columns of the UI table also include the column caption
         // because columns may get quite narrow and in this case there would not be
@@ -69,6 +70,7 @@ class UI5DataColumn extends UI5AbstractElement
 	    label: new sap.ui.commons.Label({
             text: "{$this->getCaption()}",
             {$this->buildJsPropertyTooltip(true)}
+            {$labelWrappingJs}
         }),
         autoResizable: true,
         template: {$this->buildJsConstructorForCell()},
