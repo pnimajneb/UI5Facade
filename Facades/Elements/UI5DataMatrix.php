@@ -4,6 +4,7 @@ namespace exface\UI5Facade\Facades\Elements;
 use exface\Core\Widgets\DataList;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDataTransposerTrait;
 use exface\Core\Widgets\DataColumnTransposed;
+use exface\Core\DataTypes\StringDataType;
 
 /**
  *
@@ -54,46 +55,21 @@ class UI5DataMatrix extends UI5DataTable
     
     protected function buildJsColumnStylers() : string
     {
-        return <<<JS
-        
+        $js = '';
+        foreach ($this->getWidget()->getColumns() as $col) {
+            $js .= $col->getCellStylerScript();
+        }
+        $js = trim($js);
+        if ($js !== '') {
+            $js = StringDataType::replacePlaceholders($js, ['table_id' => $this->getId()]);
+            return <<<JS
         
         setTimeout(function(){
-            $('#{$this->getId()}-table tbody tr').each(function(i, domRow) {
-                var iMStoneFirst = null;
-                var iMStoneLast = null;
-                $(domRow).children().each(function(i, domCell) {
-                    var jqCell = $(domCell);
-                    var mVal = jqCell.text();
-                    if (iMStoneFirst !== null) {
-                        jqCell.css('background', '#5899da');
-                        if (mVal) {
-                            iMStoneLast = jqCell.index();
-                        }
-                        
-                        if (mVal.includes('SAT') || mVal.includes('FAT')) {
-                            jqCell.css('background', 'yellow');
-                        }
-                    } else {
-                        if (jqCell.index() >= 4 && mVal) {
-                            iMStoneFirst = jqCell.index();
-                            jqCell.css('background', '#5899da');
-                        } else {
-                            jqCell.css('background', 'initial');
-                        }
-                    }
-                });
-                    if (iMStoneLast !== null) {
-                        $(domRow).children().each(function(i, domCell) {
-                            var jqCell = $(domCell);
-                            if (jqCell.index() > iMStoneLast) {
-                                jqCell.css('background', 'initial');
-                            }
-                        });
-                    }
-            });
-        }, 0);
-            
+            $js
+        }, 0);    
 JS;
+        }
+        return '';
     }
     
     /**
@@ -126,7 +102,11 @@ JS;
         
         // Add facade-specific column models parts
         oTable._exfColControls.forEach(function(oCol){
-            oTable._exfColModels[oCol.data('_exfDataColumnName')].oUI5Col = oCol;
+            var oColModel = oTable._exfColModels[oCol.data('_exfDataColumnName')];
+            // Ignore system columns and placeholders - only take care of those really modeled in the UI
+            if (oColModel !== undefined) {
+                oColModel.oUI5Col = oCol;
+            }
         });
     }
     
