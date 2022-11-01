@@ -29,10 +29,11 @@ class UI5Wizard extends UI5Container
         $this->registerHeightFix();
         $wizardConstructorJs = $this->buildJsConstructorForWizard($oControllerJs);
         $this->getController()->addOnHideViewScript($this->buildJsResetter());
+        // TODO what happens if multiple wizards are shown in one view, first input element of last wizard is focused?
+        $this->getController()->addOnShowViewScript($this->buildJsFocusFirstInput());
         if ($this->hasPageWrapper() === true) {
             return $this->buildJsPageWrapper($wizardConstructorJs);
         }
-        
         return $wizardConstructorJs;
     }
     
