@@ -126,6 +126,7 @@ JS;
         if ($widget->isUploadEnabled()) {
             $uploader = $widget->getUploader();
             $maxFilenameLength = $widget->getUploader()->getMaxFilenameLength() ?? 'null';
+            $maxFileSize = $widget->getUploader()->getMaxFileSizeMb() ?? 'null';
             $instantUpload = $uploader->isInstantUpload() ? 'true' : 'false';
             
             if (! $uploader->isInstantUpload()) {
@@ -138,7 +139,7 @@ JS;
             instantUpload: $instantUpload,
     		terminationEnabled: true,
             maxFileNameLength: {$maxFilenameLength},
-    		maxFileSize: {$widget->getUploader()->getMaxFileSizeMb()},
+    		maxFileSize: {$maxFileSize},
             afterItemAdded: {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_AFTER_ITEM_ADDED, true)},        
             {$this->buildJsPropertyFileTypes()}
             {$this->buildJsPropertyMediaTypes()}
