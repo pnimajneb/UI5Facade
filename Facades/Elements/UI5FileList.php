@@ -7,6 +7,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JsUploaderTrait;
 use exface\Core\DataTypes\WidgetVisibilityDataType;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\Core\Widgets\Parts\Uploader;
+use exface\Core\CommonLogic\DataSheets\DataColumn;
 
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
@@ -178,13 +179,13 @@ JS;
         $uploadButtonEl = $this->getFacade()->getElement($uploader->getInstantUploadButton());
         
         $fileModificationColumnJs = '';
-        if ($widget->hasFileModificationTimeColumn()) {
-            $fileModificationColumnJs = "{$widget->getMimeTypeColumn()->getDataColumnName()}: file.lastModified,";
+        if ($uploader->hasFileModificationTimeAttribute()) {
+            $fileModificationColumnJs = DataColumn::sanitizeColumnName($uploader->getFileModificationTimeAttribute()) . ": file.lastModified,";
         }
         
         $mimeTypeColumnJs = '';
         if ($uploader->hasFileMimeTypeAttribute()) {
-            $mimeTypeColumnJs = "{$widget->getMimeTypeColumn()->getDataColumnName()}: file.type,";
+            $mimeTypeColumnJs = DataColumn::sanitizeColumnName($uploader->getFileMimeTypeAttribute()) . ": file.type,";
         }
         
         // When the upload action succeeds, we need to refresh the list to ensure, that
@@ -267,7 +268,7 @@ JS;
                 }
 
                 fileReader.onload = function () { 
-                    var sContent = {$this->buildJsFileContentEncoder($widget->getFileContentAttribute()->getDataType(), 'fileReader.result', 'file.type')};
+                    var sContent = {$this->buildJsFileContentEncoder($uploader->getFileContentAttribute()->getDataType(), 'fileReader.result', 'file.type')};
                     var oResponseModel = new sap.ui.model.json.JSONModel({
                         oId: "{$widget->getMetaObject()->getId()}",
                         rows: [
