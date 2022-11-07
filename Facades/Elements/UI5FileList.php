@@ -120,6 +120,11 @@ class UI5FileList extends UI5AbstractElement
 JS;
     }
     
+    /**
+     * 
+     * @throws FacadeRuntimeError
+     * @return string
+     */
     protected function buildJsPropertyUpload() : string
     {
         $widget = $this->getWidget();
@@ -150,6 +155,10 @@ JS;
         }
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsPropertyFileTypes() : string
     {
         $types = $this->getWidget()->getUploader()->getAllowedFileExtensions();
@@ -159,6 +168,10 @@ JS;
         return '';
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsPropertyMediaTypes() : string
     {
         $types = $this->getWidget()->getUploader()->getAllowedMimeTypes();
@@ -168,6 +181,11 @@ JS;
         return '';
     }
     
+    /**
+     * 
+     * @param string $oEventJs
+     * @return string
+     */
     protected function buildJsEventHandlerUpload(string $oEventJs) : string
     {
         $widget = $this->getWidget();
@@ -178,14 +196,15 @@ JS;
         $uploadAction = $uploader->getInstantUploadAction();
         $uploadButtonEl = $this->getFacade()->getElement($uploader->getInstantUploadButton());
         
-        $fileModificationColumnJs = '';
+        $fileColumnsJs = '';
         if ($uploader->hasFileModificationTimeAttribute()) {
-            $fileModificationColumnJs = DataColumn::sanitizeColumnName($uploader->getFileModificationTimeAttribute()) . ": file.lastModified,";
+            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileModificationTimeAttribute()->getAliasWithRelationPath()) . ": file.lastModified,";
         }
-        
-        $mimeTypeColumnJs = '';
+        if ($uploader->hasFileSizeAttribute()) {
+            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileSizeAttribute()->getAliasWithRelationPath()) . ": file.size,";
+        }
         if ($uploader->hasFileMimeTypeAttribute()) {
-            $mimeTypeColumnJs = DataColumn::sanitizeColumnName($uploader->getFileMimeTypeAttribute()) . ": file.type,";
+            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileMimeTypeAttribute()->getAliasWithRelationPath()) . ": file.type,";
         }
         
         // When the upload action succeeds, we need to refresh the list to ensure, that
@@ -267,15 +286,14 @@ JS;
                     return;
                 }
 
-                fileReader.onload = function () { 
+                fileReader.onload = function () { console.log('uploading');
                     var sContent = {$this->buildJsFileContentEncoder($uploader->getFileContentAttribute()->getDataType(), 'fileReader.result', 'file.type')};
                     var oResponseModel = new sap.ui.model.json.JSONModel({
                         oId: "{$widget->getMetaObject()->getId()}",
                         rows: [
                             {
                                 {$widget->getFilenameColumn()->getDataColumnName()}: file.name,
-                                {$fileModificationColumnJs}
-                                {$mimeTypeColumnJs}
+                                {$fileColumnsJs}
                                 {$widget->getFileContentColumnName()}: sContent,
                             }
                         ] 
@@ -295,6 +313,11 @@ JS;
 JS;
     }
     
+    /**
+     * 
+     * @param string $oEventJs
+     * @return string
+     */
     protected function buildJsEventHandlerDelete(string $oEventJs) : string
     {
         $widget = $this->getWidget();
