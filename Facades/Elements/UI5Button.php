@@ -263,13 +263,13 @@ JS;
         
         /* @var $prefill_link \exface\Core\CommonLogic\WidgetLink */
         $prefill = '';
-        if ($prefill_link = $this->getAction()->getPrefillWithDataFromWidgetLink()) {
+        if ($prefill_link = $action->getPrefillWithDataFromWidgetLink()) {
             if ($prefill_link->getTargetPageAlias() === null || $prefill_link->getPage()->is($widget->getPage())) {
-                $prefill = ", prefill: " . $this->getFacade()->getElement($prefill_link->getTargetWidget())->buildJsDataGetter($this->getAction());
+                $prefill = ", prefill: " . $this->getFacade()->getElement($prefill_link->getTargetWidget())->buildJsDataGetter($action);
             }
         }
         
-        $targetWidget = $widget->getAction()->getWidget();
+        $targetWidget = $action->getWidget();
         
         // Close the dialog on action success only if it navigates to a view.
         // If it opens a sap.m.Dialog, the parent dialog will be closed after
