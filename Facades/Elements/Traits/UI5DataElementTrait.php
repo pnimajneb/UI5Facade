@@ -2102,7 +2102,7 @@ JS;
      */
     protected function buildJsGetRowsAll(string $oControlJs) : string
     {
-        return 'oControl.getModel().getData().rows';
+        return "{$oControlJs}.getModel().getData().rows";
     }
     
     /**
