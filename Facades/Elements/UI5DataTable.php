@@ -591,7 +591,7 @@ JS;
         switch (true) {
             // If no action is specified, return the entire row model
             case $action === null:
-                $aRowsJs = "oTable.getModel().getData().rows || []";
+                $aRowsJs = "{$this->buildJsGetRowsAll('oTable')} || []";
                 break;
                 
             // If we are reading, than we need the special data from the configurator
@@ -602,7 +602,7 @@ JS;
             // Editable tables with modifying actions return all rows either directly or as subsheet
             case $this->isEditable() 
             && $action->implementsInterface('iModifyData'):
-                $aRowsJs = "oTable.getModel().getData().rows || []";
+                $aRowsJs = "{$this->buildJsGetRowsAll('oTable')} || []";
                 switch (true) {
                     case $dataObj->is($widget->getMetaObject()):
                     case $action->getInputMapper($widget->getMetaObject()) !== null:
@@ -718,9 +718,9 @@ JS;
     
     /**
      * 
-     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     * @see UI5DataElementTrait::buildJsGetRowsSelected()
      */
-    protected function buildJsGetSelectedRows(string $oTableJs) : string
+    protected function buildJsGetRowsSelected(string $oTableJs) : string
     {
         if ($this->isUiTable()) {
             if($this->getWidget()->getMultiSelect() === false) {
@@ -1558,7 +1558,7 @@ JS;
                                 oTable.setSelectedItem(oItem, selected);
                             }
                         }                        
-                        var exfSelection = {$this->buildJsGetSelectedRows('oTable')};
+                        var exfSelection = {$this->buildJsGetRowsSelected('oTable')};
                         oTable.data('exfPreviousSelection', exfSelection);
                     } else {
                         var error = "Data Column '{$syncDataColumnName}' not found in data columns for widget '{$widget->getId()}'!";

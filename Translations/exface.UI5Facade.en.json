@@ -115,6 +115,7 @@
 	"WIDGET.FILELIST.ERROR_MIMETYPE_NOT_ALLOWED": "Content type \"%type%\" not allowed!",
 	"WIDGET.FILELIST.ERROR_FILE_TOO_BIG": "File too big: max. %mb% MB allowed!",
 	"WIDGET.FILELIST.ERROR_FILENAME_TOO_LONG": "File name too long: max. %length% characters allowed!",
+	"WIDGET.FILELIST.ERROR_MAX_FILES": "Maximum number of uploadable files reached. Cannot upload more!",
 	"WIDGET.FILELIST.ERROR_DELETE": "Delete failed: unknown error in UI5.",
 	"WIDGET.FILELIST.BROWSE": "Browse",
 	

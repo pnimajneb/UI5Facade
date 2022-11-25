@@ -144,9 +144,9 @@ JS;
     /**
      *
      * {@inheritdoc}
-     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     * @see UI5DataElementTrait::buildJsGetRowsSelected()
      */
-    protected function buildJsGetSelectedRows(string $oTableJs): string
+    protected function buildJsGetRowsSelected(string $oTableJs): string
     {
         return '[]';
     }

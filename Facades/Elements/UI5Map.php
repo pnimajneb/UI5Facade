@@ -25,7 +25,7 @@ class UI5Map extends UI5AbstractElement
     use LeafletTrait, UI5DataElementTrait {
         LeafletTrait::buildJsValueGetter insteadof UI5DataElementTrait;
         LeafletTrait::buildJsDataGetter insteadof UI5DataElementTrait;
-        UI5DataElementTrait::buildJsGetSelectedRows insteadof LeafletTrait;
+        UI5DataElementTrait::buildJsGetRowsSelected insteadof LeafletTrait;
         UI5DataElementTrait::buildJsDataLoaderParams as buildJsDataLoaderParamsViaTrait;
     }
     
@@ -279,9 +279,9 @@ JS;
     
     /**
      * 
-     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     * @see UI5DataElementTrait::buildJsGetRowsSelected()
      */
-    protected function buildJsGetSelectedRows(string $oControlJs) : string
+    protected function buildJsGetRowsSelected(string $oControlJs) : string
     {
         return $this->buildJsLeafletGetSelectedRows();
     }

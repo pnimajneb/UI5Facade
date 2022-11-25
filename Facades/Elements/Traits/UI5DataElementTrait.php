@@ -2041,7 +2041,7 @@ JS;
         }
         // Otherwise get the selected rows and proceed
         
-        $rows = $this->buildJsGetSelectedRows('oTable');
+        $rows = $this->buildJsGetRowsSelected('oTable');
         if ($dataColumnName !== null) {
             if (mb_strtolower($dataColumnName) === '~rowcount') {
                 return "(sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows || []).length";
@@ -2093,7 +2093,17 @@ JS;
      * @param string $oControlJs
      * @return string
      */
-    protected abstract function buildJsGetSelectedRows(string $oControlJs) : string;
+    protected abstract function buildJsGetRowsSelected(string $oControlJs) : string;
+    
+    /**
+     * 
+     * @param string $oControlJs
+     * @return string
+     */
+    protected function buildJsGetRowsAll(string $oControlJs) : string
+    {
+        return 'oControl.getModel().getData().rows';
+    }
     
     /**
      *
@@ -2103,13 +2113,13 @@ JS;
     public function buildJsDataGetter(ActionInterface $action = null)
     {
         if ($action === null) {
-            $getRows = "var rows = oControl.getModel().getData().rows;";
+            $getRows = "var rows = {$this->buildJsGetRowsAll('oControl')};";
         } elseif ($action instanceof iReadData) {
             // If we are reading, than we need the special data from the configurator
             // widget: filters, sorters, etc.
             return $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->buildJsDataGetter($action);
         } else {
-            $getRows = 'var rows = ' . $this->buildJsGetSelectedRows('oControl') . ';';
+            $getRows = "var rows = {$this->buildJsGetRowsSelected('oControl')};";
         }
         return <<<JS
     function() {
@@ -2153,7 +2163,7 @@ JS;
             if (
                 (function(){
                     var oControl = sap.ui.getCore().byId('{$this->getId()}');
-                    var newSelection = {$this->buildJsGetSelectedRows('oControl')};
+                    var newSelection = {$this->buildJsGetRowsSelected('oControl')};
                     var oldSelection = oControl.data('exfPreviousSelection') || [];
                     oControl.data('exfPreviousSelection', newSelection);
                     return {$this->buildJsRowCompare('oldSelection', 'newSelection', false)};

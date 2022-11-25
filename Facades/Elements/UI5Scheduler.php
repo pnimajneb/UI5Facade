@@ -340,9 +340,9 @@ JS;
     
     /**
      * 
-     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     * @see UI5DataElementTrait::buildJsGetRowsSelected()
      */
-    protected function buildJsGetSelectedRows(string $oCalJs) : string
+    protected function buildJsGetRowsSelected(string $oCalJs) : string
     {
         return <<<JS
         function(){

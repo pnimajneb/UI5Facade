@@ -8,12 +8,20 @@ use exface\Core\DataTypes\WidgetVisibilityDataType;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\Core\Widgets\Parts\Uploader;
 use exface\Core\CommonLogic\DataSheets\DataColumn;
+use exface\Core\Interfaces\Actions\ActionInterface;
+use exface\Core\Interfaces\Actions\iModifyData;
+use exface\Core\Exceptions\Widgets\WidgetLogicError;
 
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
  * 
  * TODO call `$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE)` when a list item is 
  * selected. Also call `$this->getController()->buildJsEventHandler($this, 'select', false)` there somewhere.
+ * 
+ * FIXME CSS for renaming narrow list items:
+ * - .sapMUCTextContainer {width: 200px}
+ * - .sapMUSProgressBox {display: none}
+ * - .sapMUCButtonContainer button {display: block}
  * 
  * @method \exface\Core\Widgets\FileList getWidget()
  * 
@@ -28,6 +36,8 @@ class UI5FileList extends UI5AbstractElement
     use UI5DataElementTrait, JqueryDataTableTrait {
         buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
         UI5DataElementTrait::buildJsResetter insteadof JqueryDataTableTrait;
+        UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
+        UI5DataElementTrait::buildJsDataGetter as buildJsDataGetterViaTrait;
     }
     
     use JqueryDataTableTrait;
@@ -135,10 +145,6 @@ JS;
             $maxFileSize = $widget->getUploader()->getMaxFileSizeMb() ?? 'null';
             $instantUpload = $uploader->isInstantUpload() ? 'true' : 'false';
             
-            if (! $uploader->isInstantUpload()) {
-                throw new FacadeRuntimeError('FileList widgets with instant_upload=false currently not supported in the UI5 facade!');
-            }
-            
             return <<<JS
 
             uploadEnabled: true,
@@ -190,30 +196,18 @@ JS;
     {
         $widget = $this->getWidget();
         $uploader = $this->getUploader();
-        if (! $widget->isUploadEnabled()) {
-            return '';
-        }
+        
         $uploadAction = $uploader->getInstantUploadAction();
         $uploadButtonEl = $this->getFacade()->getElement($uploader->getInstantUploadButton());
         
-        $fileColumnsJs = '';
-        if ($uploader->hasFileModificationTimeAttribute()) {
-            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileModificationTimeAttribute()->getAliasWithRelationPath()) . ": file.lastModified,";
-        }
-        if ($uploader->hasFileSizeAttribute()) {
-            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileSizeAttribute()->getAliasWithRelationPath()) . ": file.size,";
-        }
-        if ($uploader->hasFileMimeTypeAttribute()) {
-            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileMimeTypeAttribute()->getAliasWithRelationPath()) . ": file.type,";
-        }
-        
-        // When the upload action succeeds, we need to refresh the list to ensure, that
-        // additional columns are filled correctly - e.g. uploading user, etc.
-        // While uploading the list shows an "incomplete" item, which needs to be removed
-        // after the real item is loaded from the server. Make sure to remove the incomplete
-        // item AFTER the refresh-request completes because otherwise it would disapear for
-        // a second, which look really weired!
-        $onUploadCompleteJs = <<<JS
+        if ($uploader->isInstantUpload()) {
+            // When the upload action succeeds, we need to refresh the list to ensure, that
+            // additional columns are filled correctly - e.g. uploading user, etc.
+            // While uploading the list shows an "incomplete" item, which needs to be removed
+            // after the real item is loaded from the server. Make sure to remove the incomplete
+            // item AFTER the refresh-request completes because otherwise it would disapear for
+            // a second, which look really weired!
+            $onUploadCompleteJs = <<<JS
         
             var oUploadSetModel = oUploadSet.getModel();
             var oRowsBinding = new sap.ui.model.Binding(oUploadSetModel, '/rows', oUploadSetModel.getContext('/rows'));
@@ -235,11 +229,67 @@ JS;
             {$uploadButtonEl->buildJsTriggerActionEffects($uploadAction)};
             
 JS;
+        
+            $onFileCheckedSaveIt = <<<JS
+
+                fileReader.onload = function () {
+                    var oResponseModel = new sap.ui.model.json.JSONModel({
+                        oId: "{$widget->getMetaObject()->getId()}",
+                        rows: [
+                            {$this->buildJsFileDataRow('file', 'fileReader.result')}
+                        ] 
+                    });
+                    {$this->buildJsDataLoaderOnLoadedHandleWidgetLinks('oResponseModel')}
+                    var oUploadParams = {
+                        action: "{$uploadAction->getAliasWithNamespace()}",
+    					resource: "{$this->getPageId()}",
+    					element: "{$uploadAction->getWidgetDefinedIn()->getId()}",
+    					object: "{$widget->getMetaObject()->getId()}",
+                        data: oResponseModel.getData()
+                    };
+                    {$this->buildJsBusyIconShow()}
+                    {$this->getServerAdapter()->buildJsServerRequest($uploadAction, 'oResponseModel', 'oUploadParams', $onUploadCompleteJs, $onUploadCompleteJs)}
+                };
+                fileReader.readAsBinaryString(file);
+
+JS;
+        } else {
+            $onFileCheckedSaveIt = <<<JS
             
+                var iFilesOnServer = (oUploadSet.getModel().rows || []).length;
+                var iFilesPending = 0;
+                var oModelPending = oUploadSet.getModel('uploads_pending');
+                if (oModelPending === undefined) {
+                    oModelPending = new sap.ui.model.json.JSONModel({rows: []})
+                    oUploadSet.setModel(oModelPending, 'uploads_pending');
+                }
+                iFilesPending = oModelPending.getData().rows.length;
+                console.log(iMaxFiles);
+                if (iMaxFiles !== null && iFilesOnServer + iFilesPending >= iMaxFiles) {
+                    {$this->buildJsShowError('"' . $this->translate('WIDGET.FILELIST.ERROR_MAX_FILES') . '"')};
+                    oUploadSet.removeIncompleteItem(oItem);
+                    oItem.destroy();
+                    return;
+                }
+                
+                var file = oItem.getFileObject();
+                var fileReader = new FileReader();
+                fileReader.onload = function () {
+                    var oRow = {$this->buildJsFileDataRow('file', 'fileReader.result')};
+                    oModelPending.getData().rows.push(oRow);
+                };
+                fileReader.readAsBinaryString(file);
+
+JS;
+        }
+        
+        $maxFilesJs = $uploader->getMaxFiles() ?? 'null';
+        
         return <<<JS
 
                 var oItem = $oEventJs.getParameters().item;
                 var oUploadSet = $oEventJs.getSource();
+                var iMaxFiles = $maxFilesJs;
 
                 var file = oItem.getFileObject();
                 var fileReader = new FileReader( );
@@ -286,31 +336,30 @@ JS;
                     return;
                 }
 
-                fileReader.onload = function () { console.log('uploading');
-                    var sContent = {$this->buildJsFileContentEncoder($uploader->getFileContentAttribute()->getDataType(), 'fileReader.result', 'file.type')};
-                    var oResponseModel = new sap.ui.model.json.JSONModel({
-                        oId: "{$widget->getMetaObject()->getId()}",
-                        rows: [
-                            {
-                                {$widget->getFilenameColumn()->getDataColumnName()}: file.name,
-                                {$fileColumnsJs}
-                                {$widget->getFileContentColumnName()}: sContent,
-                            }
-                        ] 
-                    });
-                    {$this->buildJsDataLoaderOnLoadedHandleWidgetLinks('oResponseModel')}
-                    var oUploadParams = {
-                        action: "{$uploadAction->getAliasWithNamespace()}",
-    					resource: "{$this->getPageId()}",
-    					element: "{$uploadAction->getWidgetDefinedIn()->getId()}",
-    					object: "{$widget->getMetaObject()->getId()}",
-                        data: oResponseModel.getData()
-                    };
-                    {$this->buildJsBusyIconShow()}
-                    {$this->getServerAdapter()->buildJsServerRequest($uploadAction, 'oResponseModel', 'oUploadParams', $onUploadCompleteJs, $onUploadCompleteJs)}
-                };
-                fileReader.readAsBinaryString(file);
+                $onFileCheckedSaveIt
 JS;
+    }
+    
+    protected function buildJsFileDataRow(string $fileJs, string $fileReaderResultJs) : string
+    {
+        $widget = $this->getWidget();
+        $uploader = $this->getUploader();
+        
+        $fileColumnsJs = "{$widget->getFilenameColumn()->getDataColumnName()}: {$fileJs}.name,";
+        
+        if ($uploader->hasFileModificationTimeAttribute()) {
+            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileModificationTimeAttribute()->getAliasWithRelationPath()) . ": {$fileJs}.lastModified,";
+        }
+        if ($uploader->hasFileSizeAttribute()) {
+            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileSizeAttribute()->getAliasWithRelationPath()) . ": {$fileJs}.size,";
+        }
+        if ($uploader->hasFileMimeTypeAttribute()) {
+            $fileColumnsJs .= DataColumn::sanitizeColumnName($uploader->getFileMimeTypeAttribute()->getAliasWithRelationPath()) . ": {$fileJs}.type,";
+        }
+        
+        $fileColumnsJs .= "{$widget->getFileContentColumnName()}: {$this->buildJsFileContentEncoder($uploader->getFileContentAttribute()->getDataType(), $fileReaderResultJs, "{$fileJs}.type")},";
+        
+        return '{' . $fileColumnsJs . '}';
     }
     
     /**
@@ -367,9 +416,12 @@ JS;
                 var oContext = oItem.getBindingContext();
                 var bError = false;
                 var oRow;
+                var bIncompleteItem = oUploadSet.getInstantUpload() === false && oUploadSet.getIncompleteItems().includes(oItem);
 
                 if (oContext === undefined) {
-                    bError = true;
+                    if (bIncompleteItem === false) {
+                        bError = true;
+                    }
                 } else {
                     oRow = oContext.getObject();
                     if (oRow === undefined) bError = true;
@@ -384,8 +436,21 @@ JS;
                     var oButtonOK = oConfDialog.getButtons()[0];
                     oButtonOK.setType(sap.m.ButtonType.Emphasized);
                     oButtonOK.attachPress(function(oEventPress){
-                        var oResponseModel = new sap.ui.model.json.JSONModel();
-                        var oParams = {
+                        var oResponseModel, oParams, iIncompleteIdx;
+                        var oIncompleteModel = oUploadSet.getModel('uploads_pending');
+
+                        if (bIncompleteItem) {
+                            iIncompleteIdx = oUploadSet.indexOfIncompleteItem(oItem);
+                            if (iIncompleteIdx > -1 && oIncompleteModel.getData().rows && (oIncompleteModel.getData().rows.length > iIncompleteIdx)) {
+                                oIncompleteModel.getData().rows.splice(iIncompleteIdx, 1);
+                            }
+                            oUploadSet.removeIncompleteItem(oItem);
+                            oItem.destroy(); 
+                            return;
+                        }
+
+                        oResponseModel = new sap.ui.model.json.JSONModel();
+                        oParams = {
                             action: "{$deleteAction->getAliasWithNamespace()}",
         					resource: "{$this->getPageId()}",
         					element: "{$deleteButton->getId()}",
@@ -410,7 +475,7 @@ JS;
      */
     protected function isEditable() : bool
     {
-        return false;
+        return $this->getWidget()->isEditable();
     }
     
     /**
@@ -476,20 +541,138 @@ JS;
     
     /**
      *
-     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     * @see UI5DataElementTrait::buildJsGetRowsSelected()
      */
-    protected function buildJsGetSelectedRows(string $oControlJs) : string
+    protected function buildJsGetRowsSelected(string $oControlJs) : string
     {
         return <<<JS
                 function() {
                     var oList = $oControlJs.getList();
                     var aRows = [];
                     var oModelData = oList.getModel().getData();
+                    if (! oModelData || oModelData.rows === undefined) {
+                        return aRows;
+                    }
                     oList.getSelectedItems().forEach(function(oItem){
                         aRows.push(oModelData.rows[oList.indexOfItem(oItem)]);
                     });
                     return aRows;
                 }()
+JS;
+    }
+    
+    protected function buildJsGetRowsAll(string $oControlJs) : string
+    {
+        $widget = $this->getWidget();
+        $uploader = $widget->getUploader();
+        if ($uploader->isInstantUpload()) {
+            return 'oControl.getModel().getData().rows';
+        }
+        return <<<JS
+                function() {
+                    var aRows = $oControlJs.getModel().getData().rows || [];
+                    var aRowsPending = $oControlJs.getModel('uploads_pending').getData().rows || [];
+                    return [...aRows, ...aRowsPending];
+                }()
+JS;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsDataGetter()
+     */
+    public function buildJsDataGetter(ActionInterface $action = null)
+    {
+        $widget = $this->getWidget();
+        $dataObj = $this->getMetaObjectForDataGetter($action);
+        
+        switch (true) {
+            // Editable tables with modifying actions return all rows either directly or as subsheet
+            case $widget->isUploadEnabled() && ($action instanceof iModifyData):
+                $aRowsJs = "oTable.getModel().getData().rows || []";
+                switch (true) {
+                    case $dataObj->is($widget->getMetaObject()):
+                    case $action->getInputMapper($widget->getMetaObject()) !== null:
+                        return <<<JS
+    function() {
+        return {
+            oId: '{$this->getWidget()->getMetaObject()->getId()}',
+            rows: {$this->buildJsGetRowsAll("sap.ui.getCore().byId('{$this->getId()}')")}
+        };
+    }()
+
+JS;
+                    default:
+                        // If the data is intended for another object, make it a nested data sheet
+                        // If the action is based on the same object as the widget's parent, use the widget's
+                        // logic to find the relation to the parent. Otherwise try to find a relation to the
+                        // action's object and throw an error if this fails.
+                        if ($widget->hasParent() && $dataObj->is($widget->getParent()->getMetaObject()) && $relPath = $widget->getObjectRelationPathFromParent()) {
+                            $relAlias = $relPath->toString();
+                        } elseif ($relPath = $dataObj->findRelationPath($widget->getMetaObject())) {
+                            $relAlias = $relPath->toString();
+                        }
+                        
+                        if ($relAlias === null || $relAlias === '') {
+                            throw new WidgetLogicError($widget, 'Cannot use editable table with object "' . $widget->getMetaObject()->getName() . '" (alias ' . $widget->getMetaObject()->getAliasWithNamespace() . ') as input widget for action "' . $action->getName() . '" with object "' . $dataObj->getName() . '" (alias ' . $dataObj->getAliasWithNamespace() . '): no forward relation could be found from action object to widget object!', '7B7KU9Q');
+                        }
+                        $aRowsJs = $this->buildJsGetRowsAll('oTable');
+                        $data = <<<JS
+{
+            oId: '{$dataObj->getId()}',
+            rows: [
+                {
+                    '{$relAlias}': {
+                        oId: '{$widget->getMetaObject()->getId()}',
+                        rows: aRows
+                    }
+                }
+            ]
+        }
+        
+JS;
+                }
+                break;
+            
+            // In all other cases the data are the selected rows
+            default:
+                return $this->buildJsDataGetterViaTrait($action);
+                
+        }
+        
+        // Get rid of readonly columns
+        $readOnlyColNames = [];
+        foreach ($widget->getColumns() as $col) {
+            if ($col->isReadonly()) {
+                $readOnlyColNames[] = $col->getDataColumnName();
+            }
+        }
+        $readOnlyColNamesJs = json_encode($readOnlyColNames);
+        
+        // FIX move this copy-pasted code to UI5DataElementTrait and remove it from UI5DataTable too.
+        
+        return <<<JS
+    function() {
+        var oTable = sap.ui.getCore().byId('{$this->getId()}');
+        var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
+        var aReadOnlyColNames = $readOnlyColNamesJs;
+        var aRows = {$aRowsJs};
+        
+        if (oTable.getModel().getProperty('/_dirty') || (oDirtyColumn && oDirtyColumn.getVisible() === true)) {
+            for (var i = 0; i < aRows.length; i++) {
+                delete aRows[i]['{$this->getDirtyFlagAlias()}'];
+            }
+        }
+        
+        aReadOnlyColNames.forEach(function(sColName){
+            for (var i = 0; i < aRows.length; i++) {
+                delete aRows[i][sColName];
+            }
+        });
+        
+        return $data;
+    }()
 JS;
     }
     
@@ -563,5 +746,15 @@ JS;
     protected function buildJsClickIsTargetRowCheck(string $oTargetDomJs = 'oTargetDom') : string
     {
         return "{$oTargetDomJs} !== undefined && $({$oTargetDomJs}).parents('li.sapMLIB').length > 0";
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsResetter()
+     */
+    public function buildJsDataResetter() : string
+    {
+        return "sap.ui.getCore().byId('{$this->getId()}').setModel(new sap.ui.model.json.JSONModel({rows: []}), 'uploads_pending').removeAllIncompleteItems(); " . $this->buildJsDataResetterViaTrait();
     }
 }

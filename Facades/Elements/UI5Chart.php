@@ -401,9 +401,9 @@ JS;
     
     /**
      * 
-     * @see UI5DataElementTrait::buildJsGetSelectedRows()
+     * @see UI5DataElementTrait::buildJsGetRowsSelected()
      */
-    protected function buildJsGetSelectedRows(string $oControlJs) : string
+    protected function buildJsGetRowsSelected(string $oControlJs) : string
     {
         return $this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class)) . '.rows';
     }
