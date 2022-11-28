@@ -11,6 +11,7 @@ use exface\Core\CommonLogic\DataSheets\DataColumn;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iModifyData;
 use exface\Core\Exceptions\Widgets\WidgetLogicError;
+use exface\Core\Interfaces\Actions\iCallOtherActions;
 
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
@@ -565,7 +566,7 @@ JS;
         $widget = $this->getWidget();
         $uploader = $widget->getUploader();
         if ($uploader->isInstantUpload()) {
-            return 'oControl.getModel().getData().rows';
+            return "{$oControlJs}.getModel().getData().rows";
         }
         return <<<JS
                 function() {
@@ -589,6 +590,7 @@ JS;
         switch (true) {
             // Editable tables with modifying actions return all rows either directly or as subsheet
             case $widget->isUploadEnabled() && ($action instanceof iModifyData):
+            case $widget->isUploadEnabled() && ($action instanceof iCallOtherActions) && $action->containsActionClass(iModifyData::class):
                 $aRowsJs = "oTable.getModel().getData().rows || []";
                 switch (true) {
                     case $dataObj->is($widget->getMetaObject()):

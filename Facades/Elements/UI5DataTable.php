@@ -13,6 +13,8 @@ use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 use exface\Core\Exceptions\Widgets\WidgetLogicError;
 use exface\Core\DataTypes\StringDataType;
+use exface\Core\Interfaces\Actions\iModifyData;
+use exface\Core\Interfaces\Actions\iCallOtherActions;
 
 /**
  *
@@ -600,8 +602,8 @@ JS;
                 return $this->getConfiguratorElement()->buildJsDataGetter($action);
                 
             // Editable tables with modifying actions return all rows either directly or as subsheet
-            case $this->isEditable() 
-            && $action->implementsInterface('iModifyData'):
+            case $this->isEditable() && ($action instanceof iModifyData):
+            case $this->isEditable() && ($action instanceof iCallOtherActions) && $action->containsActionClass(iModifyData::class):
                 $aRowsJs = "{$this->buildJsGetRowsAll('oTable')} || []";
                 switch (true) {
                     case $dataObj->is($widget->getMetaObject()):
