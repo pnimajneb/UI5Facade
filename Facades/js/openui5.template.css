@@ -232,7 +232,7 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .sapUiLoSplitterContent > .sapUiNoContentPadding > .sapMPanelContent  > .sapFDynamicPage > .sapFDynamicPageContentWrapper > .sapFDynamicPageContent > .sapFDynamicPageContentFitContainer {padding: 0}
 
 /* Fullscreen */
-.fullscreen {position: fixed!important; top: 0; left: 0; z-index: 15!important; width: 100vw!important; height: 100vh!important; background: rgba(255,255,255);}
+.fullscreen {position: fixed!important; top: 0; left: 0; z-index: 99999!important; width: 100vw!important; height: 100vh!important; background: rgba(255,255,255);}
 .sapUiRespGrid.fullscreen > .sapUiRespGridSpanS12 {height: 100%}
 
 /* SegmentedButtons */
