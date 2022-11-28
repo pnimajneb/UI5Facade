@@ -53,7 +53,7 @@ class UI5Chart extends UI5AbstractElement
 
                 new sap.ui.core.HTML("{$this->getId()}", {
                     content: "<div id=\"{$this->getId()}\" style=\"height: 100%;\"><div id=\"{$this->getId()}_echarts\" class=\"exf-chart\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div></div>",
-                    afterRendering: function(oEvent) { 
+                    afterRendering: function(oEvent) {
                         {$this->buildJsEChartsInit($this->getFacade()->getConfig()->getOption('LIBS.ECHARTS.THEME_NAME'))}
                         {$this->buildJsEventHandlers()}
                         
@@ -81,6 +81,9 @@ JS;
         return <<<JS
     if (echarts.getInstanceByDom(document.getElementById('{$this->getId()}_echarts')) == undefined) {  
         echarts.init(document.getElementById('{$this->getId()}_echarts'), '{$theme}');
+        if (sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows != undefined) {
+            {$this->buildJsRedraw("sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows")}
+        }
     }
     
 JS;
