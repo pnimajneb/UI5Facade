@@ -264,7 +264,6 @@ JS;
                     oUploadSet.setModel(oModelPending, 'uploads_pending');
                 }
                 iFilesPending = oModelPending.getData().rows.length;
-                console.log(iMaxFiles);
                 if (iMaxFiles !== null && iFilesOnServer + iFilesPending >= iMaxFiles) {
                     {$this->buildJsShowError('"' . $this->translate('WIDGET.FILELIST.ERROR_MAX_FILES') . '"')};
                     oUploadSet.removeIncompleteItem(oItem);
