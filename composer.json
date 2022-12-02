@@ -48,9 +48,7 @@
     "extra": {
         "app": {
             "app_uid": "0x11e837e87a640bfd91380205857feb80",
-            "app_alias": "exface.UI5Facade",
-            "model_md5": "dac16e94c04805157a417a94d1b9594a",
-            "model_timestamp": "2021-01-25 17:30:54"
+            "app_alias": "exface.UI5Facade"
         }
     }
 }
