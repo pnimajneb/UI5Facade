@@ -628,6 +628,7 @@ JS;
     public function buildJsValueGetter($column = null, $row = null)
     {
         $allowNewValuesJs = $this->getWidget()->getAllowNewValues() ? 'true' : 'false';
+        $valueColName = $this->getWidget()->getValueColumn()->getDataColumnName();
         return <<<JS
 function(sColName){
     var oInput = sap.ui.getCore().byId('{$this->getId()}');
@@ -645,7 +646,7 @@ function(sColName){
         return null;
     }
 
-    if (sColName === '') {
+    if (sColName === '' || sColName === '$valueColName') {
         return sSelectedKey;
     }
     
