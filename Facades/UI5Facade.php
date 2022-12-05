@@ -429,7 +429,7 @@ JS;
     public function buildResponseData(DataSheetInterface $data_sheet, WidgetInterface $widget = null)
     {
         $data = array();
-        $data['rows'] = array_merge($this->buildResponseDataRowsSanitized($data_sheet), $data_sheet->getTotalsRows());
+        $data['rows'] = array_merge($this->buildResponseDataRowsSanitized($data_sheet, true, false), $data_sheet->getTotalsRows());
         $data['recordsFiltered'] = $data_sheet->countRowsInDataSource();
         $data['recordsTotal'] = $data_sheet->countRowsInDataSource();
         if (! is_null($data_sheet->getRowsLimit())) {
