@@ -28,7 +28,7 @@ class UI5Tile extends UI5Button
         // Register conditional reactions
         $this->registerConditionalProperties();
         
-        $header = $this->getCaption() ? 'header: "' . $widget->getTitle() . '",' : '';
+        $header = $this->getCaption() ? 'header: ' . $this->escapeString($widget->getTitle(), true) . ',' : '';
         $handler = $this->buildJsClickViewEventHandlerCall();
         $press = $handler !== '' ? 'press: ' . $handler . ',' : '';
         $tileClass = '';
