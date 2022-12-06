@@ -57,7 +57,7 @@ class UI5Tile extends UI5Button
                 $tileClass .= " exf-icon-tile";
             } else {
                 // for all other content widgets, add a subheader, if it is not empty
-                $subheader = $widget->getSubtitle() ? 'subheader: "' . $widget->getSubtitle() . '",' : '';
+                $subheader = $widget->getSubtitle() ? 'subheader: ' . $this->escapeString($widget->getSubtitle(), true) . ',' : '';
             }
         } else {
             // If there is no content widget, see if we can create tile content from the subtitle and the icon
@@ -76,7 +76,7 @@ class UI5Tile extends UI5Button
 JS;
             } elseif ($icon) {
                 // Otherwise put the subtitle into the subheader and use the icon as content
-                $subheader = 'subheader: "' . $subtitle . '",';
+                $subheader = 'subheader: ' . $this->escapeString($subtitle,true) . ',';
                 $tileContentConstructor = $this->buildJsTileContentConstructorForIcon($icon);
             }
         } 
