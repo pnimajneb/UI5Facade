@@ -265,4 +265,13 @@ JS;
     
 HTML;
     }
+    
+    /**
+     *
+     * @see UI5DataElementTrait::isWrappedInPanel()
+     */
+    protected function isWrappedInPanel() : bool
+    {
+        return true;
+    }
 }

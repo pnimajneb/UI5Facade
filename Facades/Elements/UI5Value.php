@@ -557,9 +557,9 @@ JS;
     }
     
     /**
-     *
-     * @param bool $visible
-     * @return string
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsVisibilitySetter()
      */
     protected function buildJsVisibilitySetter(bool $visible) : string
     {

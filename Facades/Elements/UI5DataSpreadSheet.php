@@ -219,4 +219,13 @@ JS;
         $this->getController()->addOnPrefillDataChangedScript("{$this->buildJsJqueryElement()}[0].exfWidget.refreshConditionalProperties()");
         return $this;
     }
+    
+    /**
+     *
+     * @see UI5DataElementTrait::isWrappedInPanel()
+     */
+    protected function isWrappedInPanel() : bool
+    {
+        return true;
+    }
 }

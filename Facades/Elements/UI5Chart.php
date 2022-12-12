@@ -436,4 +436,13 @@ JS;
                 return parent::buildJsOnEventScript($eventName, $scriptJs, $oEventJs);
         }
     }
+    
+    /**
+     * 
+     * @see UI5DataElementTrait::isWrappedInPanel()
+     */
+    protected function isWrappedInPanel() : bool
+    {
+        return true;
+    }
 }

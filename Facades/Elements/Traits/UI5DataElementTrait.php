@@ -295,9 +295,17 @@ JS;
 JS;
     }
     
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsVisibilitySetter()
+     */
     protected function buildJsVisibilitySetter(bool $visible) : string
     {
-        return "sap.ui.getCore().byId('{$this->getId()}_panel').setVisible(" . ($visible ? 'true' : 'false') . ").$()?.trigger('visibleChange', [{visible: " . ($visible ? 'true' : 'false') . "}]);";
+        if ($this->isWrappedInPanel()) {
+            return "sap.ui.getCore().byId('{$this->getId()}_panel')?.setVisible(" . ($visible ? 'true' : 'false') . ").$()?.trigger('visibleChange', [{visible: " . ($visible ? 'true' : 'false') . "}]);";
+        }
+        return parent::buildJsVisibilitySetter($visible);
     }
     
     /**
@@ -1028,6 +1036,18 @@ JS;
         } else {
             return $widget->getHideHeader() === false;
         }
+    }
+    
+    /**
+     * Returns if the control uses buildJsPanelWrapper() to generate a standard data widget panel with toolbars, etc.
+     * 
+     * This is only the case for non-UI5 controls or those, that do not have own toolbars.
+     * 
+     * @return bool
+     */
+    protected function isWrappedInPanel() : bool
+    {
+        return false;
     }
     
     /**
