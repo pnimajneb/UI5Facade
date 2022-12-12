@@ -282,7 +282,7 @@ JS;
             $height = $this->buildCssHeightDefaultValue();
         }
         return <<<JS
-        new sap.m.Panel({
+        new sap.m.Panel("{$this->getId()}_panel", {
             height: "$height",
             headerToolbar: [
                 {$toolbar}.addStyleClass("sapMTBHeader-CTX")
@@ -293,6 +293,11 @@ JS;
         })
         
 JS;
+    }
+    
+    protected function buildJsVisibilitySetter(bool $visible) : string
+    {
+        return "sap.ui.getCore().byId('{$this->getId()}_panel').setVisible(" . ($visible ? 'true' : 'false') . ").$()?.trigger('visibleChange', [{visible: " . ($visible ? 'true' : 'false') . "}]);";
     }
     
     /**
