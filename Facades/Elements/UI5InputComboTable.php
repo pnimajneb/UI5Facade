@@ -267,6 +267,27 @@ JS;
             $vhpOptions = "showValueHelp: false";
         }*/
         
+        $tokenUpdateJs = '';
+        if ($widget->getMultiSelect()) {
+            //Removing a token does not fire a change event, which means linked widgets do not react to it,
+            //therefor so we do it manually in a timeout function.
+            $tokenUpdateJs = <<<JS
+        .attachTokenUpdate(function(oEvent){
+            if (oEvent.getParameters().type !== 'removed') {
+                return;
+            }
+            setTimeout(function(){
+                var oInput = sap.ui.getCore().byId('{$this->getId()}'); 
+                var sVal = {$this->buildJsValueGetter()};
+                oInput.fireChange({
+                    value: sVal
+                });
+            },0);
+        })
+
+JS;
+        }
+        
         return <<<JS
 
 	   new {$control}("{$this->getId()}", {
@@ -297,7 +318,9 @@ JS;
         })
         .setModel(new sap.ui.model.json.JSONModel(), "{$this->getModelNameForAutosuggest()}")
         {$value_init_js}
+        {$tokenUpdateJs}
         {$this->buildJsPseudoEventHandlers()}
+
 JS;
     }
              
@@ -512,8 +535,10 @@ JS;
                     }, 1);
                 }
                 
-                // Remove pure-whitespace values. Otherwise they will remain while still inivisble
+                // Remove pure-whitespace values, loading the value again before doing so.
+                // Otherwise they will remain while still inivisble
                 // eventually causing input values consisting of whitespaces.
+                curText = oInput.getValue();
                 if (curText && curText.trim() === '') {
                     setTimeout(function(){
                         oInput.setValue('');
@@ -706,7 +731,7 @@ JS;
             }
             oInput.fireChange({
                 value: val
-            }); 
+            });
             return oInput;
         })($valueJs)";
     }
