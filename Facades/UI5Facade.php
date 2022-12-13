@@ -444,6 +444,16 @@ JS;
     /**
      * 
      * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::buildResponseDataError($exception)
+     */
+    public function buildResponseDataError(\Throwable $exception, bool $forceHtmlEntities = false)
+    {
+        return parent::buildResponseDataError($exception, $forceHtmlEntities);
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::buildHtmlFromError()
      */
     protected function buildHtmlFromError(ServerRequestInterface $request, \Throwable $exception, UiPageInterface $page = null) : string
