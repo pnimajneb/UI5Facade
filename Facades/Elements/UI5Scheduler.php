@@ -8,6 +8,7 @@ use exface\Core\Widgets\Parts\DataTimeline;
 use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Widgets\Parts\DataCalendarItem;
+use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 
 /**
  * 
@@ -41,11 +42,13 @@ class UI5Scheduler extends UI5AbstractElement
         $this->initConfiguratorControl($controller);
         
         $showRowHeaders = $this->getWidget()->hasResources() ? 'true' : 'false';
-        switch ($this->getWidget()->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOUR)) {
-            case DataTimeline::GRANULARITY_DAY: $viewKey = 'sap.ui.unified.CalendarIntervalType.Day'; break;
-            case DataTimeline::GRANULARITY_HOUR: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
-            case DataTimeline::GRANULARITY_WEEK: $viewKey = 'sap.ui.unified.CalendarIntervalType.Week'; break;
-            case DataTimeline::GRANULARITY_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.OneMonth'; break;
+        switch ($this->getWidget()->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
+            case DataTimeline::GRANULARITY_HOURS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
+            case DataTimeline::GRANULARITY_DAYS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Day'; break;
+            case DataTimeline::GRANULARITY_DAYS_PER_WEEK: $viewKey = 'sap.ui.unified.CalendarIntervalType.Week'; break;
+            case DataTimeline::GRANULARITY_DAYS_PER_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.OneMonth'; break;
+            case DataTimeline::GRANULARITY_MONTHS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Month'; break;
+            case DataTimeline::GRANULARITY_WEEKS: throw new FacadeUnsupportedWidgetPropertyWarning('Timeline granularity `weeks` currently not supported in UI5!'); break;
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
@@ -57,12 +60,19 @@ class UI5Scheduler extends UI5AbstractElement
 JS;
         }
         
+        if (! $this->getWidget()->getItemsConfig()->hasSubtitle()) {
+            $aptHeight = 'appointmentHeight: sap.ui.unified.CalendarAppointmentHeight.HalfSize,';
+        } else {
+            $aptHeight = '';
+        }
+        
         $startDateProp = $this->getWidget()->getStartDate() ? "startDate: exfTools.date.parse('{$this->getWidget()->getStartDate()}')," : '';
         
         return <<<JS
 
 new sap.m.PlanningCalendar("{$this->getId()}", {
     {$startDateProp}
+    {$aptHeight}
 	appointmentsVisualization: "Filled",
     viewKey: $viewKey,
 	showRowHeaders: {$showRowHeaders},
@@ -90,7 +100,11 @@ JS;
         $widget = $this->getWidget();
         
         $calItem = $widget->getItemsConfig();
-        $subtitleBinding = $calItem->hasSubtitle() ? $this->buildJsValueBindingForWidget($calItem->getSubtitleColumn()->getCellWidget()) : '""';
+        if ($calItem->hasSubtitle()) {
+            $subtitleOptions = "text: {$this->buildJsValueBindingForWidget($calItem->getSubtitleColumn()->getCellWidget())},";
+        } else {
+            $subtitleOptions = '';
+        }
         
         $rowProps = '';
         if ($widget->hasResources() === true) {
@@ -114,7 +128,7 @@ JS;
 					icon: "{pic}",
 					title: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
 					tooltip: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
-					text: {$subtitleBinding},
+					{$subtitleOptions}
 					key: "{{$this->getMetaObject()->getUidAttributeAlias()}}",
 					type: "{type}",
                     {$this->buildJsRowPropertyColor($calItem)}
@@ -128,7 +142,7 @@ JS;
 					endDate: "{end}",
 					icon: "{pic}",
 					title: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
-					text: {$subtitleBinding},
+					{$subtitleOptions}
 					type: "{type}",
 				})
             },
