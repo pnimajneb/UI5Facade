@@ -77,46 +77,23 @@ class UI5WebappRouter implements MiddlewareInterface
         } catch (UI5RouteInvalidException $e) {
             return new Response(404, [], $e->getMessage());
         }
-        $type = pathinfo($target, PATHINFO_EXTENSION);
         
-        switch (strtolower($type)) {
-            case 'json':
-                $response = $this->createResponseJson($body);
-            case 'js':
-                $response = $this->createResponseJs($body);
-            default:
-                $response = $this->createResponsePlain($body);
-        }
         $config = $this->facade->getConfig();
         $headers = array_merge(
             array_filter($config->getOption('FACADE.HEADERS.COMMON')->toArray()),
             array_filter($config->getOption('FACADE.HEADERS.AJAX')->toArray())
         );
-        foreach ($headers as $name => $value) {
-            $response = $response->withHeader($name, $value);
+        
+        $type = pathinfo($target, PATHINFO_EXTENSION);
+        switch (strtolower($type)) {
+            case 'json':
+                $headers['Content-type'] = 'application/json;charset=utf-8';
+                return new Response(200, $headers, $body);
+            case 'js':
+                $headers['Content-type'] = 'application/javascript';
+                return new Response(200, $headers, $body);                
         }
         
-        return $response;
-    }
-    
-    protected function getManifest() : ResponseInterface
-    {
-        $json = file_get_contents($this->facade->getWebappFacadeFolder() . DIRECTORY_SEPARATOR . 'manifest.json');
-        return $this->createResponseJson($json);
-    }
-    
-    protected function createResponseJson(string $jsonString) : ResponseInterface
-    {
-        return new Response(200, ['Content-type' => ['application/json;charset=utf-8']], $jsonString);
-    }
-    
-    protected function createResponseJs(string $body) : ResponseInterface
-    {
-        return new Response(200, ['Content-type' => ['application/javascript']], $body);
-    }
-    
-    protected function createResponsePlain(string $body) : ResponseInterface
-    {
-        return new Response(200, ['Content-type' => ['text/plain']], $body);
+        return new Response(200, $headers, $body);
     }
 }
