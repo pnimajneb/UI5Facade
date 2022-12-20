@@ -147,7 +147,8 @@ trait UI5DataElementTrait {
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $widget = $this->getDataWidget();
+        $dataWidget = $this->getDataWidget();
+        $widget = $this->getWidget();
         $controller = $this->getController();
         
         $this->registerConditionalProperties();
@@ -173,7 +174,7 @@ trait UI5DataElementTrait {
         // is run after all the view loading logic finished - that's what the setTimeout() is for -
         // otherwise the refresh would run before the view finished initializing, before the prefill
         // is started and will probably be empty.
-        if ($widget->hasAutoloadData()) {
+        if ($dataWidget->hasAutoloadData()) {
             $autoloadJs = <<<JS
 
                 (function() {
@@ -194,14 +195,39 @@ trait UI5DataElementTrait {
 JS;
             $controller->addOnShowViewScript($autoloadJs);
         } else {
-            $controller->addOnShowViewScript($this->buildJsShowMessageOverlay($widget->getAutoloadDisabledHint()));
+            $controller->addOnShowViewScript($this->buildJsShowMessageOverlay($dataWidget->getAutoloadDisabledHint()));
+        }
+        
+        // add trigger to refresh data automatically when widget has autorefresh_intervall set.
+        if ($widget->hasAutorefreshIntervall()) {
+            //add a UI5 IntervalTrigger for every data element
+            if (! $controller->hasProperty("autoRefreshTrigger_{$this->getId()}")) {
+                $controller->addProperty("autoRefreshTrigger_{$this->getId()}", 'new sap.ui.core.IntervalTrigger(0)');
+            }
+            //multiplicate value with 1000 as intervall in UI5 is set in milliseconds
+            $intervall = $widget->getAutorefreshIntervall() * 1000;
+            //add listeners on init
+            $controller->addOnInitScript(<<<JS
+                var oController = {$controller->buildJsControllerGetter($this)};
+                oController.autoRefreshTrigger_{$this->getId()}.addListener(function(){{$this->buildJsRefresh()}});
+JS);
+            //activate trigger by setting interval on show view
+            $controller->addOnShowViewScript(<<<JS
+                var oController = {$controller->buildJsControllerGetter($this)};
+                oController.autoRefreshTrigger_{$this->getId()}.setInterval({$intervall});
+JS);
+            //deactivate trigger by setting interval to 0 on hide view
+            $controller->addOnHideViewScript(<<<JS
+                var oController = {$controller->buildJsControllerGetter($this)};
+                oController.autoRefreshTrigger_{$this->getId()}.setInterval(0);
+JS);
         }
         
         // Handle preload
-        if ($widget->isPreloadDataEnabled()) {
+        if ($dataWidget->isPreloadDataEnabled()) {
             $dataCols = [];
             $imgCols = [];
-            foreach ($widget->getColumns() as $col) {
+            foreach ($dataWidget->getColumns() as $col) {
                 $dataCols[] = $col->getDataColumnName();
                 if ($col->getCellWidget() instanceof iShowImage) {
                     $imgCols[] = $col->getDataColumnName();
@@ -209,7 +235,7 @@ JS;
             }
             $preloadDataCols = json_encode($dataCols);
             $preloadImgCols = json_encode($imgCols);
-            $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$widget->getPage()->getUid()}', '{$widget->getId()}', '{$widget->getMetaObject()->getUidAttributeAlias()}', '{$widget->getMetaObject()->getName()}');");
+            $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$dataWidget->getPage()->getUid()}', '{$dataWidget->getId()}', '{$dataWidget->getMetaObject()->getUidAttributeAlias()}', '{$dataWidget->getMetaObject()->getName()}');");
         }
         
         // Generate the constructor for the inner widget
