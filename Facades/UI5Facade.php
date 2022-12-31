@@ -37,6 +37,9 @@ use GuzzleHttp\Psr7\Response;
 use exface\UI5Facade\Facades\Templates\UI5CustomPlaceholders;
 use exface\Core\Facades\AbstractAjaxFacade\Templates\FacadePageTemplateRenderer;
 use exface\Core\Interfaces\Selectors\FacadeSelectorInterface;
+use exface\Core\Interfaces\PWA\PWAInterface;
+use exface\Core\Interfaces\Selectors\PWASelectorInterface;
+use exface\Core\CommonLogic\Selectors\PWASelector;
 
 /**
  * Renders SAP Fiori apps using OpenUI5 or SAP UI5.
@@ -677,5 +680,11 @@ JS;
             ];
         }
         return $colors;
+    }
+    
+    public function getPWA($selectorOrString) : PWAInterface
+    {
+        $selector = $selectorOrString instanceof PWASelectorInterface ? $selectorOrString : new PWASelector($this->getWorkbench(), $selectorOrString);
+        return new UI5PWA($selector, $this);
     }
 }
