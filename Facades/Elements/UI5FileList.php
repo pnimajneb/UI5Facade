@@ -91,7 +91,7 @@ class UI5FileList extends UI5AbstractElement
         
         $attributesConstructors = '';
         foreach ($widget->getColumns() as $col) {
-            if (in_array($col, $specialCols) || $col->isHidden()) {
+            if (in_array($col, $specialCols, true) || $col->isHidden()) {
                 continue;
             }
             

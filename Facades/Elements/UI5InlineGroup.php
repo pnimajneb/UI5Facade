@@ -56,7 +56,7 @@ JS;
         foreach ($this->getWidget()->getWidgets() as $widget) {
 
             $element = $this->getFacade()->getElement($widget);
-            if (in_array($widget, $separatorWidgets) === true) {
+            if (in_array($widget, $separatorWidgets, true) === true) {
                 $element->setAlignment("sap.ui.core.TextAlign.Center");
             }
 
