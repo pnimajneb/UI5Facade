@@ -98,7 +98,9 @@ class UI5PWA extends AbstractPWA
                             if (null !== $childActionWidget = $child->getAction()->getWidget()) {
                                 $this->addRoute(new PWARoute($this, $this->getViewForWidget($childActionWidget)->getRouteName(), $childActionWidget));
                                 yield 'Action widget for page ' . $widget->getPage()->getAliasWithNamespace() . ': ' . $widget->getId();
-                                yield from $this->generateModelForWidget($childActionWidget, ($linkDepth-1));
+                                if ($this->getActionOfflineStrategy($action) !== OfflineStrategyDataType::ONLINE_ONLY) {
+                                    yield from $this->generateModelForWidget($childActionWidget, ($linkDepth-1));
+                                }
                             } elseif (null !== $childActionPage = $child->getAction()->getPage()) {
                                 yield from $this->generateModelForWidget($childActionPage->getWidgetRoot(), ($linkDepth-1));
                             }
