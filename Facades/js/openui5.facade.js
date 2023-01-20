@@ -1138,6 +1138,12 @@ const exfLauncher = {};
 				title: "{= ${/_network/online} > 0 ? ${i18n>WEBAPP.SHELL.NETWORK.ONLINE} : ${i18n>WEBAPP.SHELL.NETWORK.OFFLINE} }",
 				placement: "Bottom",
 				content: [
+					new sap.m.MessageStrip({
+						text: "Offline sync not available.",
+						type:"Warning",
+						showIcon: true,
+						visible: (! exfPreloader.isAvailable())
+					}).addStyleClass('sapUiSmallMargin'),
 					new sap.m.List({
 						items: [
 							new sap.m.GroupHeaderListItem({
