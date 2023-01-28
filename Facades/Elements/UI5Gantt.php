@@ -56,7 +56,32 @@ class UI5Gantt extends UI5AbstractElement
         $startDateProp = $this->getWidget()->getStartDate() ? "startDate: exfTools.date.parse('{$this->getWidget()->getStartDate()}')," : '';
         $controller->addDependentObject('gantt', $this, 'null');
         $gantt = <<<JS
-
+        new sap.ui.layout.Splitter({
+            contentAreas: [
+                new sap.ui.table.TreeTable({
+                    rows: {
+                        path:'/rows', 
+                        parameters: {
+                            arrayNames: [
+                                '_children'
+                            ]
+                        }
+                    },
+                    selectionMode: "MultiToggle",
+                    enableSelectAll: false,
+                    columns: [
+                        new sap.ui.table.Column({
+                            width: "13rem",
+                            label: new sap.ui.commons.Label({
+                                text: "Categories"
+                            }),
+                            template: new sap.m.Text({ 
+                                text:"{name}" ,
+                                wrapping: false 
+                            })
+                        })
+                    ]
+                }),
                 new sap.ui.core.HTML("{$this->getId()}", {
                     content: "<div id=\"{$this->getId()}\" style=\"height: 100%;\"><div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div></div>",
                     afterRendering: function(oEvent) {
@@ -74,6 +99,8 @@ console.log('init');
                         });
                     }
                 })
+            ]
+        })
 
 JS;
         return $this->buildJsPanelWrapper($gantt, $oControllerJs);
@@ -99,7 +126,7 @@ JS;
         custom_class: 'bar-milestone' // optional
       }
     ], {
-        header_height: 50,
+        header_height: 26,
         column_width: 30,
         step: 24,
         view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
