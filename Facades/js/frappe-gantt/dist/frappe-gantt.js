@@ -11,18 +11,18 @@ var Gantt = (function () {
 
     const month_names = {
         en: [
-            'January',
-            'February',
-            'March',
-            'April',
-            'May',
-            'June',
-            'July',
-            'August',
-            'September',
-            'October',
-            'November',
-            'December',
+            '01',
+            '02',
+            '03',
+            '04',
+            '05',
+            '06',
+            '07',
+            '08',
+            '09',
+            '10',
+            '11',
+            '12',
         ],
         es: [
             'Enero',
@@ -263,6 +263,10 @@ var Gantt = (function () {
                 const max_score = scores[scale];
                 return scores[_scale] <= max_score;
             }
+            
+            if (date === undefined) {
+				return new Date();
+			}
 
             const vals = [
                 date.getFullYear(),
@@ -1224,7 +1228,7 @@ var Gantt = (function () {
                 this.options.column_width = 140;
             } else if (view_mode === VIEW_MODE.MONTH) {
                 this.options.step = 24 * 30;
-                this.options.column_width = 60;
+                this.options.column_width = 20;
             } else if (view_mode === VIEW_MODE.YEAR) {
                 this.options.step = 24 * 365;
                 this.options.column_width = 12;

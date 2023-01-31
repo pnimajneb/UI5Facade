@@ -62,12 +62,12 @@ class UI5Gantt extends UI5DataTable
                         parameters: {
                             arrayNames: [
                                 '_children'
-                            ]
+                            ],
+                            numberOfExpandedLevels: 1
                         }
                     },
                     selectionMode: {$selection_mode},
     		        selectionBehavior: {$selection_behavior},
-                    enableSelectAll: false,
             		columns: [
             			{$this->buildJsColumnsForUiTable()}
             		],
@@ -81,7 +81,14 @@ class UI5Gantt extends UI5DataTable
                                 new sap.m.Text("{$this->getId()}_noData", {text: "{$this->getWidget()->getEmptyText()}"})
                             ]
                         })
-                    ]
+                    ],
+                    toggleOpenState: function(oEvent) {
+                        var oTable = oEvent.getSource();
+                        var oModel = oTable.getModel();
+                        setTimeout(function(){
+                            {$this->buildJsRefreshGantt('oModel')};
+                        },10);
+                    }
                 }),
                 new sap.ui.core.HTML("{$this->getId()}_wrapper", {
                     content: "<div id=\"{$this->getId()}_wrapper\" style=\"height: 100%;\"><div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div></div>",
@@ -93,10 +100,11 @@ class UI5Gantt extends UI5DataTable
                             oRowsBinding.attachChange(function(oEvent){
                                 var oBinding = oEvent.getSource();
                                 var oModel = oBinding.getModel();
-                                {$this->buildJsRefreshGantt('oModel')};
+                                setTimeout(function(){
+                                    {$this->buildJsRefreshGantt('oModel')};
+                                },100);
                             });
                         }
-console.log('init');
                         
                         setTimeout(function(){
                             // TODO
@@ -154,7 +162,6 @@ JS;
     	on_date_change: function(oTask, dStart, dEnd) {
     		var oTable = sap.ui.getCore().byId('{$this->getId()}');
             var oModel = oTable.getModel();
-            console.log(dStart, dEnd);
             oModel.getProperty('/rows').forEach(function(oRow, i) {
                 if (oRow['{$widget->getUidColumn()->getDataColumnName()}'] == oTask.id) {
                     oModel.setProperty('/rows/' + i + '/{$startCol->getDataColumnName()}', {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
@@ -175,7 +182,62 @@ JS;
      */
     protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
     {    
-        return parent::buildJsDataLoaderOnLoaded($oModelJs) . $this->buildJsRefreshGantt($oModelJs);
+        return parent::buildJsDataLoaderOnLoaded($oModelJs) . <<<JS
+
+                var oDataTree = {$this->buildJsTransformToTree($oModelJs . '.getData()')} 
+                {$oModelJs}.setData(oDataTree);
+
+JS;
+    }
+    
+    protected function buildJsTransformToTree(string $oDataJs) : string
+    {
+        return <<<JS
+
+                (function(oDataFlat) {
+                    var oDataTree = $.extend({}, oDataFlat);
+                    var sParentCol = '{$this->getWidget()->getTreeParentRelationAlias()}';
+
+                    function list_to_tree(list) {
+                      var map = {}, node, roots = [], i;
+                      
+                      for (i = 0; i < list.length; i += 1) {
+                        map[list[i].id] = i; // initialize the map
+                        list[i]._children = []; // initialize the children
+                      }
+                      
+                      for (i = 0; i < list.length; i += 1) {
+                        node = list[i];
+                        if (node[sParentCol] !== '' && node[sParentCol] !== null) {
+                          // if you have dangling branches check that map[node.parentId] exists
+                          list[map[node[sParentCol]]]._children.push(node);
+                        } else {
+                          roots.push(node);
+                        }
+                      }
+                      return roots;
+                    }
+
+                    oDataTree.rows = list_to_tree(oDataFlat.rows);
+                    return oDataTree;
+/*
+                    oDataFlat.rows.forEach(function(oRow){
+                        if (oRow[sParentCol] === null || oRow[sParentCol] === '') {
+                            oDataTree.rows.push(oRow);
+                        }
+                    });
+                    oDataFlat.rows.forEach(function(oRow){
+                        var oParentRow;
+                        if (oRow[sParentCol] !== null && oRow[sParentCol] !== '') {
+                            oParentRow = oDataTree.rows.filter(function(oRowTree) {
+                                return oRow[sParentCol] 
+                            });
+                        }
+                    });
+*/
+                })($oDataJs)
+
+JS;
     }
     
     protected function buildJsRefreshGantt(string $oModelJs) : string
@@ -201,7 +263,11 @@ JS;
             var aData = {$oModelJs}.getProperty('/rows') || [];
             var oRows = [];
             var aTasks = [];
-            aData.forEach(function(oRow) {
+            var oTable = sap.ui.getCore().byId('{$this->getId()}');
+            oTable.getRows().forEach(function(oTreeRow) {
+                var oCtxt = oTreeRow.getBindingContext();
+                if (! oCtxt) return;
+                var oRow = oTable.getModel().getProperty(oCtxt.sPath);
                 var dMin, dStart, dEnd, sEnd;
                 var oTask = {
                     id: oRow['{$widget->getUidColumn()->getDataColumnName()}'],
@@ -209,9 +275,14 @@ JS;
                     start: oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"],
                     end: oRow["{$calItem->getEndTimeColumn()->getDataColumnName()}"],
                     progress: 0,
-                    dependencies: ''
-                    // custom_class: 'bar-milestone'
+                    dependencies: '',
+                    custom_class: 'bar-style-' + oRow['roadmap_category']
                 };
+
+                if(oRow._children.length > 0 && oTask.start && oTask.end) {
+                    oTask.custom_class += ' bar-folder';
+                }
+
                 aTasks.push(oTask);
                 
                 dStart = new Date(oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"]);
@@ -231,8 +302,7 @@ console.log(aTasks);
             var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
             oGantt.tasks = aTasks;
             if (aTasks.length > 0) {
-                oGantt.setup_tasks(aTasks);
-                oGantt.render();
+                oGantt.refresh(aTasks);
             } else  {
                 oGantt.clear();
             }
@@ -396,6 +466,11 @@ JS;
     }
     
     protected function isMTable() : bool
+    {
+        return false;
+    }
+    
+    protected function hasDirtyColumn() : bool
     {
         return false;
     }

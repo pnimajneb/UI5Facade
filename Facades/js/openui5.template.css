@@ -240,3 +240,10 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 
 /* Gantt */
 .exf-gantt .gantt-container {height: 100%}
+.exf-gantt .gantt .tick {stroke: #ddd}
+.bar-folder {filter: drop-shadow(0px -3px 0px rgb(0 0 0 / 0.8))}
+.bar-style-3 rect:first-of-type {fill: #ffc000}
+.bar-style-4 rect:first-of-type {fill: #70AD47}
+.bar-style-5 rect:first-of-type {fill: #5B9BD5}
+.bar-style-6 rect:first-of-type {fill: #757171}
+.bar-style-7 rect:first-of-type {fill: #5B9BD5}
