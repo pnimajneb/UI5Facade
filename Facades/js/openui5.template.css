@@ -237,3 +237,6 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 
 /* SegmentedButtons */
 .segmentedButtonsError {border-color: #b00 !important; border-width: 2px !important; color: #b00 !important;}
+
+/* Gantt */
+.exf-gantt .gantt-container {height: 100%}

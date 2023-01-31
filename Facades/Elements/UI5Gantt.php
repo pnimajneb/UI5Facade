@@ -18,14 +18,8 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
  * @author Andrej Kabachnik
  *
  */
-class UI5Gantt extends UI5AbstractElement
+class UI5Gantt extends UI5DataTable
 {
-    use UI5DataElementTrait {
-        buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
-        buildJsValueGetter as buildJsValueGetterViaTrait;
-        buildJsDataResetter as buildJsDataResetterViaTrait;
-    }
-    
     use JsValueScaleTrait;
 
     const EVENT_NAME_TIMELINE_SHIFT = 'timeline_shift';
@@ -41,8 +35,8 @@ class UI5Gantt extends UI5AbstractElement
     {
         $controller = $this->getController();
         $this->initConfiguratorControl($controller);
+        $widget = $this->getWidget();
         
-        $showRowHeaders = $this->getWidget()->hasResources() ? 'true' : 'false';
         switch ($this->getWidget()->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
             case DataTimeline::GRANULARITY_HOURS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
             case DataTimeline::GRANULARITY_DAYS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Day'; break;
@@ -53,12 +47,16 @@ class UI5Gantt extends UI5AbstractElement
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
+        $selection_mode = $widget->getMultiSelect() ? 'sap.ui.table.SelectionMode.MultiToggle' : 'sap.ui.table.SelectionMode.Single';
+        $selection_behavior = $widget->getMultiSelect() ? 'sap.ui.table.SelectionBehavior.Row' : 'sap.ui.table.SelectionBehavior.RowOnly';
+        
         $startDateProp = $this->getWidget()->getStartDate() ? "startDate: exfTools.date.parse('{$this->getWidget()->getStartDate()}')," : '';
         $controller->addDependentObject('gantt', $this, 'null');
         $gantt = <<<JS
         new sap.ui.layout.Splitter({
             contentAreas: [
-                new sap.ui.table.TreeTable({
+                new sap.ui.table.TreeTable('{$this->getId()}', {
+                    columnHeaderHeight: 52,
                     rows: {
                         path:'/rows', 
                         parameters: {
@@ -67,27 +65,36 @@ class UI5Gantt extends UI5AbstractElement
                             ]
                         }
                     },
-                    selectionMode: "MultiToggle",
+                    selectionMode: {$selection_mode},
+    		        selectionBehavior: {$selection_behavior},
                     enableSelectAll: false,
-                    columns: [
-                        new sap.ui.table.Column({
-                            width: "13rem",
-                            label: new sap.ui.commons.Label({
-                                text: "Categories"
-                            }),
-                            template: new sap.m.Text({ 
-                                text:"{name}" ,
-                                wrapping: false 
-                            })
+            		columns: [
+            			{$this->buildJsColumnsForUiTable()}
+            		],
+                    noData: [
+                        new sap.m.FlexBox({
+                            height: "100%",
+                            width: "100%",
+                            justifyContent: "Center",
+                            alignItems: "Center",
+                            items: [
+                                new sap.m.Text("{$this->getId()}_noData", {text: "{$this->getWidget()->getEmptyText()}"})
+                            ]
                         })
                     ]
                 }),
-                new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getId()}\" style=\"height: 100%;\"><div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div></div>",
+                new sap.ui.core.HTML("{$this->getId()}_wrapper", {
+                    content: "<div id=\"{$this->getId()}_wrapper\" style=\"height: 100%;\"><div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div></div>",
                     afterRendering: function(oEvent) {
                         var oCtrl = sap.ui.getCore().byId('{$this->getId()}');
                         if (oCtrl.gantt === undefined) {
                             oCtrl.gantt = {$this->buildJsGanttInit()}
+                            var oRowsBinding = new sap.ui.model.Binding(sap.ui.getCore().byId('{$this->getId()}').getModel(), '/rows', sap.ui.getCore().byId('{$this->getId()}').getModel().getContext('/rows'));
+                            oRowsBinding.attachChange(function(oEvent){
+                                var oBinding = oEvent.getSource();
+                                var oModel = oBinding.getModel();
+                                {$this->buildJsRefreshGantt('oModel')};
+                            });
                         }
 console.log('init');
                         
@@ -113,6 +120,12 @@ JS;
 		
     protected function buildJsGanttInit() : string
     {
+        $widget = $this->getWidget();
+        $calItem = $widget->getTasksConfig();
+        $startCol = $calItem->getStartTimeColumn();
+        $startFormatter = $this->getFacade()->getDataTypeFormatter($startCol->getDataType());
+        $endCol = $calItem->getEndTimeColumn();
+        $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());
         return <<<JS
 (function() {   
     return new Gantt("#{$this->getId()}_gantt", [
@@ -126,61 +139,33 @@ JS;
         custom_class: 'bar-milestone' // optional
       }
     ], {
-        header_height: 26,
+        header_height: 46,
         column_width: 30,
         step: 24,
         view_modes: ['Quarter Day', 'Half Day', 'Day', 'Week', 'Month'],
-        bar_height: 20,
+        bar_height: 19,
         bar_corner_radius: 3,
         arrow_curve: 5,
-        padding: 18,
-        view_mode: 'Year',
-        date_format: 'DD-MM-YYYY',
+        padding: 14,
+        view_mode: 'Month',
+        date_format: 'DD.MM.YYYY',
         language: 'en', // or 'es', 'it', 'ru', 'ptBr', 'fr', 'tr', 'zh', 'de', 'hu'
-        custom_popup_html: null
+        custom_popup_html: null,
+    	on_date_change: function(oTask, dStart, dEnd) {
+    		var oTable = sap.ui.getCore().byId('{$this->getId()}');
+            var oModel = oTable.getModel();
+            console.log(dStart, dEnd);
+            oModel.getProperty('/rows').forEach(function(oRow, i) {
+                if (oRow['{$widget->getUidColumn()->getDataColumnName()}'] == oTask.id) {
+                    oModel.setProperty('/rows/' + i + '/{$startCol->getDataColumnName()}', {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
+                    oModel.setProperty('/rows/' + i + '/{$endCol->getDataColumnName()}', {$endFormatter->buildJsFormatDateObjectToInternal('dEnd')});
+                }
+            });
+    	}
     });
 })();
 
 JS;
-    }
-    
-    protected function buildJsRowPropertyColor(DataCalendarItem $calItem) : string
-    {
-        switch (true) {
-            case $colorCol = $calItem->getColorColumn();
-                $semanticColors = $this->getFacade()->getSemanticColors();
-                $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
-                return <<<JS
-                    color: {
-                        path: "{$colorCol->getDataColumnName()}",
-                        formatter: function(value){
-                            var sColor = {$this->buildJsScaleResolver('value', $calItem->getColorScale(), $calItem->isColorScaleRangeBased())};
-                            var sValueColor;
-                            var oCtrl = this;
-                            var sCssColor = '';
-                            var oSemanticColors = $semanticColorsJs;
-                            if (sColor.startsWith('~')) {
-                                sCssColor = oSemanticColors[sColor] || '';
-                            } else if (sColor) {
-                                sCssColor = sColor;
-                            }
-                            return sCssColor;
-                        }
-                    },
-JS;
-            case null !== $colorVal = $calItem->getColor():
-                return 'color: ' . $this->escapeString($colorVal) . ',';
-        }
-        return '';
-    }
-        
-    /**
-     * 
-     * @return string
-     */
-    protected function buildJsDataResetter() : string
-    {
-        return $this->buildJsDataResetterViaTrait() . "; sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())})";
     }
     
     /**
@@ -189,9 +174,14 @@ JS;
      * @return string
      */
     protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
+    {    
+        return parent::buildJsDataLoaderOnLoaded($oModelJs) . $this->buildJsRefreshGantt($oModelJs);
+    }
+    
+    protected function buildJsRefreshGantt(string $oModelJs) : string
     {
         $widget = $this->getWidget();
-        $calItem = $widget->getItemsConfig();
+        $calItem = $widget->getTasksConfig();
         
         $endTime = $calItem->hasEndTime() ? "oRow['{$calItem->getEndTimeColumn()->getDataColumnName()}']" : "''";
         $subtitle = $calItem->hasSubtitle() ? "{$calItem->getSubtitleColumn()->getDataColumnName()}: oRow['{$calItem->getSubtitleColumn()->getDataColumnName()}']," : '';
@@ -206,25 +196,9 @@ JS;
             $workdayStartJs = 'dMin.setHours(' . implode(', ', $workdayStartSplit) . ');';
         }
         
-        if ($widget->hasResources()) {
-            $rConf = $widget->getResourcesConfig();
-            $rowKeyGetter = "oRow['{$rConf->getTitleColumn()->getDataColumnName()}']";
-            if ($rConf->hasSubtitle()) {
-                $rSubtitle = "{$rConf->getSubtitleColumn()->getDataColumnName()}: oRow['{$rConf->getSubtitleColumn()->getDataColumnName()}'],";
-            }
-            $rowProps = <<<JS
-
-                        {$rConf->getTitleColumn()->getDataColumnName()}: oRow['{$rConf->getTitleColumn()->getDataColumnName()}'],
-                        {$rSubtitle}
-
-JS;
-        } else {
-            $rowKeyGetter = "''";
-        }
+        return <<<JS
         
-        return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
-        
-            var aData = {$oModelJs}.getProperty('/rows');
+            var aData = {$oModelJs}.getProperty('/rows') || [];
             var oRows = [];
             var aTasks = [];
             aData.forEach(function(oRow) {
@@ -239,7 +213,7 @@ JS;
                     // custom_class: 'bar-milestone'
                 };
                 aTasks.push(oTask);
-
+                
                 dStart = new Date(oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"]);
                 if (dMin === undefined) {
                     dMin = new Date(dStart.getTime());
@@ -253,14 +227,16 @@ JS;
                     dEnd.setHours(dEnd.getHours() + {$calItem->getDefaultDurationHours(1)});
                 }
             });
-
+console.log(aTasks);
             var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
             oGantt.tasks = aTasks;
-            oGantt.setup_tasks(aTasks);
-            oGantt.clear();
-            oGantt.render();
-            console.log(oGantt);
-			
+            if (aTasks.length > 0) {
+                oGantt.setup_tasks(aTasks);
+                oGantt.render();
+            } else  {
+                oGantt.clear();
+            }
+            
 JS;
     }
     
@@ -290,12 +266,12 @@ JS;
                     $oParamsJs.data.filters = {operator: "AND", conditions: []};
                 }
                 $oParamsJs.data.filters.conditions.push({
-                    expression: '{$this->getWidget()->getItemsConfig()->getStartTimeColumn()->getDataColumnName()}',
+                    expression: '{$this->getWidget()->getTasksConfig()->getStartTimeColumn()->getDataColumnName()}',
                     comparator: '>=',
                     value: exfTools.date.format(oStartDate, '$dateFormat')
                 });
                 $oParamsJs.data.filters.conditions.push({
-                    expression: '{$this->getWidget()->getItemsConfig()->getStartTimeColumn()->getDataColumnName()}',
+                    expression: '{$this->getWidget()->getTasksConfig()->getStartTimeColumn()->getDataColumnName()}',
                     comparator: '<=',
                     value: exfTools.date.format(oEndDate, '$dateFormat')
                 });
@@ -313,49 +289,6 @@ JS;
     protected function hasQuickSearch() : bool
     {
         return true;
-    }
-    
-    protected function buildJsValueBindingForWidget(WidgetInterface $tplWidget, string $modelName = null) : string
-    {
-        $tpl = $this->getFacade()->getElement($tplWidget);
-        // Disable using widget id as control id because this is a template for multiple controls
-        $tpl->setUseWidgetId(false);
-        
-        $modelPrefix = $modelName ? $modelName . '>' : '';
-        if ($tpl instanceof UI5Display) {
-            $tpl->setValueBindingPrefix($modelPrefix);
-        } elseif ($tpl instanceof UI5ValueBindingInterface) {
-            $tpl->setValueBindingPrefix($modelPrefix);
-        }
-        
-        return $tpl->buildJsValueBinding();
-    }
-    
-    /**
-     * 
-     * @see UI5DataElementTrait::buildJsGetRowsSelected()
-     */
-    protected function buildJsGetRowsSelected(string $oCalJs) : string
-    {
-        return <<<JS
-        function(){
-            var aApts = $oCalJs.getSelectedAppointments(),
-                sUid,
-                rows = [],
-                data = sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows;
-    
-            for (var i in aApts) {
-                var sUid = sap.ui.getCore().byId(aApts[i]).getKey();
-                for (var j in data) {
-                    if (data[j]['{$this->getWidget()->getMetaObject()->getUidAttributeAlias()}'] == sUid) {
-                        rows.push(data[j]);
-                    }
-                }
-            }
-            return rows;
-        }()
-
-JS;
     }
     
     /**
@@ -382,9 +315,9 @@ JS;
      * {@inheritdoc}
      * @see UI5DataElementTrait::isEditable()
      */
-    protected function isEditable()
+    public function isEditable()
     {
-        return false;
+        return $this->getWidget()->isEditable();
     }
     
     /**
@@ -394,40 +327,6 @@ JS;
     protected function hasPaginator() : bool
     {
         return false;
-    }
-    
-    public function buildJsValueGetter($dataColumnName = null, $rowNr = null)
-    {
-        if ($dataColumnName !== null) {
-            $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
-            if (mb_strtolower($dataColumnName) === '~start_date') {
-                return "exfTools.date.format(sap.ui.getCore().byId('{$this->getId()}').getStartDate(), '$dateFormat')";
-            }
-            if (mb_strtolower($dataColumnName) === '~end_date') {
-                return "exfTools.date.format(function(oPCal){return oPCal.getEndDate !== undefined ? oPCal.getEndDate() : oPCal._getFirstAndLastRangeDate().oEndDate.oDate}(sap.ui.getCore().byId('{$this->getId()}')), '$dateFormat')";
-            }            
-            if (mb_strtolower($dataColumnName) === '~resources_title') {
-                $col = $this->getWidget()->getResourcesConfig()->getTitleColumn();
-                $delim = $col && $col->isBoundToAttribute() ? $col->getAttribute()->getValueListDelimiter() : EXF_LIST_SEPARATOR;
-                return <<<JS
-                
-(function(){
-    var oPCal = sap.ui.getCore().byId('{$this->getId()}');
-    var aSelectedRows = oPCal.getSelectedRows();
-    var aTitles = [];
-    for (var i = 0; i < aSelectedRows.length; i++) {
-        if (aSelectedRows[i].getTitle() !== '' && aSelectedRows[i].getTitle() !== undefined) {
-            aTitles.push(aSelectedRows[i].getTitle());
-        }    
-    }
-    return aTitles.join('{$delim}');
-}() || '')
-
-JS;
-            }
-            
-        }
-        return $this->buildJsValueGetterViaTrait($dataColumnName, $rowNr);
     }
     
     /**
@@ -441,18 +340,63 @@ JS;
             $this->getController()->addOnEventScript($this, UI5Gantt::EVENT_NAME_TIMELINE_SHIFT, $js);
             return $this;
         }
-        if (strpos($js, $this->buildJsValueGetter('~resources_title')) !== false) {
-            $this->getController()->addOnEventScript($this, UI5Gantt::EVENT_NAME_ROW_SELECTION_CHANGE, $js);
-            return $this;
-        }
         return parent::addOnChangeScript($js);
     }
     
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
     {
         // $f = $this->getFacade();
-        $controller->addExternalModule('libs.exface.gantt.Gantt', 'vendor/exface/UI5Facade/Facades/js/frappe-gantt/dist/frappe-gantt.min.js', null, 'Gantt');
+        $controller->addExternalModule('libs.exface.gantt.Gantt', 'vendor/exface/UI5Facade/Facades/js/frappe-gantt/dist/frappe-gantt.js', null, 'Gantt');
         $controller->addExternalCss('vendor/exface/UI5Facade/Facades/js/frappe-gantt/dist/frappe-gantt.min.css');
         return $this;
+    }
+    
+    protected function buildJsRowPropertyColor(DataCalendarItem $calItem) : string
+    {
+        switch (true) {
+            case $colorCol = $calItem->getColorColumn();
+            $semanticColors = $this->getFacade()->getSemanticColors();
+            $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
+            return <<<JS
+                    color: {
+                        path: "{$colorCol->getDataColumnName()}",
+                        formatter: function(value){
+                            var sColor = {$this->buildJsScaleResolver('value', $calItem->getColorScale(), $calItem->isColorScaleRangeBased())};
+                            var sValueColor;
+                            var oCtrl = this;
+                            var sCssColor = '';
+                            var oSemanticColors = $semanticColorsJs;
+                            if (sColor.startsWith('~')) {
+                                sCssColor = oSemanticColors[sColor] || '';
+                            } else if (sColor) {
+                                sCssColor = sColor;
+                            }
+                            return sCssColor;
+                        }
+                    },
+JS;
+            case null !== $colorVal = $calItem->getColor():
+                return 'color: ' . $this->escapeString($colorVal) . ',';
+        }
+        return '';
+    }
+    
+    /**
+     *
+     * @return string
+     */
+    protected function buildJsDataResetter() : string
+    {
+        return parent::buildJsDataResetter() . "; sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())});";
+    }
+    
+    protected function isUiTable() : bool
+    {
+        return true;
+    }
+    
+    protected function isMTable() : bool
+    {
+        return false;
     }
 }
