@@ -35,7 +35,7 @@ class UI5InputComboTable extends UI5Input
     protected function init()
     {
         parent::init();
-        
+        $widget= $this->getWidget();
         // If the combo does not allow new values, we need to force the UI5 input to
         // check any input via autosuggest _before_ any other action is taken.
         // TODO this only works if there was no value before and needs to be
@@ -75,6 +75,16 @@ JS;
 JS;
                 
             $this->addPseudoEventHandler('onsapenter', $onEnter);
+        }
+        
+        // reset the input when a widget, that a filter is linked to, changes
+        if ($widget->getTable()->hasFilters()) {
+            foreach ($widget->getTable()->getFilters() as $fltr) {                
+                if ($link = $fltr->getValueWidgetLink()) {
+                    $linked_element = $this->getFacade()->getElement($link->getTargetWidget());
+                    $linked_element->addOnChangeScript($this->buildJsResetter());
+                }
+            }
         }
     }
     
