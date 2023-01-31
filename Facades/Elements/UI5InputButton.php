@@ -43,6 +43,16 @@ JS;
             $btnElement->addOnErrorScript($this->buildJsCallFunction(Input::FUNCTION_EMPTY));
         }
         
+        // Select
+        $jsFocus = <<<JS
+console.log('focus', oEvent);
+var value = sap.ui.getCore().byId('{$this->getId()}').getValue();
+var length = value.length
+sap.ui.getCore().byId('{$this->getId()}').selectText(0,length);
+
+JS;
+        $this->getController()->addOnInitScript("sap.ui.getCore().byId('{$this->getId()}').onfocusin = (function(oEvent){{$jsFocus}});");
+        
         return <<<JS
 
         new sap.m.HBox({
