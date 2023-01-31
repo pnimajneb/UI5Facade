@@ -45,7 +45,6 @@ JS;
         
         // Select
         $jsFocus = <<<JS
-console.log('focus', oEvent);
 var value = sap.ui.getCore().byId('{$this->getId()}').getValue();
 var length = value.length
 sap.ui.getCore().byId('{$this->getId()}').selectText(0,length);
