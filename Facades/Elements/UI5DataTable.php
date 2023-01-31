@@ -1044,6 +1044,14 @@ JS;
             }
         }
         
+        $updatePaginator = '';
+        if ($this->hasPaginator()) {
+            $updatePaginator = <<<JS
+            
+            {$paginator->buildJsSetTotal($oModelJs . '.getProperty("/recordsFiltered")', 'oController')};
+            {$paginator->buildJsRefresh('oController')};
+JS;
+        }
         return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
             /*if (typeof oTable === 'undefined') {
                 var oTable = sap.ui.getCore().byId('{$this->getId()}');
@@ -1051,9 +1059,7 @@ JS;
 
 			var footerRows = {$oModelJs}.getProperty("/footerRows");
             {$uiTableSetFooterRows}
-
-            {$paginator->buildJsSetTotal($oModelJs . '.getProperty("/recordsFiltered")', 'oController')};
-            {$paginator->buildJsRefresh('oController')};  
+            {$updatePaginator}
             {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, false)};
             {$singleResultJs};
             {$uiTablePostprocessing};
