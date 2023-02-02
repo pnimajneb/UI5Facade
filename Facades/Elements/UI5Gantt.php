@@ -39,16 +39,6 @@ class UI5Gantt extends UI5DataTable
         $this->initConfiguratorControl($controller);
         $widget = $this->getWidget();
         
-        switch ($this->getWidget()->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
-            case DataTimeline::GRANULARITY_HOURS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
-            case DataTimeline::GRANULARITY_DAYS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Day'; break;
-            case DataTimeline::GRANULARITY_DAYS_PER_WEEK: $viewKey = 'sap.ui.unified.CalendarIntervalType.Week'; break;
-            case DataTimeline::GRANULARITY_DAYS_PER_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.OneMonth'; break;
-            case DataTimeline::GRANULARITY_MONTHS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Month'; break;
-            case DataTimeline::GRANULARITY_WEEKS: throw new FacadeUnsupportedWidgetPropertyWarning('Timeline granularity `weeks` currently not supported in UI5!'); break;
-            default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
-        }
-        
         $selection_mode = $widget->getMultiSelect() ? 'sap.ui.table.SelectionMode.MultiToggle' : 'sap.ui.table.SelectionMode.Single';
         $selection_behavior = $widget->getMultiSelect() ? 'sap.ui.table.SelectionBehavior.Row' : 'sap.ui.table.SelectionBehavior.RowOnly';
         
@@ -143,12 +133,25 @@ JS;
     protected function buildJsGanttInit() : string
     {
         $widget = $this->getWidget();
+        $dateFormat = $this->escapeString($this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT'));
+        
         $calItem = $widget->getTasksConfig();
         $startCol = $calItem->getStartTimeColumn();
         $startFormatter = $this->getFacade()->getDataTypeFormatter($startCol->getDataType());
-        $dateFormat = $this->escapeString($this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT'));
         $endCol = $calItem->getEndTimeColumn();
         $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());
+        
+        switch ($widget->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
+            case DataTimeline::GRANULARITY_HOURS: $viewMode = 'Quater Day'; break;
+            case DataTimeline::GRANULARITY_DAYS: $viewMode = 'Day'; break;
+            case DataTimeline::GRANULARITY_DAYS_PER_WEEK: $viewMode = 'Day'; break;
+            case DataTimeline::GRANULARITY_DAYS_PER_MONTH: $viewMode = 'Day'; break;
+            case DataTimeline::GRANULARITY_MONTHS: $viewMode = 'Month'; break;
+            case DataTimeline::GRANULARITY_WEEKS: $viewMode = 'Week'; break;
+            case DataTimeline::GRANULARITY_YEARS: $viewMode = 'Year'; break;
+            default: $viewMode = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
+        }
+        
         return <<<JS
 (function() {   
     return new Gantt("#{$this->getId()}_gantt", [
@@ -167,7 +170,7 @@ JS;
         bar_corner_radius: 3,
         arrow_curve: 5,
         padding: 14,
-        view_mode: 'Month',
+        view_mode: '$viewMode',
         date_format: $dateFormat,
         language: 'en', // or 'es', 'it', 'ru', 'ptBr', 'fr', 'tr', 'zh', 'de', 'hu'
         custom_popup_html: null,
