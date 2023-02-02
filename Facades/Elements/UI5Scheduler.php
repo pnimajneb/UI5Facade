@@ -49,6 +49,7 @@ class UI5Scheduler extends UI5AbstractElement
             case DataTimeline::GRANULARITY_DAYS_PER_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.OneMonth'; break;
             case DataTimeline::GRANULARITY_MONTHS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Month'; break;
             case DataTimeline::GRANULARITY_WEEKS: throw new FacadeUnsupportedWidgetPropertyWarning('Timeline granularity `weeks` currently not supported in UI5!'); break;
+            case DataTimeline::GRANULARITY_YEARS: throw new FacadeUnsupportedWidgetPropertyWarning('Timeline granularity `years` currently not supported in UI5!'); break;
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
