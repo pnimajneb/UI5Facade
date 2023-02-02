@@ -245,35 +245,23 @@ JS;
         $widget = $this->getWidget();
         $calItem = $widget->getTasksConfig();
         
-        $endTime = $calItem->hasEndTime() ? "oRow['{$calItem->getEndTimeColumn()->getDataColumnName()}']" : "''";
-        $subtitle = $calItem->hasSubtitle() ? "{$calItem->getSubtitleColumn()->getDataColumnName()}: oRow['{$calItem->getSubtitleColumn()->getDataColumnName()}']," : '';
-        
-        if ($widget->hasUidColumn()) {
-            $uid = "{$widget->getUidColumn()->getDataColumnName()}: oRow['{$widget->getUidColumn()->getDataColumnName()}'],";
-        }
-        
-        if ($workdayStart = $widget->getTimelineConfig()->getWorkdayStartTime()){
-            $workdayStartSplit = explode(':', $workdayStart);
-            $workdayStartSplit = array_map('intval', $workdayStartSplit);
-            $workdayStartJs = 'dMin.setHours(' . implode(', ', $workdayStartSplit) . ');';
-        }
-        
         return <<<JS
             (function(oTable) {
+                var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
                 var aTasks = [];
                 oTable.getRows().forEach(function(oTreeRow) {
                     var oCtxt = oTreeRow.getBindingContext();
                     if (! oCtxt) return;
                     var oRow = oTable.getModel().getProperty(oCtxt.sPath);
-                    var dMin, dStart, dEnd, sEnd;
                     var oTask = {
                         id: oRow['{$widget->getUidColumn()->getDataColumnName()}'],
                         name: oRow['{$calItem->getTitleColumn()->getDataColumnName()}'],
                         start: oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"],
                         end: oRow["{$calItem->getEndTimeColumn()->getDataColumnName()}"],
                         progress: 0,
-                        dependencies: '',
-                        custom_class: 'bar-style-' + oRow['roadmap_category']
+                        dependencies: ''/*,
+                        TODO
+                        custom_class: 'bar-style-' + */
                     };
     
                     if(oRow._children.length > 0 && oTask.start && oTask.end) {
@@ -281,22 +269,8 @@ JS;
                     }
     
                     aTasks.push(oTask);
-                    
-                    dStart = new Date(oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"]);
-                    if (dMin === undefined) {
-                        dMin = new Date(dStart.getTime());
-                        {$workdayStartJs}
-                    }
-                    sEnd = $endTime;
-                    if (sEnd) {
-                        dEnd = new Date(sEnd);
-                    } else {
-                        dEnd = new Date(dStart.getTime());
-                        dEnd.setHours(dEnd.getHours() + {$calItem->getDefaultDurationHours(1)});
-                    }
                 });
     
-                var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
                 oGantt.tasks = aTasks;
                 if (aTasks.length > 0) {
                     oGantt.refresh(aTasks);
@@ -306,77 +280,6 @@ JS;
             })($oTableJs)
             
 JS;
-    }
-    
-    /**
-     *
-     * @param string $oControlEventJsVar
-     * @param string $oParamsJs
-     * @param string $keepPagePosJsVar
-     * @return string
-     */
-    protected function buildJsDataLoaderParams(string $oControlEventJsVar = 'oControlEvent', string $oParamsJs = 'params', $keepPagePosJsVar = 'bKeepPagingPos') : string
-    {
-        // Don't call the parent here as we don't want "regular" pagination. 
-        $js = '';
-        
-        // If we are paging, page via start/end dates of the currently visible timeline
-        if ($this->getWidget()->isPaged()) {
-            $dateFormat = DateTimeDataType::DATETIME_ICU_FORMAT_INTERNAL;
-            return <<<JS
-        
-            var oPCal = sap.ui.getCore().byId('{$this->getId()}');
-            var oSchedulerModel = oPCal.getModel().getProperty('/_scheduler');
-            var oStartDate = oPCal.getStartDate();
-            var oEndDate = oPCal.getEndDate !== undefined ? oPCal.getEndDate() : oPCal._getFirstAndLastRangeDate().oEndDate.oDate;
-            if (oSchedulerModel !== undefined) {
-                if ($oParamsJs.data.filters === undefined) {
-                    $oParamsJs.data.filters = {operator: "AND", conditions: []};
-                }
-                $oParamsJs.data.filters.conditions.push({
-                    expression: '{$this->getWidget()->getTasksConfig()->getStartTimeColumn()->getDataColumnName()}',
-                    comparator: '>=',
-                    value: exfTools.date.format(oStartDate, '$dateFormat')
-                });
-                $oParamsJs.data.filters.conditions.push({
-                    expression: '{$this->getWidget()->getTasksConfig()->getStartTimeColumn()->getDataColumnName()}',
-                    comparator: '<=',
-                    value: exfTools.date.format(oEndDate, '$dateFormat')
-                });
-            }
-            
-JS;
-        }
-        return $js;
-    }
-    
-    /**
-     *
-     * @return bool
-     */
-    protected function hasQuickSearch() : bool
-    {
-        return true;
-    }
-    
-    /**
-     *
-     * {@inheritdoc}
-     * @see UI5DataElementTrait::buildJsClickHandlerLeftClick()
-     */
-    protected function buildJsClickHandlerLeftClick($oControllerJsVar = 'oController') : string
-    {
-        // Single click. Currently only supports one click action - the first one in the list of buttons
-        if ($leftclick_button = $this->getWidget()->getButtonsBoundToMouseAction(EXF_MOUSE_ACTION_LEFT_CLICK)[0]) {
-            return <<<JS
-            
-            .attachAppointmentSelect(function(oEvent) {
-                {$this->getFacade()->getElement($leftclick_button)->buildJsClickEventHandlerCall($oControllerJsVar)};
-            })
-JS;
-        }
-        
-        return '';
     }
     
     /**
@@ -397,20 +300,6 @@ JS;
         return false;
     }
     
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::addOnChangeScript()
-     */
-    public function addOnChangeScript($js)
-    {
-        if (strpos($js, $this->buildJsValueGetter('~start_date')) !== false || strpos($js, $this->buildJsValueGetter('~end_date')) !== false) {
-            $this->getController()->addOnEventScript($this, UI5Gantt::EVENT_NAME_TIMELINE_SHIFT, $js);
-            return $this;
-        }
-        return parent::addOnChangeScript($js);
-    }
-    
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
     {
         // $f = $this->getFacade();
@@ -419,19 +308,23 @@ JS;
         return $this;
     }
     
-    protected function buildJsRowPropertyColor(DataCalendarItem $calItem) : string
+    /**
+     * 
+     * @param DataCalendarItem $calItem
+     * @param string $oRowJs
+     * @return string
+     */
+    protected function buildJsColorResolver(DataCalendarItem $calItem, string $oRowJs) : string
     {
         switch (true) {
             case $colorCol = $calItem->getColorColumn();
-            $semanticColors = $this->getFacade()->getSemanticColors();
-            $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
-            return <<<JS
-                    color: {
-                        path: "{$colorCol->getDataColumnName()}",
-                        formatter: function(value){
+                $semanticColors = $this->getFacade()->getSemanticColors();
+                $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
+                if ($calItem->hasColorScale()) {
+                    return <<<JS
+                        (function(oRow){
+                            var value = oRowJs['{$colorCol->getDataColumnName()}']
                             var sColor = {$this->buildJsScaleResolver('value', $calItem->getColorScale(), $calItem->isColorScaleRangeBased())};
-                            var sValueColor;
-                            var oCtrl = this;
                             var sCssColor = '';
                             var oSemanticColors = $semanticColorsJs;
                             if (sColor.startsWith('~')) {
@@ -440,11 +333,13 @@ JS;
                                 sCssColor = sColor;
                             }
                             return sCssColor;
-                        }
-                    },
+                        })(oRow)
 JS;
+                } else {
+                    return "oRow['{$colorCol->getDataColumnName()}']";
+                }
             case null !== $colorVal = $calItem->getColor():
-                return 'color: ' . $this->escapeString($colorVal) . ',';
+                return $this->escapeString($colorVal);
         }
         return '';
     }
@@ -458,16 +353,31 @@ JS;
         return parent::buildJsDataResetter() . "; sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())});";
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isUiTable()
+     */
     protected function isUiTable() : bool
     {
         return true;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isMTable()
+     */
     protected function isMTable() : bool
     {
         return false;
     }
     
+    /**
+     * TODO For some reason, transforming model data to tree did not work when there was a dirty-column
+     * 
+     * @return bool
+     */
     protected function hasDirtyColumn() : bool
     {
         return false;
