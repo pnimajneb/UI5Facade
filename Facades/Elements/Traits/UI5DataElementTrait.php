@@ -537,7 +537,7 @@ if (jqFullscreenContainer.hasClass('fullscreen') === false) {
     oButton.setIcon('sap-icon://full-screen');
 }
 JS;
-        $this->getController()->addOnHideViewScript("if (jqFullscreenContainer.hasClass('fullscreen') === true) {{$script}}", true);
+        $this->getController()->addOnHideViewScript("if ({$this->buildJsFullscreenContainerGetter()}.hasClass('fullscreen') === true) {{$script}}", true);
         return <<<JS
         
                     new sap.m.OverflowToolbarButton({
