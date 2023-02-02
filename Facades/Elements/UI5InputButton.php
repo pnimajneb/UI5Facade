@@ -43,17 +43,6 @@ JS;
             $btnElement->addOnErrorScript($this->buildJsCallFunction(Input::FUNCTION_EMPTY));
         }
         
-        // Select complete text in the input when it is focused
-        if ($widget->getValueSelectedOnFocus() === true) {
-            $jsFocus = <<<JS
-var value = sap.ui.getCore().byId('{$this->getId()}').getValue();
-var length = value.length
-sap.ui.getCore().byId('{$this->getId()}').selectText(0,length);
-
-JS;
-            $this->getController()->addOnInitScript("sap.ui.getCore().byId('{$this->getId()}').onfocusin = (function(oEvent){{$jsFocus}});");
-        }
-        
         return <<<JS
 
         new sap.m.HBox({
@@ -79,7 +68,37 @@ JS;
 
 JS;
     }
-            
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsPseudoEventHandlers()
+     */
+    protected function buildJsPseudoEventHandlers()
+    {
+        // Select complete text in the input when it is focused
+        if ($this->getWidget()->getValueSelectedOnFocus()) {
+            $this->addPseudoEventHandler('onfocusin', $this->buildJsValueSelectedOnFocus());
+        }
+        return parent::buildJsPseudoEventHandlers();
+    }
+    
+    /**
+     * Javascript to select the complete value of the input when it gets focused
+     * 
+     * @return string
+     */
+    protected function buildJsValueSelectedOnFocus() : string
+    {
+        return <<<JS
+        
+                (function(){
+                    var iLength = sap.ui.getCore().byId('{$this->getId()}').getValue().length
+                    sap.ui.getCore().byId('{$this->getId()}').selectText(0, iLength);
+                })();                
+JS;
+    }
+    
     public function buildJsValueGetter(string $dataColumnName = null, string $iRowJs = null)
     {
         $widget = $this->getWidget();
