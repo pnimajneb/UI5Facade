@@ -494,6 +494,19 @@ JS;
     }
     
     /**
+     * Returns an inline JS snippet to select the jQuery element, that should be maximized.
+     * 
+     * Technically, the respective DOM element will get the CSS class `fullscreen`. Depending
+     * on the DOM structure of a speicifc control, you might need to override this method.
+     * 
+     * @return string
+     */
+    protected function buildJsFullscreenContainerGetter() : string
+    {
+        return "$('#{$this->getId()}').parent().parent()";
+    }
+    
+    /**
      * Returns the JS constructor for the fullscreen button.
      * 
      * Must end with a comma unless it is an empty string!
@@ -508,20 +521,23 @@ JS;
         $id = $this->getId() . '_fullscreenButton';
         
         $script = <<<JS
-if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === false) {
-    $('#{$this->getId()}')[0]._originalParent = $('#{$this->getId()}').parent().parent().parent();
-    $('#{$this->getId()}').parent().parent().appendTo($('#sap-ui-static')[0]).addClass('fullscreen');
-    sap.ui.getCore().getElementById('{$id}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
-    sap.ui.getCore().getElementById('{$id}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
-    sap.ui.getCore().getElementById('{$id}').setIcon('sap-icon://exit-full-screen');
+var jqFullscreenContainer = {$this->buildJsFullscreenContainerGetter()};
+var oButton = sap.ui.getCore().getElementById('{$id}');
+var jqButton = $('#{$this->getId()}')[0];
+if (jqFullscreenContainer.hasClass('fullscreen') === false) {
+    jqButton._originalParent = jqFullscreenContainer.parent();
+    jqFullscreenContainer.appendTo($('#sap-ui-static')[0]).addClass('fullscreen');
+    oButton.setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
+    oButton.setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MINIMIZE')}");
+    oButton.setIcon('sap-icon://exit-full-screen');
 } else {
-    $('#{$this->getId()}').parent().parent().appendTo($('#{$this->getId()}')[0]._originalParent).removeClass('fullscreen');
-    sap.ui.getCore().getElementById('{$id}').setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
-    sap.ui.getCore().getElementById('{$id}').setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
-    sap.ui.getCore().getElementById('{$id}').setIcon('sap-icon://full-screen');
+    jqFullscreenContainer.appendTo(jqButton._originalParent).removeClass('fullscreen');
+    oButton.setTooltip("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
+    oButton.setText("{$this->translate('WIDGET.CHART.FULLSCREEN_MAXIMIZE')}");
+    oButton.setIcon('sap-icon://full-screen');
 }
 JS;
-        $this->getController()->addOnHideViewScript("if ($('#{$this->getId()}').parent().parent().hasClass('fullscreen') === true) {{$script}}", true);
+        $this->getController()->addOnHideViewScript("if (jqFullscreenContainer.hasClass('fullscreen') === true) {{$script}}", true);
         return <<<JS
         
                     new sap.m.OverflowToolbarButton({

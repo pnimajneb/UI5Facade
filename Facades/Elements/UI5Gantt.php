@@ -10,6 +10,8 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
+use exface\Core\Facades\AbstractAjaxFacade\Formatters\JsDateFormatter;
+use exface\Core\DataTypes\DateDataType;
 
 /**
  * 
@@ -50,8 +52,12 @@ class UI5Gantt extends UI5DataTable
         $selection_mode = $widget->getMultiSelect() ? 'sap.ui.table.SelectionMode.MultiToggle' : 'sap.ui.table.SelectionMode.Single';
         $selection_behavior = $widget->getMultiSelect() ? 'sap.ui.table.SelectionBehavior.Row' : 'sap.ui.table.SelectionBehavior.RowOnly';
         
-        $startDateProp = $this->getWidget()->getStartDate() ? "startDate: exfTools.date.parse('{$this->getWidget()->getStartDate()}')," : '';
-        $controller->addDependentObject('gantt', $this, 'null');
+        if ($widget->getTreeExpandedLevels() !== null) {
+            $numberOfExpandedLevelsJs = "numberOfExpandedLevels: {$widget->getTreeExpandedLevels()},";
+        } else {
+            $numberOfExpandedLevelsJs = "";
+        }
+        
         $gantt = <<<JS
         new sap.ui.layout.Splitter({
             contentAreas: [
@@ -63,7 +69,7 @@ class UI5Gantt extends UI5DataTable
                             arrayNames: [
                                 '_children'
                             ],
-                            numberOfExpandedLevels: 1
+                            {$numberOfExpandedLevelsJs}
                         }
                     },
                     selectionMode: {$selection_mode},
@@ -84,14 +90,22 @@ class UI5Gantt extends UI5DataTable
                     ],
                     toggleOpenState: function(oEvent) {
                         var oTable = oEvent.getSource();
-                        var oModel = oTable.getModel();
                         setTimeout(function(){
-                            {$this->buildJsRefreshGantt('oModel')};
+                            {$this->buildJsSyncTreeToGantt('oTable')};
+                        },10);
+                    },
+                    firstVisibleRowChanged: function(oEvent) {
+                        var oTable = oEvent.getSource();
+                        var domGanttContainer = $('#{$this->getId()}_gantt .gantt-container')[0];
+                        var iScrollLeft = domGanttContainer.scrollLeft;
+                        setTimeout(function(){
+                            {$this->buildJsSyncTreeToGantt('oTable')};
+                            domGanttContainer.scrollTo(iScrollLeft, 0);
                         },10);
                     }
                 }),
                 new sap.ui.core.HTML("{$this->getId()}_wrapper", {
-                    content: "<div id=\"{$this->getId()}_wrapper\" style=\"height: 100%;\"><div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div></div>",
+                    content: "<div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
                     afterRendering: function(oEvent) {
                         var oCtrl = sap.ui.getCore().byId('{$this->getId()}');
                         if (oCtrl.gantt === undefined) {
@@ -99,9 +113,9 @@ class UI5Gantt extends UI5DataTable
                             var oRowsBinding = new sap.ui.model.Binding(sap.ui.getCore().byId('{$this->getId()}').getModel(), '/rows', sap.ui.getCore().byId('{$this->getId()}').getModel().getContext('/rows'));
                             oRowsBinding.attachChange(function(oEvent){
                                 var oBinding = oEvent.getSource();
-                                var oModel = oBinding.getModel();
+                                var oTable = sap.ui.getCore().getElementById('{$this->getId()}');
                                 setTimeout(function(){
-                                    {$this->buildJsRefreshGantt('oModel')};
+                                    {$this->buildJsSyncTreeToGantt('oTable')};
                                 },100);
                             });
                         }
@@ -118,7 +132,7 @@ class UI5Gantt extends UI5DataTable
         })
 
 JS;
-        return $this->buildJsPanelWrapper($gantt, $oControllerJs);
+        return $this->buildJsPanelWrapper($gantt, $oControllerJs) . ".addStyleClass('sapUiNoContentPadding')";
     }
     
     protected function buildJsGanttGetInstance() : string
@@ -132,19 +146,17 @@ JS;
         $calItem = $widget->getTasksConfig();
         $startCol = $calItem->getStartTimeColumn();
         $startFormatter = $this->getFacade()->getDataTypeFormatter($startCol->getDataType());
+        $dateFormat = $this->escapeString($this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT'));
         $endCol = $calItem->getEndTimeColumn();
         $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());
         return <<<JS
 (function() {   
     return new Gantt("#{$this->getId()}_gantt", [
       {
-        id: 'Task 1',
-        name: 'Loading',
-        start: '2022-12-28',
-        end: '2022-12-31',
-        progress: 20,
-        dependencies: 'Task 2, Task 3',
-        custom_class: 'bar-milestone' // optional
+        id: 1,
+        name: 'Loading...',
+        start: null,
+        end: null
       }
     ], {
         header_height: 46,
@@ -156,18 +168,18 @@ JS;
         arrow_curve: 5,
         padding: 14,
         view_mode: 'Month',
-        date_format: 'DD.MM.YYYY',
+        date_format: $dateFormat,
         language: 'en', // or 'es', 'it', 'ru', 'ptBr', 'fr', 'tr', 'zh', 'de', 'hu'
         custom_popup_html: null,
     	on_date_change: function(oTask, dStart, dEnd) {
     		var oTable = sap.ui.getCore().byId('{$this->getId()}');
             var oModel = oTable.getModel();
-            oModel.getProperty('/rows').forEach(function(oRow, i) {
-                if (oRow['{$widget->getUidColumn()->getDataColumnName()}'] == oTask.id) {
-                    oModel.setProperty('/rows/' + i + '/{$startCol->getDataColumnName()}', {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
-                    oModel.setProperty('/rows/' + i + '/{$endCol->getDataColumnName()}', {$endFormatter->buildJsFormatDateObjectToInternal('dEnd')});
-                }
-            });
+            var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
+            var iRow = oGantt.tasks.indexOf(oTask);
+            var oCtxt = oTable.getRows()[iRow].getBindingContext();
+            var oRow = oTable.getModel().getProperty(oCtxt.sPath);
+            oModel.setProperty(oCtxt.sPath + '/{$startCol->getDataColumnName()}', {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
+            oModel.setProperty(oCtxt.sPath + '/{$endCol->getDataColumnName()}', {$endFormatter->buildJsFormatDateObjectToInternal('dEnd')});
     	}
     });
 })();
@@ -220,27 +232,12 @@ JS;
 
                     oDataTree.rows = list_to_tree(oDataFlat.rows);
                     return oDataTree;
-/*
-                    oDataFlat.rows.forEach(function(oRow){
-                        if (oRow[sParentCol] === null || oRow[sParentCol] === '') {
-                            oDataTree.rows.push(oRow);
-                        }
-                    });
-                    oDataFlat.rows.forEach(function(oRow){
-                        var oParentRow;
-                        if (oRow[sParentCol] !== null && oRow[sParentCol] !== '') {
-                            oParentRow = oDataTree.rows.filter(function(oRowTree) {
-                                return oRow[sParentCol] 
-                            });
-                        }
-                    });
-*/
                 })($oDataJs)
 
 JS;
     }
     
-    protected function buildJsRefreshGantt(string $oModelJs) : string
+    protected function buildJsSyncTreeToGantt(string $oTableJs) : string
     {
         $widget = $this->getWidget();
         $calItem = $widget->getTasksConfig();
@@ -259,53 +256,51 @@ JS;
         }
         
         return <<<JS
-        
-            var aData = {$oModelJs}.getProperty('/rows') || [];
-            var oRows = [];
-            var aTasks = [];
-            var oTable = sap.ui.getCore().byId('{$this->getId()}');
-            oTable.getRows().forEach(function(oTreeRow) {
-                var oCtxt = oTreeRow.getBindingContext();
-                if (! oCtxt) return;
-                var oRow = oTable.getModel().getProperty(oCtxt.sPath);
-                var dMin, dStart, dEnd, sEnd;
-                var oTask = {
-                    id: oRow['{$widget->getUidColumn()->getDataColumnName()}'],
-                    name: oRow['{$calItem->getTitleColumn()->getDataColumnName()}'],
-                    start: oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"],
-                    end: oRow["{$calItem->getEndTimeColumn()->getDataColumnName()}"],
-                    progress: 0,
-                    dependencies: '',
-                    custom_class: 'bar-style-' + oRow['roadmap_category']
-                };
-
-                if(oRow._children.length > 0 && oTask.start && oTask.end) {
-                    oTask.custom_class += ' bar-folder';
+            (function(oTable) {
+                var aTasks = [];
+                oTable.getRows().forEach(function(oTreeRow) {
+                    var oCtxt = oTreeRow.getBindingContext();
+                    if (! oCtxt) return;
+                    var oRow = oTable.getModel().getProperty(oCtxt.sPath);
+                    var dMin, dStart, dEnd, sEnd;
+                    var oTask = {
+                        id: oRow['{$widget->getUidColumn()->getDataColumnName()}'],
+                        name: oRow['{$calItem->getTitleColumn()->getDataColumnName()}'],
+                        start: oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"],
+                        end: oRow["{$calItem->getEndTimeColumn()->getDataColumnName()}"],
+                        progress: 0,
+                        dependencies: '',
+                        custom_class: 'bar-style-' + oRow['roadmap_category']
+                    };
+    
+                    if(oRow._children.length > 0 && oTask.start && oTask.end) {
+                        oTask.custom_class += ' bar-folder';
+                    }
+    
+                    aTasks.push(oTask);
+                    
+                    dStart = new Date(oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"]);
+                    if (dMin === undefined) {
+                        dMin = new Date(dStart.getTime());
+                        {$workdayStartJs}
+                    }
+                    sEnd = $endTime;
+                    if (sEnd) {
+                        dEnd = new Date(sEnd);
+                    } else {
+                        dEnd = new Date(dStart.getTime());
+                        dEnd.setHours(dEnd.getHours() + {$calItem->getDefaultDurationHours(1)});
+                    }
+                });
+    
+                var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
+                oGantt.tasks = aTasks;
+                if (aTasks.length > 0) {
+                    oGantt.refresh(aTasks);
+                } else  {
+                    oGantt.clear();
                 }
-
-                aTasks.push(oTask);
-                
-                dStart = new Date(oRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"]);
-                if (dMin === undefined) {
-                    dMin = new Date(dStart.getTime());
-                    {$workdayStartJs}
-                }
-                sEnd = $endTime;
-                if (sEnd) {
-                    dEnd = new Date(sEnd);
-                } else {
-                    dEnd = new Date(dStart.getTime());
-                    dEnd.setHours(dEnd.getHours() + {$calItem->getDefaultDurationHours(1)});
-                }
-            });
-console.log(aTasks);
-            var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
-            oGantt.tasks = aTasks;
-            if (aTasks.length > 0) {
-                oGantt.refresh(aTasks);
-            } else  {
-                oGantt.clear();
-            }
+            })($oTableJs)
             
 JS;
     }
@@ -473,5 +468,14 @@ JS;
     protected function hasDirtyColumn() : bool
     {
         return false;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsFullscreenContainerGetter() : string
+    {
+        return "$('#{$this->getId()}').parents('.sapMPanel').first().parent().parent()";
     }
 }
