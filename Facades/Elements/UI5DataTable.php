@@ -1119,9 +1119,11 @@ JS;
     {
         if ($this->isMList() === true) {
             $setSelectJs = ($deSelect === true) ? 'false' : 'true';
+            //filter items to only get items with binding context
+            //necessary as row groupers add item without binding to table
             return <<<JS
 
-                var oItem = {$oTableJs}.getItems()[{$iRowIdxJs}];
+                var oItem = {$oTableJs}.getItems().filter(function(oItem){return oItem.getBindingContext() !== undefined})[{$iRowIdxJs}];
                 {$oTableJs}.setSelectedItem(oItem, {$setSelectJs});
                 {$oTableJs}.fireSelectionChange({listItem: oItem, selected: $setSelectJs});
                 oItem.focus();
