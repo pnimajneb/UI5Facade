@@ -40,6 +40,7 @@ use exface\Core\Interfaces\Selectors\FacadeSelectorInterface;
 use exface\Core\Interfaces\PWA\PWAInterface;
 use exface\Core\Interfaces\Selectors\PWASelectorInterface;
 use exface\Core\CommonLogic\Selectors\PWASelector;
+use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
 
 /**
  * Renders SAP Fiori apps using OpenUI5 or SAP UI5.
@@ -613,7 +614,7 @@ JS;
         
         $headers = array_merge($headers, $this->buildHeadersForErrors());
         
-        return new Response(401, $headers, $responseBody);
+        return new Response($exception instanceof AuthorizationExceptionInterface ? $exception->getStatusCode() : 401, $headers, $responseBody);
     }
     
     /**
