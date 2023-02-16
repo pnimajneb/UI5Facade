@@ -266,6 +266,7 @@ JS;
                 oRows[sRowKey].items.push({
                     _start: dStart,
                     _end: dEnd,
+                    _dataRowIdx: i,
                     {$calItem->getTitleColumn()->getDataColumnName()}: oDataRow["{$calItem->getTitleColumn()->getDataColumnName()}"],
                     {$uid}
                     {$subtitle}
@@ -472,5 +473,51 @@ JS;
             return $this;
         }
         return parent::addOnChangeScript($js);
+    }
+    
+    /**
+     * @see UI5DataElementTrait::buildJsSelectRowByIndex()
+     * @param string $oTableJs
+     * @param string $iRowIdxJs
+     * @param bool $deSelect
+     * @param string $bScrollToJs
+     * @return string
+     */
+    public function buildJsSelectRowByIndex(string $oTableJs = 'oTable', string $iRowIdxJs = 'iRowIdx', bool $deSelect = false, string $bScrollToJs = 'true') : string
+    {
+        if ($deSelect) {
+            $js = "if (oItem.getBindingContext().getProperty('_dataRowIdx') == iRowIdx) { oItem.setSelected(false); }";
+        } else {
+            $js = "oItem.setSelected((oItem.getBindingContext().getProperty('_dataRowIdx') == iRowIdx ? true : false));";
+        }
+        
+        return <<<JS
+        (function(oTable, iRowIdx, bScrollTo){
+            oTable.getRows().forEach(function(oCalRow){
+                oCalRow.getAppointments().forEach(function(oItem){
+                    $js
+                });
+            });
+        })($oTableJs, $iRowIdxJs, $bScrollToJs)
+
+JS;
+    }
+    
+    /**
+     * @see UI5DataElementTrait::buildJsClickGetRowIndex()
+     * @param string $oDomElementClickedJs
+     * @return string
+     */
+    protected function buildJsClickGetRowIndex(string $oDomElementClickedJs) : string
+    {
+        return <<<JS
+        (function(domClicked){
+            var sCalDomId = $(domClicked).parents('div.sapUiCalendarApp').data('sap-ui');
+            var oCalItem = sap.ui.getCore().byId(sCalDomId);
+            if (oCalItem === undefined) return -1;
+            return oCalItem.getBindingContext().getProperty('_dataRowIdx');
+        })($oDomElementClickedJs)
+JS;
+        return "sap.ui.getCore().byId($({$oDomElementClickedJs}).parents('div.sapUiCalendarApp').data('data-sap-ui')).getKey()";
     }
 }
