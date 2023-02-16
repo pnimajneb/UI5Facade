@@ -131,8 +131,7 @@ JS;
 					tooltip: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
 					{$subtitleOptions}
 					key: "{{$this->getMetaObject()->getUidAttributeAlias()}}",
-					type: "{type}",
-                    {$this->buildJsRowPropertyColor($calItem)}
+                    {$this->buildJsAppointmentPropertyColor($calItem)}
 				})
             },
 			intervalHeaders: {
@@ -144,7 +143,6 @@ JS;
 					icon: "{pic}",
 					title: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
 					{$subtitleOptions}
-					type: "{type}",
 				})
             },
 		})
@@ -152,7 +150,7 @@ JS;
 JS;
     }
     
-    protected function buildJsRowPropertyColor(DataCalendarItem $calItem) : string
+    protected function buildJsAppointmentPropertyColor(DataCalendarItem $calItem) : string
     {
         switch (true) {
             case $colorCol = $calItem->getColorColumn();

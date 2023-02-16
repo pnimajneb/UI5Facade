@@ -2,6 +2,7 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Interfaces\Widgets\iHaveColorScale;
+use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 
 /**
  * Renders a sap.m.ProgressIndicator for a ProgressBar widget
@@ -13,6 +14,8 @@ use exface\Core\Interfaces\Widgets\iHaveColorScale;
  */
 class UI5ProgressBar extends UI5Display
 {
+    use UI5ColorClassesTrait;
+    
     private $textBindingPath = null;
     
     /**
@@ -25,7 +28,10 @@ class UI5ProgressBar extends UI5Display
         // Register stuff here, that is needed for in-table rendering where buildJsConstructor()
         // is not called
         $this->registerExternalModules($this->getController());
-        $this->registerColorClasses();
+        if ($this->getWidget()->hasColorScale()) {
+            $this->registerColorClasses($this->getWidget()->getColorScale(), '.exf-custom-color.exf-color-[#color#] .sapMPIBar');
+        }
+        
         
         // NOTE: displayOnly:true makes the progressbar look nice inside responsive table 
         // cells! Otherwise it has top and bottom margins and is displayed uneven with the
@@ -194,46 +200,6 @@ JS;
         })($oControlJs, $sColorJs);
 
 JS;
-    }
-    
-    /**
-     * @return void
-     */
-    protected function registerColorClasses()
-    {
-        if (! $this->getWidget()->hasColorScale()) {
-            return;
-        }
-        $css = '';
-        foreach ($this->getWidget()->getColorScale() as $color) {
-            if (substr($color, 0, 1) === '~') {
-                continue;
-            }
-            $css .= '.exf-custom-color.exf-color-' . trim(trim($color), "#") . ' .sapMPIBar {background-color: ' . $color . '}';
-        }
-        
-        $cssId = $this->getId();
-        if (! $this->getUseWidgetId()) {
-            $this->setUseWidgetId(true);
-            $cssId = $this->getId();
-            $this->setUseWidgetId(false);
-        }
-        $cssId .= '_color_css';
-        
-        $this->getController()->addOnShowViewScript(<<<JS
-            
-(function(){
-    var jqTag = $('#{$cssId}');
-    if (jqTag.length === 0) {
-        $('head').append($('<style type="text/css" id="{$cssId}"></style>').text('$css'));
-    }
-})();
-
-JS, false);
-        
-        $this->getController()->addOnHideViewScript("$('#{$cssId}').remove();");
-        
-        return;
     }
     
     /**
