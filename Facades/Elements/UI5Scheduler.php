@@ -59,6 +59,12 @@ class UI5Scheduler extends UI5AbstractElement
     startDateChange: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
     viewChange: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
 JS;
+        } else {
+            $refreshOnNavigation = <<<JS
+            
+    startDateChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, true)},
+    viewChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, true)},
+JS;
         }
         
         if (! $this->getWidget()->getItemsConfig()->hasSubtitle()) {
