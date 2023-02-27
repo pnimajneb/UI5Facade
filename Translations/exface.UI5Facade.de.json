@@ -1,6 +1,8 @@
 {
 	"ACTION.EXPORTFIORIWEBAPP.NAME": "Export",
 	
+	"CONTEXT.BUTTON.CLOSE": "Schließen",
+	
 	"ERROR.DETAILS": "Details",
 	"ERROR.LOG_ID_HINT": "Bei Support-Anfragen bitte angeben!",
 	"ERROR.BUTTON_TEXT": "Schließen",
