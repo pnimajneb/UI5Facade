@@ -242,3 +242,10 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .exf-gantt .gantt-container {height: 100%; overflow-y: hidden;}
 .exf-gantt .gantt .tick {stroke: #ddd}
 .bar-folder {filter: drop-shadow(0px -3px 0px rgb(0 0 0 / 0.8))}
+
+/* Scheduler */
+.sapMPlanCal.halfHeight>.sapMList>table>tbody>tr>td>.sapUiCalendarRow:not(.sapMPlanCalRowLarge)>.sapUiCalendarRowApps {
+    min-height: 2rem; height: 100% !important;
+}
+.sapMPlanCal.halfHeight>.sapMList .sapMListTblCell.sapMPlanCalAppRow {height: inherit;}
+.sapMPlanCal.halfHeight>.sapMList .sapMPlanCalAppRow>.sapUiCalendarRow {height: 100%}

@@ -41,6 +41,20 @@ class UI5Scheduler extends UI5AbstractElement
         $controller = $this->getController();
         $this->initConfiguratorControl($controller);
         
+        $cssClasses = '';
+        $customViewsJs = <<<JS
+        
+        new sap.m.PlanningCalendarView({
+            description: 'Years',
+            key: 'Years',
+            intervalsL: 24,
+            intervalsM: 16,
+            intervalsS: 12,
+            intervalType: 'Month',
+            showSubIntervals: false
+        }),
+JS;
+        
         $showRowHeaders = $this->getWidget()->hasResources() ? 'true' : 'false';
         switch ($this->getWidget()->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
             case DataTimeline::GRANULARITY_HOURS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
@@ -49,7 +63,7 @@ class UI5Scheduler extends UI5AbstractElement
             case DataTimeline::GRANULARITY_DAYS_PER_MONTH: $viewKey = 'sap.ui.unified.CalendarIntervalType.OneMonth'; break;
             case DataTimeline::GRANULARITY_MONTHS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Month'; break;
             case DataTimeline::GRANULARITY_WEEKS: throw new FacadeUnsupportedWidgetPropertyWarning('Timeline granularity `weeks` currently not supported in UI5!'); break;
-            case DataTimeline::GRANULARITY_YEARS: throw new FacadeUnsupportedWidgetPropertyWarning('Timeline granularity `years` currently not supported in UI5!'); break;
+            case DataTimeline::GRANULARITY_YEARS: $viewKey = "'Years'"; break;
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
@@ -69,6 +83,9 @@ JS;
         
         if (! $this->getWidget()->getItemsConfig()->hasSubtitle()) {
             $aptHeight = 'appointmentHeight: sap.ui.unified.CalendarAppointmentHeight.HalfSize,';
+            // Reduce the height of the planning calendar rows too with a CSS hack
+            // @see https://answers.sap.com/questions/13327688/row-height-of-the-planning-calendar.html
+            $cssClasses .= 'halfHeight';
         } else {
             $aptHeight = '';
         }
@@ -81,9 +98,20 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
     {$startDateProp}
     {$aptHeight}
 	appointmentsVisualization: "Filled",
+    builtInViews: [
+        sap.ui.unified.CalendarIntervalType.Hour,
+        sap.ui.unified.CalendarIntervalType.Day,
+        sap.ui.unified.CalendarIntervalType.Week,
+        sap.ui.unified.CalendarIntervalType.OneMonth,
+        sap.ui.unified.CalendarIntervalType.Month
+    ],
+    views: [
+        $customViewsJs
+    ],
     viewKey: $viewKey,
 	showRowHeaders: {$showRowHeaders},
     showEmptyIntervalHeaders: false,
+    showIntervalHeaders: true,
 	showWeekNumbers: true,
     {$refreshOnNavigation}
     appointmentSelect: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
@@ -97,6 +125,7 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
 	}
 })
 .data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())})
+.addStyleClass('$cssClasses')
 {$this->buildJsClickHandlers($oControllerJs)}
 
 JS;
@@ -139,7 +168,7 @@ JS;
 					key: "{{$this->getMetaObject()->getUidAttributeAlias()}}",
                     {$this->buildJsAppointmentPropertyColor($calItem)}
 				})
-            },
+            },/*
 			intervalHeaders: {
                 path: 'headers', 
                 templateShareable: true,
@@ -147,10 +176,9 @@ JS;
 					startDate: "{start}",
 					endDate: "{end}",
 					icon: "{pic}",
-					title: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
-					{$subtitleOptions}
+					title: "{title}"
 				})
-            },
+            },*/
 		})
 
 JS;
@@ -160,13 +188,14 @@ JS;
     {
         switch (true) {
             case $colorCol = $calItem->getColorColumn();
+                $colorResolverJs = ! $calItem->hasColorScale() ? '(value || "").toString()' : $this->buildJsScaleResolver('value', $calItem->getColorScale(), $calItem->isColorScaleRangeBased());
                 $semanticColors = $this->getFacade()->getSemanticColors();
                 $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
                 return <<<JS
                     color: {
                         path: "{$colorCol->getDataColumnName()}",
                         formatter: function(value){
-                            var sColor = {$this->buildJsScaleResolver('value', $calItem->getColorScale(), $calItem->isColorScaleRangeBased())};
+                            var sColor = {$colorResolverJs};
                             var sValueColor;
                             var oCtrl = this;
                             var sCssColor = '';
@@ -206,11 +235,6 @@ JS;
         $calItem = $widget->getItemsConfig();
         
         $endTime = $calItem->hasEndTime() ? "oDataRow['{$calItem->getEndTimeColumn()->getDataColumnName()}']" : "''";
-        $subtitle = $calItem->hasSubtitle() ? "{$calItem->getSubtitleColumn()->getDataColumnName()}: oDataRow['{$calItem->getSubtitleColumn()->getDataColumnName()}']," : '';
-        
-        if ($widget->hasUidColumn()) {
-            $uid = "{$widget->getUidColumn()->getDataColumnName()}: oDataRow['{$widget->getUidColumn()->getDataColumnName()}'],";
-        }
         
         if ($workdayStart = $widget->getTimelineConfig()->getWorkdayStartTime()){
             $workdayStartSplit = explode(':', $workdayStart);
@@ -263,14 +287,15 @@ JS;
                     dEnd = new Date(dStart.getTime());
                     dEnd.setHours(dEnd.getHours() + {$calItem->getDefaultDurationHours(1)});
                 }
-                oRows[sRowKey].items.push({
-                    _start: dStart,
-                    _end: dEnd,
-                    _dataRowIdx: i,
-                    {$calItem->getTitleColumn()->getDataColumnName()}: oDataRow["{$calItem->getTitleColumn()->getDataColumnName()}"],
-                    {$uid}
-                    {$subtitle}
-                });
+                oRows[sRowKey].items.push(
+                    $.extend({
+                            _start: dStart,
+                            _end: dEnd,
+                            _dataRowIdx: i
+                        }, 
+                        oDataRow
+                    )
+                );
             }
 
             if (dMin !== undefined && ! sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate') && {$oModelJs}.getProperty('/_scheduler') === undefined) {
