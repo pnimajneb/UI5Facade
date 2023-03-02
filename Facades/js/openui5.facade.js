@@ -246,7 +246,7 @@ const exfLauncher = {};
 				if (oPopover) {
 					return;
 				} else {
-					oPopover = new sap.m.Popover(sPopoverId, {
+					oPopover = new sap.m.ResponsivePopover(sPopoverId, {
 						title: oButton.getTooltip(),
 						placement: "Bottom",
 						busy: true,
@@ -267,8 +267,20 @@ const exfLauncher = {};
 									})
 								]
 							})
+						],
+						endButton: [
+							new sap.m.Button({
+								icon: 'sap-icon://font-awesome/close',
+					            text: "{i18n>CONTEXT.BUTTON.CLOSE}",
+					            press: function() {oPopover.close();},
+					        })
+							
 						]
-					}).setBusyIndicatorDelay(0);
+						
+					})
+					.setModel(oButton.getModel())
+					.setModel(oButton.getModel('i18n'), 'i18n')
+					.setBusyIndicatorDelay(0);
 					oPopover.addStyleClass('exf-context-popup');
 					
 					jQuery.sap.delayedCall(0, this, function () {
@@ -380,7 +392,7 @@ const exfLauncher = {};
 		var oButton = oEvent.getSource();
 		var button = new sap.m.Button({
 			icon: 'sap-icon://font-awesome/close',
-            text: "Close",
+            text: "{i18n>WEBAPP.SHELL.NETWORK.STORAGE_CLOSE}",
             press: function() {dialog.close();},
         });
 		dialog.addButton(button);
@@ -1134,7 +1146,7 @@ const exfLauncher = {};
 		var oButton = oEvent.getSource();
 		var oPopover = sap.ui.getCore().byId('exf-network-menu');
 		if (oPopover === undefined) {
-			oPopover = new sap.m.Popover("exf-network-menu", {
+			oPopover = new sap.m.ResponsivePopover("exf-network-menu", {
 				title: "{= ${/_network/online} > 0 ? ${i18n>WEBAPP.SHELL.NETWORK.ONLINE} : ${i18n>WEBAPP.SHELL.NETWORK.OFFLINE} }",
 				placement: "Bottom",
 				content: [
@@ -1189,6 +1201,14 @@ const exfLauncher = {};
 							})
 						]
 					})
+				],
+				endButton: [
+					new sap.m.Button({
+						icon: 'sap-icon://font-awesome/close',
+			            text: "{i18n>CONTEXT.BUTTON.CLOSE}",
+			            press: function() {oPopover.close();},
+			        })
+					
 				]
 			})
 			.setModel(oButton.getModel())
