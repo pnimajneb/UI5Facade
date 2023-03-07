@@ -12,6 +12,7 @@ use exface\UI5Facade\Exceptions\UI5RouteInvalidException;
 use exface\UI5Facade\Facades\UI5Facade;
 use exface\Core\Interfaces\Tasks\HttpTaskInterface;
 use exface\Core\Facades\AbstractHttpFacade\Middleware\Traits\TaskRequestTrait;
+use exface\Core\Exceptions\Facades\FacadeOutputError;
 
 /**
  * This PSR-15 middleware routes requests to components of a UI5 webapp.
@@ -54,6 +55,7 @@ class UI5WebappRouter implements MiddlewareInterface
             try {
                 return $this->resolve($webappRoute, $this->getTask($request, $this->taskAttributeName, $this->facade));
             } catch (\Throwable $e) {
+                $this->facade->getWorkbench()->getLogger()->logException(new FacadeOutputError('Error in UI5 router: ' . $e->getMessage(), null, $e));
                 return $this->facade->createResponseFromError($request, $e);
             }
         }
