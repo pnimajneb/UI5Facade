@@ -26,7 +26,7 @@ interface UI5ViewInterface {
      *
      * @return string
      */
-    public function getPath() : string;
+    public function getPath(bool $relativeToAppRoot = false) : string;
     
     /**
      * Returns the name of the default route of the view: e.g. my.app.page_alias

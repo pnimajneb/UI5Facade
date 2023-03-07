@@ -364,6 +364,8 @@ sap.ui.define([
             var oController = this;
             var oView = this.getView();
 
+            BaseController.prototype.onInit.call(this);
+
             // Make sure the main view of the controller is removed from router cache
             // when it gets destroyed. If not done so, we were getting an error when trying
             // to reload the view: "object was destroyed and cannot be used again". Don't

@@ -34,6 +34,8 @@ use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
 use exface\Core\Events\Widget\OnPrefillDataLoadedEvent;
 use exface\Core\Events\Action\OnActionInputValidatedEvent;
 use exface\Core\Events\Action\OnBeforeActionInputValidatedEvent;
+use exface\Core\DataTypes\OfflineStrategyDataType;
+use exface\Core\Interfaces\PWA\PWAInterface;
 
 class Webapp implements WorkbenchDependantInterface
 {
@@ -264,11 +266,23 @@ class Webapp implements WorkbenchDependantInterface
                 return $this->getManifestJson();
             case $route === 'Component-preload.js' && $this->facade->getConfig()->getOption('UI5.USE_COMPONENT_PRELOAD'):
                 return $this->getComponentPreload();
+            case $route === 'Offline-preload.js' && $this->getRootPage()->isPWA():
+                return $this->getComponentPreloadForOffline();
             case StringDataType::startsWith($route, 'i18n/'):
                 $lang = explode('_', pathinfo($route, PATHINFO_FILENAME))[1];
                 return $this->getTranslation($lang);
             case file_exists($this->getFacadesFolder() . $route):
-                return $this->getFromFileTemplate($route);
+                if ($route === 'controller/BaseController.js' && $this->getRootPage()->isPWA()) {
+                    $pwa = $this->facade->getPWA($this->getRootPage()->getPWASelector());
+                    $extraPlaceholders = [
+                        'onInit' => $pwa->buildJsBaseControllerOnInit()
+                    ];
+                } else {
+                    $extraPlaceholders = [
+                        'onInit' => ''
+                    ];
+                }
+                return $this->getFromFileTemplate($route, $extraPlaceholders);
             case StringDataType::startsWith($route, 'view/'):
                 $path = StringDataType::substringAfter($route, 'view/');
                 if (StringDataType::endsWith($path, $this->getViewFileSuffix())) {
@@ -383,7 +397,7 @@ class Webapp implements WorkbenchDependantInterface
         return $this->facadeFolder;
     }
     
-    protected function getFromFileTemplate(string $pathRelativeToWebappFolder, array $placeholders = null) : string
+    protected function getFromFileTemplate(string $pathRelativeToWebappFolder, array $placeholders = []) : string
     {
         $path = $this->getFacadesFolder() . $pathRelativeToWebappFolder;
         if (! file_exists($path)) {
@@ -396,7 +410,7 @@ class Webapp implements WorkbenchDependantInterface
             throw new RuntimeException('Cannot read facade file "' . $pathRelativeToWebappFolder . '"!');
         }
         
-        $phs = $placeholders === null ? $this->config : $placeholders;
+        $phs = array_merge($this->config, $placeholders);
         
         try {
             return StringDataType::replacePlaceholders($tpl, $phs);
@@ -405,6 +419,11 @@ class Webapp implements WorkbenchDependantInterface
         }
     }
     
+    /**
+     * @see https://sapui5.hana.ondemand.com/sdk/#/topic/be0cf40f61184b358b5faedaec98b2da.html
+     * @param string $ui5Version
+     * @return string
+     */
     protected function getManifestVersion(string $ui5Version) : string
     {
         switch (true) {
@@ -679,7 +698,8 @@ class Webapp implements WorkbenchDependantInterface
         
         // Root view and controller
         try {
-            $rootWidget = $this->getRootPage()->getWidgetRoot();
+            $rootPage = $this->getRootPage();
+            $rootWidget = $rootPage->getWidgetRoot();
             $rootController = $this->getControllerForWidget($rootWidget);
             $resources = array_merge($resources, $this->getComponentPreloadForController($rootController));
         } catch (\Throwable $e) {
@@ -694,7 +714,7 @@ class Webapp implements WorkbenchDependantInterface
             }
         }
         
-        return 'sap.ui.require.preload(' . json_encode($resources, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) . ', "' . $prefix . 'Component-preload");';
+        return $this->getComponentPreloadFromResources($resources, $prefix . 'Component-preload');
     }
     
     /**
@@ -729,6 +749,57 @@ class Webapp implements WorkbenchDependantInterface
         return $resources;
     }
     
+    /**
+     * 
+     * @param string[] $scripts
+     * @param string $name
+     * @return string
+     */
+    protected function getComponentPreloadFromResources(array $scripts, string $name) : string
+    {
+        return 'sap.ui.require.preload(' . json_encode($scripts, JSON_UNESCAPED_SLASHES|JSON_PRETTY_PRINT) . ', "' . $name . '");';
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function getComponentPreloadForOffline()
+    {
+        $resources = [];
+        $rootPage = $this->getRootPage();   
+        if ($rootPage->isPWA()) {
+            $pwa = $this->getFacade()->getPWA($rootPage->getPWASelector());
+            $pwa->loadModel([
+                OfflineStrategyDataType::PRESYNC,
+                OfflineStrategyDataType::CLIENT_SIDE
+            ]);
+            foreach ($pwa->getRoutes() as $route) {
+                if ($route->getOfflineStrategy() !== OfflineStrategyDataType::PRESYNC) {
+                    continue;
+                }
+                try {
+                    $routePath = $this->convertNameToPath($route->getUrl(), '');
+                    $widget = $this->getWidgetFromPath($routePath);
+                    if ($widget) {
+                        // $widget = $this->handlePrefill($widget, $task);
+                        $routeController = $this->getControllerForWidget($widget);
+                    }
+                    $resources = array_merge($resources, $this->getComponentPreloadForController($routeController));
+                } catch (\Throwable $e) {
+                    $ex = new FacadeLogicError('Failed to preload route ' . $route->getPWA()->getDescriptionOf($route) . ': ' . $e->getMessage(), null, $e);
+                    $this->getWorkbench()->getLogger()->logException($ex);
+                }
+            }
+        }
+        return $this->getComponentPreloadFromResources($resources, $this->getComponentPath() . '/' . 'Offline-preload') . '; console.log("preloaded");';
+    }
+    
+    /**
+     * 
+     * @param array $locales
+     * @return array
+     */
     protected function getComponentPreloadForLangs(array $locales) : array
     {
         $resources = [];
@@ -877,12 +948,12 @@ class Webapp implements WorkbenchDependantInterface
             $text = json_encode($exception->getMessage());
             $description = '""';
         }
-        $placeholders = array_merge($this->config, [
+        $placeholders = [
             'error_view_name' => ($originalViewPath ?? 'Error'),
             'error_title' => $title,
             'error_text' => $text,
             'error_description' => $description            
-        ]);
+        ];
         return $this->getFromFileTemplate('view/Error' . $this->getViewFileSuffix(), $placeholders);
     }
     

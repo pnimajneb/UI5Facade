@@ -5,6 +5,10 @@ sap.ui.define([
 	"use strict";
 	return Controller.extend("[#app_id#].controller.BaseController", {
 		
+		onInit : function() {
+			[#onInit#]
+		},
+		
 		getRouter : function () {
 			return sap.ui.core.UIComponent.getRouterFor(this);
 		},
@@ -67,13 +71,15 @@ sap.ui.define([
 		 */
 		_loadView : function(sViewName, fnCallback, oXHRSettings) {
 			var sViewId = this.getViewId(sViewName);
-			var oController = this;			
-			
+			var oController = this;		
+			var bUseCombinedViewControllers	= oController.getOwnerComponent().getManifest()['exface']['useCombinedViewControllers']
+			var bViewPreloaded = this.isPreloaded(this._getModulePath(sViewName, 'view'));
+			console.log('Loading view', sViewName);
 			// Load view and controller with a custom async AJAX if running on UI server. 
 			// Reasons:
 			// 1) By default, views and controllers are loaded with sync requests (not compatible with CacheAPI)
 			// 2) Loading a single viewcontroller is faster, than the view and the controller separately
-			if (oController.getOwnerComponent().getManifest()['exface']['useCombinedViewControllers'] === true && ! sap.ui.getCore().byId(sViewId)) {
+			if (bUseCombinedViewControllers === true && ! bViewPreloaded && ! sap.ui.getCore().byId(sViewId)) {
 				if (oXHRSettings) {
 					var oCallbacks = {
 						success: oXHRSettings.success,
@@ -117,6 +123,11 @@ sap.ui.define([
 				
 				return $.ajax(params);
 			} else {
+				if(! bViewPreloaded && ! sap.ui.getCore().byId(sViewId)) {
+					if (navigator.onLine === false) {
+						oController.getRouter().getTargets().display("offline");
+					} 
+				}
 				if (oXHRSettings) {
 					if (oXHRSettings.success) {
 						oXHRSettings.success();
@@ -169,6 +180,10 @@ sap.ui.define([
 			return this._getResourceRoot() + '/' + sType + '/' + sViewName.replace(/\./g, '/') + '.' + sType + '.js';
 		},
 		
+		_getModulePath: function(sName, sType) {
+			return ('[#app_id#]/' + sType + '/' + sName).replace(/\./g, '/') + '.' + sType;
+		},
+		
 		/**
 		 * @private
 		 */
@@ -203,8 +218,12 @@ sap.ui.define([
 		 */
 		_decodeRouteParams : function(sParams) {
 			return JSON.parse(decodeURIComponent(sParams));
-		}
+		},
 		
+		isPreloaded: function(sModuleName, sExtension) {
+			sExtension = sExtension || '.js';
+			return sap.ui.loader._.getModuleState(sModuleName + sExtension) !== 0;
+		}
 	});
 });
 

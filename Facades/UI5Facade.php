@@ -686,6 +686,10 @@ JS;
     public function getPWA($selectorOrString) : PWAInterface
     {
         $selector = $selectorOrString instanceof PWASelectorInterface ? $selectorOrString : new PWASelector($this->getWorkbench(), $selectorOrString);
-        return new UI5PWA($selector, $this);
+        $pwa = new UI5PWA($selector, $this);
+        if ($this->webapp === null) {
+            $this->initWebapp($pwa->getMenuRoots()[0]->getAliasWithNamespace());
+        }
+        return $pwa;
     }
 }
