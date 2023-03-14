@@ -35,7 +35,6 @@ use exface\Core\Events\Widget\OnPrefillDataLoadedEvent;
 use exface\Core\Events\Action\OnActionInputValidatedEvent;
 use exface\Core\Events\Action\OnBeforeActionInputValidatedEvent;
 use exface\Core\DataTypes\OfflineStrategyDataType;
-use exface\Core\Interfaces\PWA\PWAInterface;
 
 class Webapp implements WorkbenchDependantInterface
 {
@@ -768,8 +767,16 @@ class Webapp implements WorkbenchDependantInterface
     {
         $resources = [];
         $rootPage = $this->getRootPage();   
-        if ($rootPage->isPWA()) {
-            $pwa = $this->getFacade()->getPWA($rootPage->getPWASelector());
+        if (! $rootPage->isPWA()) {
+            return '';   
+        }
+        
+        $pwa = $this->getFacade()->getPWA($rootPage->getPWASelector());
+        $authToken = $this->getWorkbench()->getSecurity()->getAuthenticatedToken();
+        $cacheSheet = $pwa->getBuildCache('Offline-preload.js', $authToken);
+        if (! $cacheSheet->isEmpty()) {
+            $preloadJs = $cacheSheet->getCellValue('CONTENT', 0);
+        } else {
             $pwa->loadModel([
                 OfflineStrategyDataType::PRESYNC,
                 OfflineStrategyDataType::CLIENT_SIDE
@@ -791,8 +798,10 @@ class Webapp implements WorkbenchDependantInterface
                     $this->getWorkbench()->getLogger()->logException($ex);
                 }
             }
+            $preloadJs = $this->getComponentPreloadFromResources($resources, $this->getComponentPath() . '/' . 'Offline-preload') . ';';
+            $pwa->setBuildCache('Offline-preload.js', $preloadJs, 'text/javascript', $authToken);
         }
-        return $this->getComponentPreloadFromResources($resources, $this->getComponentPath() . '/' . 'Offline-preload') . '; console.log("preloaded");';
+        return $preloadJs;
     }
     
     /**
