@@ -23,6 +23,10 @@ use exface\Core\Interfaces\Actions\iExportData;
 use exface\Core\Interfaces\Actions\iNavigate;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Actions\ShowWidget;
+use exface\Core\Interfaces\UserImpersonationInterface;
+use exface\Core\Interfaces\DataSheets\DataSheetInterface;
+use exface\Core\Factories\DataSheetFactory;
+use exface\Core\DataTypes\ComparatorDataType;
 
 /**
  * 
