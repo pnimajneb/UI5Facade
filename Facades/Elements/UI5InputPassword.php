@@ -109,7 +109,7 @@ JS;
             $confirmInputElement = $this->getFacade()->getElement($this->getConfirmationInput());
             return "({$this->buildJsValueGetter()} === {$confirmInputElement->buildJsValueGetter()})";
         }
-        return 'true';
+        return parent::buildJsValidator();
     }
     
     /**
