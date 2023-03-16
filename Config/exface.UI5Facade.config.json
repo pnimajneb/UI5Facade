@@ -61,12 +61,7 @@
 	"ICON_CLASSES.INFO": "fa fa-info-circle",
 	
 	"INSTALLER.SERVICEWORKER.ROUTES": {
-		"GET preload data": {
-			"description": "Dont cache preload data from the UI5 API (e.g. GET `/api/ui5?action=exface.Core.ReadPreload....`)",
-			"matcher": "/.*\\/api\\/ui5\\?action=exface\\.Core\\.ReadPreload&(?!.*context).*/i",
-			"strategy": "workbox.strategies.NetworkOnly"
-		},
-    	"GET data": {
+		"GET data": {
 			"description": "Cache data from the UI5 API (e.g. GET `/api/ui5?action=...`)",
 			"matcher": "/.*\\/api\\/ui5\\?(?!.*context).*/i",
 			"strategy": "workbox.strategies.NetworkFirst",
@@ -100,7 +95,7 @@
     "INSTALLER.SERVICEWORKER.IMPORTS": [
     	"npm-asset/dexie/dist/dexie.min.js",
     	"exface/Core/Facades/AbstractPWAFacade/sw_tools.js",
-    	"exface/Core/Facades/AbstractPWAFacade/exf_preloader.js"
+    	"exface/Core/Facades/AbstractPWAFacade/exfPWA.js"
     ],
 	
 	"LIBS.FACADE.CSS": "exface/UI5Facade/Facades/js/openui5.template.css",

@@ -70,60 +70,59 @@ class UI5PWA extends AbstractPWA
             return;
         }
         
-        foreach ($widget->getChildren() as $child) {
-            switch (true) {
-                case $child instanceof iSupportLazyLoading:
-                    if ($this->isWidgetLazyLoading($child) && $child->hasAction()) {
-                        $action = $child->getAction();
-                        $child->getLazyLoadingAction();
-                        $this->addAction($action, $child);
-                        if ($action->getOfflineStrategy() === null || $action->getOfflineStrategy() === OfflineStrategyDataType::PRESYNC) {
-                            $data = $action instanceof ReadPrefill ? $child->prepareDataSheetToPrefill() : $child->prepareDataSheetToRead();
-                            $dataSet = $this->addData($data, $action, $child);
+        switch (true) {
+            case $widget instanceof iSupportLazyLoading:
+                if ($this->isWidgetLazyLoading($widget) && $widget->hasAction()) {
+                    $action = $widget->getAction();
+                    $widget->getLazyLoadingAction();
+                    $this->addAction($action, $widget);
+                    if ($action->getOfflineStrategy() === null || $action->getOfflineStrategy() === OfflineStrategyDataType::PRESYNC) {
+                        $data = $action instanceof ReadPrefill ? $widget->prepareDataSheetToPrefill() : $widget->prepareDataSheetToRead();
+                        $dataSet = $this->addData($data, $action, $widget);
+                        yield $logIndent . 'Data for ' . $this->getDescriptionOf($dataSet) . PHP_EOL;
+                    }
+                }
+                yield from $this->generateModelForWidget($widget, ($linkDepth-1));
+                break;
+            case $widget instanceof iTriggerAction:
+                if (! $widget->hasAction()) {
+                    break;
+                }
+                $action = $widget->getAction();
+                $this->addAction($action, $widget);
+                switch (true) {
+                    case $action instanceof iReadData:
+                    case $widget instanceof iSupportLazyLoading && $widget->getLazyLoadingAction() === $action:
+                        $inputWidget = $widget instanceof iUseInputWidget ? $widget->getInputWidget() : $widget;
+                        if ($this->getActionOfflineStrategy($action) === OfflineStrategyDataType::PRESYNC) {
+                            $data = $action instanceof ReadPrefill ?  $inputWidget->prepareDataSheetToPrefill() : $inputWidget->prepareDataSheetToRead();
+                            $dataSet = $this->addData($data, $action, $widget);
                             yield $logIndent . 'Data for ' . $this->getDescriptionOf($dataSet) . PHP_EOL;
                         }
-                    }
-                    yield from $this->generateModelForWidget($child, ($linkDepth-1));
-                    break;
-                case $child instanceof iTriggerAction:
-                    if (! $child->hasAction()) {
                         break;
-                    }
-                    $action = $child->getAction();
-                    $this->addAction($action, $child);
-                    switch (true) {
-                        case $action instanceof iReadData:
-                        case $child instanceof iSupportLazyLoading && $child->getLazyLoadingAction() === $action:
-                            $inputWidget = $child instanceof iUseInputWidget ? $child->getInputWidget() : $child;
-                            if ($this->getActionOfflineStrategy($action) === OfflineStrategyDataType::PRESYNC) {
-                                $data = $action instanceof ReadPrefill ?  $inputWidget->prepareDataSheetToPrefill() : $inputWidget->prepareDataSheetToRead();
-                                $dataSet = $this->addData($data, $action, $child);
-                                yield $logIndent . 'Data for ' . $this->getDescriptionOf($dataSet) . PHP_EOL;
-                            }
-                            yield from $this->generateModelForWidget($child, ($linkDepth-1));
-                            break;
-                        case $action instanceof iShowWidget:
-                            if (null !== $childActionWidget = $child->getAction()->getWidget()) {
-                                $route = new PWARoute(
-                                    $this, 
-                                    $this->getViewForWidget($childActionWidget)->getRouteName(), 
-                                    $childActionWidget, 
-                                    $child->getAction()
+                    case $action instanceof iShowWidget:
+                        if (null !== $widgetActionWidget = $widget->getAction()->getWidget()) {
+                            $route = new PWARoute(
+                                $this,
+                                $this->getViewForWidget($widgetActionWidget)->getRouteName(),
+                                $widgetActionWidget,
+                                $widget->getAction()
                                 );
-                                $this->addRoute($route);
-                                yield $logIndent . 'Route for ' . $this->getDescriptionOf($route) . PHP_EOL;
-                                if ($this->getActionOfflineStrategy($action) !== OfflineStrategyDataType::ONLINE_ONLY) {
-                                    yield from $this->generateModelForWidget($childActionWidget, ($linkDepth-1), $logIndent . '  ');
-                                }
-                            } elseif (null !== $childActionPage = $child->getAction()->getPage()) {
-                                yield from $this->generateModelForWidget($childActionPage->getWidgetRoot(), ($linkDepth-1), $logIndent . '  ');
+                            $this->addRoute($route);
+                            yield $logIndent . 'Route for ' . $this->getDescriptionOf($route) . PHP_EOL;
+                            if ($this->getActionOfflineStrategy($action) !== OfflineStrategyDataType::ONLINE_ONLY) {
+                                yield from $this->generateModelForWidget($widgetActionWidget, ($linkDepth-1), $logIndent . '  ');
                             }
-                            break;
-                    }
-                    break;
-                default: 
-                    yield from $this->generateModelForWidget($child, ($linkDepth-1));
-            }
+                        } elseif (null !== $widgetActionPage = $widget->getAction()->getPage()) {
+                            yield from $this->generateModelForWidget($widgetActionPage->getWidgetRoot(), ($linkDepth-1), $logIndent . '  ');
+                        }
+                        break;
+                }
+                break;
+        }
+        
+        foreach ($widget->getChildren() as $child) {
+            yield from $this->generateModelForWidget($child, ($linkDepth-1));
         }
     }
     
@@ -183,10 +182,10 @@ class UI5PWA extends AbstractPWA
             
 (function(oController){
     var oBtnOffline;
-    if (! exfPreloader.ui5Preloaded) {
+    if (! exfPWA.ui5Preloaded) {
         oBtnOffline = sap.ui.getCore().byId('exf-network-indicator');
         oBtnOffline.setBusyIndicatorDelay(0).setBusy(true);
-        exfPreloader.ui5Preloaded = true;
+        exfPWA.ui5Preloaded = true;
         $.ajax({
     		url: '{$url}Offline-preload.js',
     		dataType: "script",
@@ -202,6 +201,7 @@ class UI5PWA extends AbstractPWA
     		}
     	})
     }
+    exfPWA.addPWA('{$this->getURL()}');
 })(this);
 
 JS;

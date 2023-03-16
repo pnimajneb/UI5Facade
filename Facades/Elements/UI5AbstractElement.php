@@ -15,6 +15,7 @@ use exface\Core\Interfaces\Widgets\iHaveIcon;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
+use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 
 /**
  *
@@ -498,13 +499,11 @@ JS;
     
     public function getServerAdapter() : UI5ServerAdapterInterface
     {
-        $widget = $this->getWidget();
-        
         $adapterclass = $this->getFacade()->getConfig()->getOption("DEFAULT_SERVER_ADAPTER_CLASS");
         $adapter = new $adapterclass($this);
         
-        if ($widget instanceof iCanPreloadData && $widget->isPreloadDataEnabled()) {
-            $adapter = new PreloadServerAdapter($this, $adapter);
+        if ($this->getFacade()->getWebapp()->isPWA()) {
+            $adapter = new OfflineServerAdapter($this, $adapter);
         }
         return $adapter;
     }

@@ -620,11 +620,6 @@ JS;
         $widget = $this->getWidget();
         $triggerWidget = $this->getDialogOpenButton() ?? $widget;
         
-        // FIXME #DataPreloader this will force the form to use any preload - regardless of the columns.
-        if ($widget->isPreloadDataEnabled() === true) {
-            $this->getController()->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}');");
-        } 
-        
         // If the prefill cannot be fetched due to being offline, show the offline message view
         // (if the dialog is a page) or an error-popup (if the dialog is a regular dialog).
         if ($this->isMaximized()) {

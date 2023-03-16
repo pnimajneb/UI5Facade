@@ -265,13 +265,13 @@ class Webapp implements WorkbenchDependantInterface
                 return $this->getManifestJson();
             case $route === 'Component-preload.js' && $this->facade->getConfig()->getOption('UI5.USE_COMPONENT_PRELOAD'):
                 return $this->getComponentPreload();
-            case $route === 'Offline-preload.js' && $this->getRootPage()->isPWA():
+            case $route === 'Offline-preload.js' && $this->isPWA():
                 return $this->getComponentPreloadForOffline();
             case StringDataType::startsWith($route, 'i18n/'):
                 $lang = explode('_', pathinfo($route, PATHINFO_FILENAME))[1];
                 return $this->getTranslation($lang);
             case file_exists($this->getFacadesFolder() . $route):
-                if ($route === 'controller/BaseController.js' && $this->getRootPage()->isPWA()) {
+                if ($route === 'controller/BaseController.js' && $this->isPWA()) {
                     $pwa = $this->facade->getPWA($this->getRootPage()->getPWASelector());
                     $extraPlaceholders = [
                         'onInit' => $pwa->buildJsBaseControllerOnInit()
@@ -370,7 +370,7 @@ class Webapp implements WorkbenchDependantInterface
         
         $json->exface->useCombinedViewControllers = $placeholders['use_combined_viewcontrollers'];
         
-        if ($this->isPWA() === true) {
+        if ($this->hasPWAConfig() === true) {
             $json->short_name = $this->getName();
             $json->name = $this->getTitle();
             // TODO #nocms
@@ -875,6 +875,11 @@ class Webapp implements WorkbenchDependantInterface
     }
     
     public function isPWA() : bool
+    {
+        return $this->getRootPage()->isPWA();
+    }
+    
+    public function hasPWAConfig() : bool
     {
         return $this->config['pwa_flag'] ? true : false;
     }

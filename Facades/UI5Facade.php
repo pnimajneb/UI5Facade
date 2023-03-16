@@ -41,6 +41,7 @@ use exface\Core\Interfaces\PWA\PWAInterface;
 use exface\Core\Interfaces\Selectors\PWASelectorInterface;
 use exface\Core\CommonLogic\Selectors\PWASelector;
 use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
+use exface\Core\Interfaces\Facades\PWAFacadeInterface;
 
 /**
  * Renders SAP Fiori apps using OpenUI5 or SAP UI5.
@@ -85,7 +86,7 @@ use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
  * @author Andrej Kabachnik
  *
  */
-class UI5Facade extends AbstractAjaxFacade
+class UI5Facade extends AbstractAjaxFacade implements PWAFacadeInterface
 {
     private $webapp = null;
     

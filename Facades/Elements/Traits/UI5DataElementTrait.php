@@ -6,7 +6,6 @@ use exface\Core\Widgets\DataTable;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Elements\UI5AbstractElement;
 use exface\UI5Facade\Facades\Elements\UI5DataConfigurator;
-use exface\Core\Interfaces\Widgets\iShowImage;
 use exface\UI5Facade\Facades\Elements\UI5SearchField;
 use exface\Core\Widgets\Input;
 use exface\Core\Interfaces\Widgets\iHaveColumns;
@@ -22,10 +21,8 @@ use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
-use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
-use exface\Core\Factories\WidgetFactory;
 use exface\Core\CommonLogic\UxonObject;
-use exface\Core\Widgets\DataButton;
+use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -221,21 +218,6 @@ JS);
                 var oController = {$controller->buildJsControllerGetter($this)};
                 oController.autoRefreshTrigger_{$this->getId()}.setInterval(0);
 JS);
-        }
-        
-        // Handle preload
-        if ($dataWidget->isPreloadDataEnabled()) {
-            $dataCols = [];
-            $imgCols = [];
-            foreach ($dataWidget->getColumns() as $col) {
-                $dataCols[] = $col->getDataColumnName();
-                if ($col->getCellWidget() instanceof iShowImage) {
-                    $imgCols[] = $col->getDataColumnName();
-                }
-            }
-            $preloadDataCols = json_encode($dataCols);
-            $preloadImgCols = json_encode($imgCols);
-            $controller->addOnDefineScript("exfPreloader.addPreload('{$this->getMetaObject()->getAliasWithNamespace()}', {$preloadDataCols}, {$preloadImgCols}, '{$dataWidget->getPage()->getUid()}', '{$dataWidget->getId()}', '{$dataWidget->getMetaObject()->getUidAttributeAlias()}', '{$dataWidget->getMetaObject()->getName()}');");
         }
         
         // Generate the constructor for the inner widget
@@ -1697,7 +1679,7 @@ JS;
             var oData = $oModelJs.getData();
             var aRows = oData.rows;
             var bRowsDirty = false;
-            exfPreloader.getOfflineActionsEffects('{$widget->getMetaObject()->getAliasWithNamespace()}')
+            exfPWA.getOfflineActionsEffects('{$widget->getMetaObject()->getAliasWithNamespace()}')
             .then(function(aEffects) {
                 var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
                 aEffects.forEach(function(oEffect){
@@ -1742,7 +1724,7 @@ JS;
     protected function hasDirtyColumn() : bool
     {
         $adapter = $this->getServerAdapter();
-        if (! ($adapter instanceof UI5FacadeServerAdapter || $adapter instanceof PreloadServerAdapter)) {
+        if (! ($adapter instanceof UI5FacadeServerAdapter || $adapter instanceof OfflineServerAdapter)) {
             return false;
         }
         return $this->getDataWidget()->hasUidColumn();

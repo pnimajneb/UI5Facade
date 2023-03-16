@@ -178,14 +178,14 @@ JS;
 							$oParamsJs.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';
                             var oComponent = {$controller->buildJsComponentGetter()};                
                             if (! navigator.onLine) {
-                                if (exfPreloader) {
+                                if (exfPWA) {
                                     var actionParams = {
                                         type: 'POST',
         								url: '{$this->getElement()->getAjaxUrl()}',
                                         {$headers}
         								data: {$oParamsJs}
                                     };                          
-                                    exfPreloader.addAction(
+                                    exfPWA.addAction(
                                         actionParams, 
                                         '{$action->getMetaObject()->getAliasWithNamespace()}',
                                         {$actionNameJs},

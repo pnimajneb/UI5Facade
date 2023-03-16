@@ -901,11 +901,6 @@ JS;
         $callerWidget = $callerElement->getWidget();
         $triggerWidget = $callerWidget->getParent() instanceof iTriggerAction ? $callerWidget->getParent() : $callerWidget;
         
-        // FIXME #DataPreloader this will force the form to use any preload - regardless of the columns.
-        if ($callerWidget instanceof iCanPreloadData && $callerWidget->isPreloadDataEnabled() === true) {
-            $this->addOnDefineScript("exfPreloader.addPreload('{$callerWidget->getMetaObject()->getAliasWithNamespace()}');");
-        }
-        
         $action = ActionFactory::createFromString($callerWidget->getWorkbench(), 'exface.Core.ReadPrefill', $callerWidget);
         
         $stopJs = <<<JS

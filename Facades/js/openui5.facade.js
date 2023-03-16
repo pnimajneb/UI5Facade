@@ -1,18 +1,18 @@
 // Toggle online/offlie icon
 window.addEventListener('online', function(){
 	exfLauncher.toggleOnlineIndicator();
-	exfLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
+	exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 	if(!navigator.serviceWorker){
-		exfPreloader.getActionQueueIds('offline')
+		exfPWA.getActionQueueIds('offline')
 		.then(function(ids) {
 			var count = ids.length;
 			if (count > 0){
 				var shell = exfLauncher.getShell();
 				shell.setBusy(true);				
-				exfPreloader.syncActionAll(ids)
+				exfPWA.syncActionAll(ids)
 				.then(function(){
-					exfLauncher.contextBar.getComponent().getPreloader().updateQueueCount();
-					exfLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
+					exfLauncher.contextBar.getComponent().getPWA().updateQueueCount();
+					exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 					return;
 				})
 				.then(function(){
@@ -35,9 +35,9 @@ window.addEventListener('offline', function(){
 
 if (navigator.serviceWorker) {
 	navigator.serviceWorker.addEventListener('message', function(event) {
-		exfLauncher.contextBar.getComponent().getPreloader().updateQueueCount()
+		exfLauncher.contextBar.getComponent().getPWA().updateQueueCount()
 		.then(function(){
-			exfLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
+			exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 			exfLauncher.showMessageToast(event.data);
 		})
 	});
@@ -46,7 +46,7 @@ if (navigator.serviceWorker) {
 const exfLauncher = {};
 (function() {
 	
-	exfPreloader.setTopics(['offline', 'ui5']);
+	exfPWA.setTopics(['offline', 'ui5']);
 	
 	var _oShell = {};
 	var _oAppMenu;
@@ -120,7 +120,7 @@ const exfLauncher = {};
 				online: navigator.onLine,
 				queueCnt: 0,
 				syncErrorCnt: 0,
-				deviceId: exfPreloader.getDeviceId()
+				deviceId: exfPWA.getDeviceId()
 			}
 		}));
 		
@@ -162,8 +162,8 @@ const exfLauncher = {};
 						_oContextBar.load();
 					}
 				});
-				oComponent.getPreloader().updateQueueCount();
-				oComponent.getPreloader().updateErrorCount();
+				oComponent.getPWA().updateQueueCount();
+				oComponent.getPWA().updateErrorCount();
 			},
 		
 			getComponent : function() {
@@ -208,6 +208,8 @@ const exfLauncher = {};
 				var aItemsOld = _oShell.getHeader().getContent();
 				var iItemsIndex = 5;
 				var oControl = {};
+				var oCtxtData = {};
+				var sColor;
 				
 				oToolbar.removeAllContent();
 				
@@ -221,21 +223,30 @@ const exfLauncher = {};
 				}
 				
 				for (var id in data) {
-					var sColor = data[id].color ? 'background-color:'+data[id].color+' !important;' : '';
+					oCtxtData = data[id];
+					sColor = oCtxtData.color ? 'background-color:'+oCtxtData.color+' !important;' : '';
+					if (oCtxtData.context_alias === 'exface.Core.PWAContext') {
+						_oShell.getModel().setProperty("/_network/syncErrorCnt", parseInt(oCtxtData.indicator));
+						continue;
+					}
+					if (oCtxtData.visibility === 'hide_allways') {
+						continue;
+					}
 					oToolbar.insertContent(
-							new sap.m.Button(id, { 
-								icon: data[id].icon,
-								tooltip: data[id].hint,
-								text: data[id].indicator,
-								press: function(oEvent) {
-									var oButton = oEvent.getSource();
-									_oContextBar.showMenu(oButton);
-								}
-							}).data('widget', data[id].bar_widget_id, true), 
-							iItemsIndex);
+						new sap.m.Button(id, { 
+							icon: oCtxtData.icon,
+							tooltip: oCtxtData.hint,
+							text: oCtxtData.indicator,
+							press: function(oEvent) {
+								var oButton = oEvent.getSource();
+								_oContextBar.showMenu(oButton);
+							}
+						}).data('widget', oCtxtData.bar_widget_id, true), 
+						iItemsIndex
+					);
 				}
-				_oLauncher.contextBar.getComponent().getPreloader().updateQueueCount();
-				_oLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
+				_oLauncher.contextBar.getComponent().getPWA().updateQueueCount();
+				_oLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 			},
 
 			showMenu : function (oButton){
@@ -473,7 +484,7 @@ const exfLauncher = {};
 								var oButton = oEvent.getSource();
 								var oTable = oButton.getParent().getParent();
 								oTable.setBusy(true);
-								_oLauncher.syncPreload(oEvent)
+								_oLauncher.syncOffline(oEvent)
 								.then(function(){
 									_oLauncher.loadPreloadInfo(oTable);
 									oTable.setBusy(false);
@@ -556,15 +567,15 @@ const exfLauncher = {};
 	 * @reutn void
 	 */
 	this.loadPreloadInfo = function(oTable) {
-		return exfPreloader.getPreloadTable().toArray()
+		return exfPWA.getOfflineDataTable().toArray()
 		.then(function(dbContent){
 			oTable.removeAllItems();
 			dbContent.forEach(function(element) {
 				oRow = new sap.m.ColumnListItem();
-				oRow.addCell(new sap.m.Text({text: element.name}));
-				if (element.response && element.response.rows) {
-					oRow.addCell(new sap.m.Text({text: element.response.rows.length}));
-					oRow.addCell(new sap.m.Text({text: new Date(element.lastSync).toLocaleString()}));
+				oRow.addCell(new sap.m.Text({text: element.object_name}));
+				if (element.rows) {
+					oRow.addCell(new sap.m.Text({text: element.rows.length}));
+					oRow.addCell(new sap.m.Text({text: new Date(element.sync_last).toLocaleString()}));
 				} else {
 					oRow.addCell(new sap.m.Text({text: '0'}));
 
@@ -653,7 +664,7 @@ const exfLauncher = {};
 		.setModel(oTrigger.getModel())
 		.setModel(oTrigger.getModel('i18n'), 'i18n');
 		
-		exfPreloader.getOfflineActionsEffects(sObjectAlias)
+		exfPWA.getOfflineActionsEffects(sObjectAlias)
         .then(function(aEffects){
 			var oData = {
 				rows: []
@@ -730,16 +741,16 @@ const exfLauncher = {};
 										text: "{i18n>WEBAPP.SHELL.NETWORK.CONFIRM_YES}",
 										type: sap.m.ButtonType.Emphasized,
 										press: function(oEvent){
-											exfPreloader.deleteActionAll(selectedIds)
+											exfPWA.deleteActionAll(selectedIds)
 											.then(function(){
-												_oLauncher.contextBar.getComponent().getPreloader().updateQueueCount()
+												_oLauncher.contextBar.getComponent().getPWA().updateQueueCount()
 											})
 											.then(function(){
 												confirmDialog.close();
 												oButton.setBusy(false);
 												var text = exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.NETWORK.ENTRIES_DELETED");
 												_oLauncher.showMessageToast(text);
-												return exfPreloader.getActionQueueData('offline')
+												return exfPWA.getActionQueueData('offline')
 											})
 											.then(function(data){
 												var oData = {};
@@ -782,16 +793,16 @@ const exfLauncher = {};
 									var bindingObj = item.getBindingContext('queueModel').getObject()
 									selectedIds.push(bindingObj.id);
 								})																					
-								exfPreloader.syncActionAll(selectedIds)
+								exfPWA.syncActionAll(selectedIds)
 								.then(function(){
-									_oLauncher.contextBar.getComponent().getPreloader().updateQueueCount();
-									_oLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
+									_oLauncher.contextBar.getComponent().getPWA().updateQueueCount();
+									_oLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 								})
 								.then(function(){
 									oButton.setBusy(false);
 									var text = exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.NETWORK.SYNC_ACTIONS_COMPLETE");
 									_oLauncher.showMessageToast(text);
-									return exfPreloader.getActionQueueData('offline')
+									return exfPWA.getActionQueueData('offline')
 								})
 								.then(function(data){
 									var oData = {};
@@ -801,12 +812,12 @@ const exfLauncher = {};
 								})
 								.catch(function(error){
 									console.error('Offline action sync error: ', error);
-									_oLauncher.contextBar.getComponent().getPreloader().updateQueueCount()
+									_oLauncher.contextBar.getComponent().getPWA().updateQueueCount()
 									.then(function(){
-										_oLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
+										_oLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 										oButton.setBusy(false);
 										_oLauncher.contextBar.getComponent().showErrorDialog(error, '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_HEADER}');
-										return exfPreloader.getActionQueueData('offline')
+										return exfPWA.getActionQueueData('offline')
 									})
 									.then(function(data){
 										var oData = {};
@@ -836,7 +847,7 @@ const exfLauncher = {};
 									var bindingObj = item.getBindingContext('queueModel').getObject()
 									selectedIds.push(bindingObj.id);
 								})
-								exfPreloader.getActionsData(selectedIds)
+								exfPWA.getActionsData(selectedIds)
 								.then(function(data) {
 									data = JSON.stringify(data);
 									var date = new Date();
@@ -846,7 +857,7 @@ const exfLauncher = {};
 									dateString = dateString.replace("T","_");
 									dateString = dateString.replace(":","");
 									oButton.setBusyIndicatorDelay(0).setBusy(false);
-									exfPreloader.download(data,'offlineActions_'+ dateString, 'application/json')
+									exfPWA.download(data,'offlineActions_'+ dateString, 'application/json')
 									var text = exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.NETWORK.ENTRIES_EXPORTED");
 									_oLauncher.showMessageToast(text);
 									return;
@@ -948,7 +959,7 @@ const exfLauncher = {};
 		.setModel(oButton.getModel())
 		.setModel(oButton.getModel('i18n'), 'i18n');
 		
-		exfPreloader.getActionQueueData('offline')
+		exfPWA.getActionQueueData('offline')
 		.then(function(data){
 			var oData = {};
 			oData.data = data;
@@ -1071,7 +1082,7 @@ const exfLauncher = {};
 		.setModel(oButton.getModel())
 		.setModel(oButton.getModel('i18n'), 'i18n');
 		
-		exfPreloader.loadErrorData()
+		exfPWA.loadErrorData()
 		.then(function(data){
 			var oData = {};
 			if (data.rows !== undefined) {
@@ -1095,11 +1106,11 @@ const exfLauncher = {};
 	 * 
 	 * @return Promise
 	 */
-	this.syncPreload = function(oEvent){
+	this.syncOffline = function(oEvent){
 		oButton = oEvent.getSource();
 		oButton.setBusyIndicatorDelay(0).setBusy(true);
 		var oI18nModel = oButton.getModel('i18n');
-		return exfPreloader.syncAll()
+		return exfPWA.syncAll()
 		.then(function(){
 			oButton.setBusy(false)
 			exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.NETWORK.SYNC_COMPLETE'));
@@ -1122,7 +1133,7 @@ const exfLauncher = {};
 		var oButton = oEvent.getSource();
 		var oI18nModel = oButton.getModel('i18n');
 		oButton.setBusyIndicatorDelay(0).setBusy(true);
-		return exfPreloader
+		return exfPWA
 		.reset()
 		.then(() => {
 			oButton.setBusy(false);
@@ -1141,8 +1152,8 @@ const exfLauncher = {};
 	 * @return void
 	 */
 	this.showOfflineMenu = function(oEvent){
-    	_oLauncher.contextBar.getComponent().getPreloader().updateQueueCount();
-    	_oLauncher.contextBar.getComponent().getPreloader().updateErrorCount();
+    	_oLauncher.contextBar.getComponent().getPWA().updateQueueCount();
+    	_oLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 		var oButton = oEvent.getSource();
 		var oPopover = sap.ui.getCore().byId('exf-network-menu');
 		if (oPopover === undefined) {
@@ -1154,7 +1165,7 @@ const exfLauncher = {};
 						text: "Offline sync not available.",
 						type:"Warning",
 						showIcon: true,
-						visible: (! exfPreloader.isAvailable())
+						visible: (! exfPWA.isAvailable())
 					}).addStyleClass('sapUiSmallMargin'),
 					new sap.m.List({
 						items: [
@@ -1184,7 +1195,7 @@ const exfLauncher = {};
 								tooltip: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_SYNC_TOOLTIP}",
 								icon: "sap-icon://synchronize",
 								type: "{= ${/_network/online} > 0 ? 'Active' : 'Inactive' }",
-								press: _oLauncher.syncPreload,
+								press: _oLauncher.syncOffline,
 							}),
 							new sap.m.StandardListItem({
 								title: "{i18n>WEBAPP.SHELL.NETWORK.STORAGE_HEADER}",

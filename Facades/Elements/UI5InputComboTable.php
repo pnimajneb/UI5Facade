@@ -98,15 +98,6 @@ JS;
         $widget = $this->getWidget();
         $controller = $this->getController();
         
-        if ($widget->isPreloadDataEnabled()) {
-            $cols = '';
-            foreach ($widget->getTable()->getColumns() as $col) {
-                $cols .= $col->getDataColumnName() . ',';
-            }
-            $cols = rtrim($cols, ",");
-            $controller->addOnDefineScript("exfPreloader.addPreload('{$widget->getTableObject()->getAliasWithNamespace()}', ['{$cols}'], [], '{$widget->getPage()->getUid()}', '{$widget->getTable()->getId()}', '{$widget->getTableObject()->getUidAttributeAlias()}', '{$widget->getOptionsObject()->getName()}');");
-        }
-        
         $controller->addMethod('onSuggest', $this, 'oEvent', $this->buildJsDataLoader('oEvent'));
         
         // If there are links to this combo, that point to additional column, we need a lazy load right

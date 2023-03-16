@@ -428,13 +428,13 @@ sap.ui.define([
 		},
 		
 		_preloader : function(){
-			const exfPreloaderUI5 = {};
+			const exfPWAUI5 = {};
 			(function(){
 				this.updateQueueCount = function(){
-					if (exfPreloader.getActionQueueData === undefined) {
+					if (exfPWA.getActionQueueData === undefined) {
 						return;
 					}
-					return exfPreloader.getActionQueueData('offline')
+					return exfPWA.getActionQueueData('offline')
 					.then(function(data){
 						var count = data.length;
 						if (!exfLauncher){
@@ -446,15 +446,15 @@ sap.ui.define([
 				}
 				
 				this.updateErrorCount = function(){
-					if (exfPreloader.loadErrorData === undefined) {
+					if (exfPWA.loadErrorData === undefined) {
 						return;
 					}
-					return exfPreloader.loadErrorData()
+					return exfPWA.loadErrorData()
 					.then(function(data){
 						var count = "-";
-						if (data.rows) {
-							count = data.rows.length;
-						}						
+						if (data) {
+							count = data.rows ? data.rows.length : 0;
+						} 				
 						if (!exfLauncher){
 							return;
 						}
@@ -462,11 +462,11 @@ sap.ui.define([
 						return count;
 					})
 				}
-			}).apply(exfPreloaderUI5);
-			return exfPreloaderUI5;
+			}).apply(exfPWAUI5);
+			return exfPWAUI5;
 		}(),
 		
-		getPreloader : function(){
+		getPWA : function(){
 			return this._preloader;
 		}		
 	});
