@@ -1679,7 +1679,7 @@ JS;
             var oData = $oModelJs.getData();
             var aRows = oData.rows;
             var bRowsDirty = false;
-            exfPWA.getOfflineActionsEffects('{$widget->getMetaObject()->getAliasWithNamespace()}')
+            exfPWA.actionQueue.getEffects('{$widget->getMetaObject()->getAliasWithNamespace()}')
             .then(function(aEffects) {
                 var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
                 aEffects.forEach(function(oEffect){

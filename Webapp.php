@@ -272,9 +272,8 @@ class Webapp implements WorkbenchDependantInterface
                 return $this->getTranslation($lang);
             case file_exists($this->getFacadesFolder() . $route):
                 if ($route === 'controller/BaseController.js' && $this->isPWA()) {
-                    $pwa = $this->facade->getPWA($this->getRootPage()->getPWASelector());
                     $extraPlaceholders = [
-                        'onInit' => $pwa->buildJsBaseControllerOnInit()
+                        'onInit' => $this->buildJsPWAInit()
                     ];
                 } else {
                     $extraPlaceholders = [
@@ -1031,5 +1030,42 @@ class Webapp implements WorkbenchDependantInterface
         $loginPage->addWidget($loginPrompt);
         
         return $loginPage;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsPWAInit() : string
+    {
+        $pwa = $this->facade->getPWA($this->getRootPage()->getPWASelector());
+        $url = ltrim($this->getComponentUrl(), '/');
+        return <<<JS
+        
+(function(oController){
+    var oBtnOffline;
+    if (! exfPWA.ui5Preloaded) {
+        oBtnOffline = sap.ui.getCore().byId('exf-network-indicator');
+        oBtnOffline.setBusyIndicatorDelay(0).setBusy(true);
+        exfPWA.ui5Preloaded = true;
+        $.ajax({
+    		url: '{$url}Offline-preload.js',
+    		dataType: "script",
+    		cache: true,
+    		success: function(script, textStatus) {
+                oBtnOffline.setBusy(false);
+    			console.log('offline stuff loaded');
+    		},
+    		error: function(jqXHR, textStatus, errorThrown) {
+                oBtnOffline.setBusy(false);
+    			console.warn("Failed loading offline data from $url");
+    			oController.getOwnerComponent().showAjaxErrorDialog(jqXHR);
+    		}
+    	})
+        exfPWA.model.addPWA('{$pwa->getURL()}');
+    }
+})(this);
+
+JS;
     }
 }

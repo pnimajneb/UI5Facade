@@ -174,36 +174,4 @@ class UI5PWA extends AbstractPWA
     {
         return $this->getWebapp()->getViewForWidget($widget);
     }
-    
-    public function buildJsBaseControllerOnInit() : string
-    {
-        $url = ltrim($this->getWebapp()->getComponentUrl(), '/');
-        return <<<JS
-            
-(function(oController){
-    var oBtnOffline;
-    if (! exfPWA.ui5Preloaded) {
-        oBtnOffline = sap.ui.getCore().byId('exf-network-indicator');
-        oBtnOffline.setBusyIndicatorDelay(0).setBusy(true);
-        exfPWA.ui5Preloaded = true;
-        $.ajax({
-    		url: '{$url}Offline-preload.js',
-    		dataType: "script",
-    		cache: true,
-    		success: function(script, textStatus) {
-                oBtnOffline.setBusy(false);
-    			console.log('offline stuff loaded');
-    		},
-    		error: function(jqXHR, textStatus, errorThrown) {
-                oBtnOffline.setBusy(false);
-    			console.warn("Failed loading offline data from $url");    			
-    			oController.getOwnerComponent().showAjaxErrorDialog(jqXHR);
-    		}
-    	})
-    }
-    exfPWA.addPWA('{$this->getURL()}');
-})(this);
-
-JS;
-    }
 }

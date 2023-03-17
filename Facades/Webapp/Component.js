@@ -431,10 +431,10 @@ sap.ui.define([
 			const exfPWAUI5 = {};
 			(function(){
 				this.updateQueueCount = function(){
-					if (exfPWA.getActionQueueData === undefined) {
+					if (exfPWA.actionQueue.get === undefined) {
 						return;
 					}
-					return exfPWA.getActionQueueData('offline')
+					return exfPWA.actionQueue.get('offline')
 					.then(function(data){
 						var count = data.length;
 						if (!exfLauncher){
@@ -446,20 +446,23 @@ sap.ui.define([
 				}
 				
 				this.updateErrorCount = function(){
-					if (exfPWA.loadErrorData === undefined) {
+					if (exfPWA === undefined || exfLauncher === undefined) {
 						return;
 					}
-					return exfPWA.loadErrorData()
+					if (navigator.onLine === false) {
+						exfLauncher.getShell().getModel().setProperty("/_network/syncErrorCnt", '-');
+						return;
+					}
+					return exfPWA.errors.sync()
 					.then(function(data){
 						var count = "-";
 						if (data) {
 							count = data.rows ? data.rows.length : 0;
-						} 				
-						if (!exfLauncher){
-							return;
-						}
-						exfLauncher.getShell().getModel().setProperty("/_network/syncErrorCnt", count);
+						} 
 						return count;
+					})
+					.then(function(sCount){
+						exfLauncher.getShell().getModel().setProperty("/_network/syncErrorCnt", sCount);
 					})
 				}
 			}).apply(exfPWAUI5);

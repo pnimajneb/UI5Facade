@@ -185,7 +185,7 @@ JS;
                                         {$headers}
         								data: {$oParamsJs}
                                     };                          
-                                    exfPWA.addAction(
+                                    exfPWA.actionQueue.add(
                                         actionParams, 
                                         '{$action->getMetaObject()->getAliasWithNamespace()}',
                                         {$actionNameJs},

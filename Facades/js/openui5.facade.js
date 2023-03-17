@@ -3,13 +3,13 @@ window.addEventListener('online', function(){
 	exfLauncher.toggleOnlineIndicator();
 	exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 	if(!navigator.serviceWorker){
-		exfPWA.getActionQueueIds('offline')
+		exfPWA.actionQueue.getIds('offline')
 		.then(function(ids) {
 			var count = ids.length;
 			if (count > 0){
 				var shell = exfLauncher.getShell();
 				shell.setBusy(true);				
-				exfPWA.syncActionAll(ids)
+				exfPWA.actionQueue.syncIds(ids)
 				.then(function(){
 					exfLauncher.contextBar.getComponent().getPWA().updateQueueCount();
 					exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
@@ -46,7 +46,7 @@ if (navigator.serviceWorker) {
 const exfLauncher = {};
 (function() {
 	
-	exfPWA.setTopics(['offline', 'ui5']);
+	exfPWA.actionQueue.setTopics(['offline', 'ui5']);
 	
 	var _oShell = {};
 	var _oAppMenu;
@@ -178,6 +178,11 @@ const exfLauncher = {};
 					return;
 				}
 				_oContextBar.lastContextRefresh = new Date();
+				
+				if (navigator.onLine === false) {
+					_oContextBar.refresh({});
+					return;
+				}
 				
 				setTimeout(function(){
 					// IDEA had to disable adding context bar extras to every request due to
@@ -567,7 +572,7 @@ const exfLauncher = {};
 	 * @reutn void
 	 */
 	this.loadPreloadInfo = function(oTable) {
-		return exfPWA.getOfflineDataTable().toArray()
+		return exfPWA.data.getTable().toArray()
 		.then(function(dbContent){
 			oTable.removeAllItems();
 			dbContent.forEach(function(element) {
@@ -664,7 +669,7 @@ const exfLauncher = {};
 		.setModel(oTrigger.getModel())
 		.setModel(oTrigger.getModel('i18n'), 'i18n');
 		
-		exfPWA.getOfflineActionsEffects(sObjectAlias)
+		exfPWA.actionQueue.getEffects(sObjectAlias)
         .then(function(aEffects){
 			var oData = {
 				rows: []
@@ -741,7 +746,7 @@ const exfLauncher = {};
 										text: "{i18n>WEBAPP.SHELL.NETWORK.CONFIRM_YES}",
 										type: sap.m.ButtonType.Emphasized,
 										press: function(oEvent){
-											exfPWA.deleteActionAll(selectedIds)
+											exfPWA.actionQueue.deleteAll(selectedIds)
 											.then(function(){
 												_oLauncher.contextBar.getComponent().getPWA().updateQueueCount()
 											})
@@ -750,7 +755,7 @@ const exfLauncher = {};
 												oButton.setBusy(false);
 												var text = exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.NETWORK.ENTRIES_DELETED");
 												_oLauncher.showMessageToast(text);
-												return exfPWA.getActionQueueData('offline')
+												return exfPWA.actionQueue.get('offline')
 											})
 											.then(function(data){
 												var oData = {};
@@ -793,7 +798,7 @@ const exfLauncher = {};
 									var bindingObj = item.getBindingContext('queueModel').getObject()
 									selectedIds.push(bindingObj.id);
 								})																					
-								exfPWA.syncActionAll(selectedIds)
+								exfPWA.actionQueue.syncIds(selectedIds)
 								.then(function(){
 									_oLauncher.contextBar.getComponent().getPWA().updateQueueCount();
 									_oLauncher.contextBar.getComponent().getPWA().updateErrorCount();
@@ -802,7 +807,7 @@ const exfLauncher = {};
 									oButton.setBusy(false);
 									var text = exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.NETWORK.SYNC_ACTIONS_COMPLETE");
 									_oLauncher.showMessageToast(text);
-									return exfPWA.getActionQueueData('offline')
+									return exfPWA.actionQueue.get('offline')
 								})
 								.then(function(data){
 									var oData = {};
@@ -817,7 +822,7 @@ const exfLauncher = {};
 										_oLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 										oButton.setBusy(false);
 										_oLauncher.contextBar.getComponent().showErrorDialog(error, '{i18n>WEBAPP.SHELL.NETWORK.QUEUE_TABLE_HEADER}');
-										return exfPWA.getActionQueueData('offline')
+										return exfPWA.actionQueue.get('offline')
 									})
 									.then(function(data){
 										var oData = {};
@@ -847,7 +852,7 @@ const exfLauncher = {};
 									var bindingObj = item.getBindingContext('queueModel').getObject()
 									selectedIds.push(bindingObj.id);
 								})
-								exfPWA.getActionsData(selectedIds)
+								exfPWA.actionQueue.getByIds(selectedIds)
 								.then(function(data) {
 									data = JSON.stringify(data);
 									var date = new Date();
@@ -959,7 +964,7 @@ const exfLauncher = {};
 		.setModel(oButton.getModel())
 		.setModel(oButton.getModel('i18n'), 'i18n');
 		
-		exfPWA.getActionQueueData('offline')
+		exfPWA.actionQueue.get('offline')
 		.then(function(data){
 			var oData = {};
 			oData.data = data;
@@ -1082,7 +1087,7 @@ const exfLauncher = {};
 		.setModel(oButton.getModel())
 		.setModel(oButton.getModel('i18n'), 'i18n');
 		
-		exfPWA.loadErrorData()
+		exfPWA.errors.sync()
 		.then(function(data){
 			var oData = {};
 			if (data.rows !== undefined) {

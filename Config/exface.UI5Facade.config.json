@@ -86,7 +86,7 @@
 		},
     	"GET i18n, config": {
 			"description": "Cache UI5 specific files in addition to regular JS and CSS cache rules from Core",
-			"matcher": "/(.*\\.properties|.*\\/cldr\\/.*\\.json)/",
+			"matcher": "/(.*\\.properties|.*\\.woff2|.*\\/cldr\\/.*\\.json)/",
 			"strategy": "workbox.strategies.StaleWhileRevalidate",
 			"cacheName": "ui5-cache",
     		"maxAgeSeconds": 604800

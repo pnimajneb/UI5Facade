@@ -104,7 +104,7 @@ JS;
                 };
 
                 return exfPWA
-                .getOfflineData('{$widget->getMetaObject()->getAliasWithNamespace()}')
+                .data.get('{$widget->getMetaObject()->getAliasWithNamespace()}')
                 .then(oDataSet => {
                     var bGetFirstRowOnly = $useFirstRowJs;
                     var aData = [];
