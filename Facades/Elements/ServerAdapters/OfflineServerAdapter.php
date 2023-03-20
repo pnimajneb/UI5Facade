@@ -52,17 +52,12 @@ class OfflineServerAdapter implements UI5ServerAdapterInterface
 
                 var uid;
                 if ($oParamsJs.data && $oParamsJs.data.rows && $oParamsJs.data.rows[0]) {
-                    uid = $oParamsJs.data.rows[0]['{$this->getElement()->getMetaObject()->getUidAttribute()->getAlias()}'];
-                } else {
-                    console.warn('Cannot fetch offline data: no request data rows selected!');
-                }
+                    uid = $oParamsJs.data.rows[0]['{$this->getElement()->getMetaObject()->getUidAttribute()->getAlias()}']; 
 
-                if (uid === undefined || uid === '') {
-                    console.warn('Cannot prefill from preload data: no UID value found in input rows!');
-                }
-
-                if ($oParamsJs.data !== undefined) {
-
+                    if (uid === undefined || uid === '') {
+                        console.warn('Cannot prefill from preload data: no UID value found in input rows!');
+                    }
+    
                     if ($oParamsJs.data.filters === undefined) {
                         $oParamsJs.data.filters = {};
                     }
@@ -77,7 +72,6 @@ class OfflineServerAdapter implements UI5ServerAdapterInterface
                         value: uid,
                         object_alias: '{$this->getElement()->getMetaObject()->getAliasWithNamespace()}'
                     });
-
                 }
 
                 {$this->buildJsDataLoader($oModelJs, $oParamsJs, $onModelLoadedJs, $onOfflineJs, $fallBackRequest, true)}
@@ -140,10 +134,13 @@ JS;
                             recordsFiltered: iFiltered
                         });
                     }
-                    {$onModelLoadedJs}
+                    
+                    setTimeout(function(){
+                        {$onModelLoadedJs}
+                    }, 100);
                 })
                 .then(function(){
-                    return $oModelJs;
+                    return Promise.resolve($oModelJs);
                 });
 
             })()

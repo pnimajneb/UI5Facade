@@ -726,13 +726,13 @@ JS;
     {
         if ($this->isUiTable()) {
             if($this->getWidget()->getMultiSelect() === false) {
-                $rows = "($oTableJs.getSelectedIndex() !== -1 && $oTableJs.getModel().getData().rows !== undefined ? [$oTableJs.getModel().getData().rows[$oTableJs.getSelectedIndex()]] : [])";
+                $rows = "($oTableJs && $oTableJs.getSelectedIndex() !== -1 && $oTableJs.getModel().getData().rows !== undefined ? [$oTableJs.getModel().getData().rows[$oTableJs.getSelectedIndex()]] : [])";
             } else {
                 $rows = "function(){var selectedIdx = $oTableJs.getSelectedIndices(); var aRows = []; selectedIdx.forEach(index => aRows.push($oTableJs.getModel().getData().rows[index])); return aRows;}()";
             }
         } else {
             if($this->getWidget()->getMultiSelect() === false) {
-                $rows = "($oTableJs.getSelectedItem() ? [$oTableJs.getSelectedItem().getBindingContext().getObject()] : [])";
+                $rows = "($oTableJs && $oTableJs.getSelectedItem() ? [$oTableJs.getSelectedItem().getBindingContext().getObject()] : [])";
             } else {
                 $rows = "$oTableJs.getSelectedContexts().reduce(function(aRows, oCtxt) {aRows.push(oCtxt.getObject()); return aRows;},[])";
             }

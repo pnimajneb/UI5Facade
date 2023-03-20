@@ -13,6 +13,7 @@ use exface\Core\Interfaces\Actions\iShowDialog;
 use exface\Core\Interfaces\Model\MetaObjectInterface;
 use exface\Core\Widgets\Dialog;
 use exface\Core\Widgets\Button;
+use exface\Core\DataTypes\OfflineStrategyDataType;
 
 class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
 {
@@ -167,23 +168,41 @@ JS;
         }
         $actionNameJs = json_encode($actionName);
         $objectNameJs = json_encode($action->getMetaObject()->getName());
+        $skipOfflineJs = $action->getOfflineStrategy() === OfflineStrategyDataType::SKIP ? 'true' : 'false';
         
         $coreTranslator = $this->getElement()->getWorkbench()->getCoreApp()->getTranslator();
         
         return <<<JS
 
+                        (function(oModel, oParams){
+                            var bSkipIfOffline = $skipOfflineJs;
+                            var response;
                             var aEffects = [];
-                            {$this->buildJsEffects($action, $oParamsJs, 'aEffects')};
+                            var fnOnModelLoaded = function() {
+                                $onModelLoadedJs
+                            };
+                            var fnOnOffline = function() {
+                                {$onOfflineJs}
+                            };
+                            var fnOnError = function() {
+                                $onErrorJs
+                            }
 
-							$oParamsJs.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';
+                            {$this->buildJsEffects($action, 'oParams', 'aEffects')};
+
+							oParams.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';
                             var oComponent = {$controller->buildJsComponentGetter()};                
-                            if (! navigator.onLine) {
+                            if (navigator.onLine === false) {
+                                if (bSkipIfOffline) {
+                                    fnOnModelLoaded();
+                                    return oModel;
+                                }
                                 if (exfPWA) {
                                     var actionParams = {
                                         type: 'POST',
         								url: '{$this->getElement()->getAjaxUrl()}',
                                         {$headers}
-        								data: {$oParamsJs}
+        								data: {}
                                     };                          
                                     exfPWA.actionQueue.add(
                                         actionParams, 
@@ -193,32 +212,32 @@ JS;
                                         aEffects
                                     )
                                     .then(function(key) {
-                                        var response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};
-                                        $oModelJs.setData(response);
-                                        $onModelLoadedJs
+                                        response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};
+                                        oModel.setData(response);
+                                        fnOnModelLoaded.apply(this);
                                     })
                                     .catch(function(error) {
                                         console.error(error);
-                                        var response = {error: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUE_FAILED')}'}
+                                        response = {error: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUE_FAILED')}'}
                                         {$this->getElement()->buildJsShowMessageError('response.error', '"Server error"')}
-                                        {$onErrorJs}
+                                        fnOnError();
                                     })
-                                    oComponent.getPreloader().updateQueueCount();
+                                    oComponent.getPWA().updateQueueCount();
                                 } else {
-                                    {$onOfflineJs}
+                                    fnOnOffline();
                                 }
-                                return $oModelJs;
+                                return oModel;
                             } else {
                                 return $.ajax({
     								type: 'POST',
     								url: '{$this->getElement()->getAjaxUrl()}',
                                     {$headers}
-    								data: {$oParamsJs},
+    								data: oParams,
     								success: function(data, textStatus, jqXHR) {
                                         if (typeof data === 'object') {
                                             response = data;
                                         } else {
-                                            var response = {};
+                                            response = {};
         									try {
         										response = $.parseJSON(data);
         									} catch (e) {
@@ -226,26 +245,27 @@ JS;
         									}
                                         }
     				                   	if (response.success){
-                                            $oModelJs.setData(response);
-    										{$onModelLoadedJs}
+                                            oModel.setData(response);
+    										fnOnModelLoaded();
     				                    } else {
     										{$this->getElement()->buildJsShowMessageError('response.error', '"Server error"')}
-                                            {$onErrorJs}
+                                            onError();
     				                    }
     								},
     								error: function(jqXHR, textStatus, errorThrown){
-                                        {$onErrorJs}
+                                        onError();
                                         if (navigator.onLine === false) {
-                                            {$onOfflineJs}
+                                            fnOnOffline();
                                         } else {
                                             {$this->getElement()->getController()->buildJsComponentGetter()}.showAjaxErrorDialog(jqXHR)
                                         }
     								}
     							})
                                 .then(function(){
-                                    return $oModelJs;
+                                    return oModel;
                                 });
                             }
+                        })($oModelJs, $oParamsJs);
                                         
 JS;
     }
