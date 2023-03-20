@@ -387,14 +387,17 @@ const exfLauncher = {};
 	this.toggleOnlineIndicator = function() {
 		sap.ui.getCore().byId('exf-network-indicator').setIcon(navigator.onLine ? 'sap-icon://connected' : 'sap-icon://disconnected');
 		_oShell.getModel().setProperty("/_network/online", navigator.onLine);
-		if (navigator.onLine) {
+		if (navigator.onLine !== false) {
 			_oLauncher.contextBar.load();
+			if (exfPWA) {
+				exfPWA.actionQueue.syncOffline();
+			}
 		}
 	};
 	
 	this.showMessageToast = function(message){
-			sap.m.MessageToast.show(message);
-			return;
+		sap.m.MessageToast.show(message);
+		return;
 	};
 	
 	/**

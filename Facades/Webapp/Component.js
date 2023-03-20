@@ -427,7 +427,7 @@ sap.ui.define([
             });
 		},
 		
-		_preloader : function(){
+		_pwa : function(){
 			const exfPWAUI5 = {};
 			(function(){
 				this.updateQueueCount = function(){
@@ -470,7 +470,7 @@ sap.ui.define([
 		}(),
 		
 		getPWA : function(){
-			return this._preloader;
+			return this._pwa;
 		}		
 	});
 });
