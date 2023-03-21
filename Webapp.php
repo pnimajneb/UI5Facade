@@ -793,7 +793,7 @@ class Webapp implements WorkbenchDependantInterface
                     }
                     $resources = array_merge($resources, $this->getComponentPreloadForController($routeController));
                 } catch (\Throwable $e) {
-                    $ex = new FacadeLogicError('Failed to preload route ' . $route->getPWA()->getDescriptionOf($route) . ': ' . $e->getMessage(), null, $e);
+                    $ex = new FacadeLogicError('Failed to preload offline route ' . $route->getPWA()->getDescriptionOf($route) . ': ' . $e->getMessage(), null, $e);
                     $this->getWorkbench()->getLogger()->logException($ex);
                 }
             }

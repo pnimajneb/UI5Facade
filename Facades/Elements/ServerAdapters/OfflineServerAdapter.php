@@ -9,6 +9,7 @@ use exface\Core\Interfaces\Widgets\iHaveQuickSearch;
 use exface\Core\Actions\ReadPrefill;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\Core\Interfaces\Model\MetaAttributeInterface;
+use exface\Core\CommonLogic\DataSheets\DataColumn;
 
 class OfflineServerAdapter implements UI5ServerAdapterInterface
 {
@@ -47,36 +48,43 @@ class OfflineServerAdapter implements UI5ServerAdapterInterface
     
     protected function buildJsPrefillLoader(string $oModelJs, string $oParamsJs, string $onModelLoadedJs, string $onOfflineJs, string $fallBackRequest) : string
     {
-        $uidComp = EXF_COMPARATOR_EQUALS;
+        $equals = EXF_COMPARATOR_EQUALS;
+        $obj = $this->getElement()->getMetaObject();
+        $uidColNameJs = $obj->hasUidAttribute() ? "'" . DataColumn::sanitizeColumnName($obj->getUidAttributeAlias()) . "'" : 'null';
         return <<<JS
 
                 var uid;
+                var uidCol = $uidColNameJs;
                 if ($oParamsJs.data && $oParamsJs.data.rows && $oParamsJs.data.rows[0]) {
-                    uid = $oParamsJs.data.rows[0]['{$this->getElement()->getMetaObject()->getUidAttribute()->getAlias()}']; 
-
-                    if (uid === undefined || uid === '') {
-                        console.warn('Cannot prefill from preload data: no UID value found in input rows!');
+                    if (uidCol) {
+                        uid = $oParamsJs.data.rows[0][uidCol]; 
+    
+                        if (uid === undefined || uid === '') {
+                            console.warn('Cannot prefill from preload data: no UID value found in input rows!');
+                        }
+        
+                        if ($oParamsJs.data.filters === undefined) {
+                            $oParamsJs.data.filters = {};
+                        }
+        
+                        if ($oParamsJs.data.filters.conditions === undefined) {
+                            $oParamsJs.data.filters.conditions = [];
+                        }     
+        
+                        $oParamsJs.data.filters.conditions.push({
+                            expression: uidCol,
+                            comparator: '{$equals}',
+                            value: uid,
+                            object_alias: '{$obj->getAliasWithNamespace()}'
+                        });
+                    } else {
+                        return Promise.resolve($oParamsJs.data.rows[0]);
                     }
-    
-                    if ($oParamsJs.data.filters === undefined) {
-                        $oParamsJs.data.filters = {};
-                    }
-    
-                    if ($oParamsJs.data.filters.conditions === undefined) {
-                        $oParamsJs.data.filters.conditions = [];
-                    }     
-    
-                    $oParamsJs.data.filters.conditions.push({
-                        expression: '{$this->getElement()->getMetaObject()->getUidAttribute()->getDataAddress()}',
-                        comparator: '{$uidComp}',
-                        value: uid,
-                        object_alias: '{$this->getElement()->getMetaObject()->getAliasWithNamespace()}'
-                    });
                 }
 
-                {$this->buildJsDataLoader($oModelJs, $oParamsJs, $onModelLoadedJs, $onOfflineJs, $fallBackRequest, true)}
-
 JS;
+             
+        return $this->buildJsDataLoader($oModelJs, $oParamsJs, $onModelLoadedJs, $onOfflineJs, $fallBackRequest, true);
     }
     
     protected function buildJsDataLoader(string $oModelJs, string $oParamsJs, string $onModelLoadedJs, string $onOfflineJs, string $fallBackRequest, bool $useFirstRowOnly = false) : string

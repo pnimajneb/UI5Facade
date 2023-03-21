@@ -15,6 +15,7 @@ use exface\Core\Exceptions\Widgets\WidgetLogicError;
 use exface\Core\DataTypes\StringDataType;
 use exface\Core\Interfaces\Actions\iModifyData;
 use exface\Core\Interfaces\Actions\iCallOtherActions;
+use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
 
 /**
  *
@@ -23,7 +24,7 @@ use exface\Core\Interfaces\Actions\iCallOtherActions;
  * @author Andrej Kabachnik
  *
  */
-class UI5DataTable extends UI5AbstractElement
+class UI5DataTable extends UI5AbstractElement implements UI5DataElementInterface
 {    
     use JsConditionalPropertyTrait;
     

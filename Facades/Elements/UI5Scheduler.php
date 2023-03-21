@@ -9,6 +9,7 @@ use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
+use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
 
 /**
  * 
@@ -17,7 +18,7 @@ use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
  * @author Andrej Kabachnik
  *
  */
-class UI5Scheduler extends UI5AbstractElement
+class UI5Scheduler extends UI5AbstractElement implements UI5DataElementInterface
 {
     use UI5DataElementTrait {
         buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;

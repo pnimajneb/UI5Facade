@@ -4,8 +4,9 @@ namespace exface\UI5Facade\Facades\Elements;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JExcelTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
+use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
 
-class UI5DataSpreadSheet extends UI5AbstractElement
+class UI5DataSpreadSheet extends UI5AbstractElement implements UI5DataElementInterface
 {    
     use JExcelTrait;
     use UI5DataElementTrait {

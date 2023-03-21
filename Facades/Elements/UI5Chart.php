@@ -10,6 +10,7 @@ use exface\Core\Actions\SaveData;
 use exface\Core\Factories\WidgetFactory;
 use exface\Core\CommonLogic\UxonObject;
 use exface\Core\Widgets\DataButton;
+use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
 
 /**
  * 
@@ -19,7 +20,7 @@ use exface\Core\Widgets\DataButton;
  * @author Andrej Kabachnik
  *
  */
-class UI5Chart extends UI5AbstractElement
+class UI5Chart extends UI5AbstractElement implements UI5DataElementInterface
 {
     use EChartsTrait;
     use UI5DataElementTrait {

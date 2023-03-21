@@ -12,6 +12,7 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Interfaces\Actions\iModifyData;
 use exface\Core\Exceptions\Widgets\WidgetLogicError;
 use exface\Core\Interfaces\Actions\iCallOtherActions;
+use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
 
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
@@ -29,7 +30,7 @@ use exface\Core\Interfaces\Actions\iCallOtherActions;
  * @author Andrej Kabachnik
  *
  */
-class UI5FileList extends UI5AbstractElement
+class UI5FileList extends UI5AbstractElement implements UI5DataElementInterface
 {
     const EVENT_NAME_AFTER_ITEM_ADDED = 'afterItemAdded';
     const EVENT_NAME_BEFORE_ITEM_REMOVED = 'beforeItemRemoved';

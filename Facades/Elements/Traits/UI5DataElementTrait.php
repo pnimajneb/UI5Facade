@@ -23,6 +23,7 @@ use exface\Core\Interfaces\Actions\iReadData;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 use exface\Core\CommonLogic\UxonObject;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
+use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -335,7 +336,7 @@ JS;
      */
     protected function buildJsToolbar($oControllerJsVar = 'oController', string $leftExtras = null, string $rightExtras = null)
     {
-        $visible = $this->getWidget()->getHideHeader() === true && $this->getWidget()->getHideCaption() ? 'false' : 'true';
+        $visible = $this->hasToolbarTop() ? 'true' : 'false';
         
         // Remove bottom line of the toolbar if it is to be integrated into the dynamic page header
         if ($this->getDynamicPageShowToolbar() === true) {
@@ -354,6 +355,15 @@ JS;
 			})
 
 JS;
+    }
+    
+    /**
+     * 
+     * @return bool
+     */
+    public function hasToolbarTop() : bool
+    {
+        return ! ($this->getWidget()->getHideHeader() === true && $this->getWidget()->getHideCaption());
     }
     
     /**
@@ -1052,7 +1062,7 @@ JS;
      *
      * @return boolean
      */
-    public function isWrappedInDynamicPage()
+    public function isWrappedInDynamicPage() : bool
     {
         $widget = $this->getWidget();
         if ($widget->getHideHeader() === null) {
@@ -1440,7 +1450,7 @@ JS;
      * @param bool $value
      * @return self
      */
-    public function setDynamicPageHeaderCollapsed(bool $value) : self
+    public function setDynamicPageHeaderCollapsed(bool $value) : AjaxFacadeElementInterface
     {
         $this->dynamicPageHeaderCollapsed = $value;
         return $this;
@@ -1491,7 +1501,7 @@ JS;
      * @param bool $trueOrFalse
      * @return self
      */
-    public function setDynamicPageShowToolbar(bool $trueOrFalse) : self
+    public function setDynamicPageShowToolbar(bool $trueOrFalse) : AjaxFacadeElementInterface
     {
         $this->dynamicPageShowToolbar = $trueOrFalse;
         return $this;

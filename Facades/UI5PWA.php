@@ -23,10 +23,10 @@ use exface\Core\Interfaces\Actions\iExportData;
 use exface\Core\Interfaces\Actions\iNavigate;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Actions\ShowWidget;
-use exface\Core\Interfaces\UserImpersonationInterface;
-use exface\Core\Interfaces\DataSheets\DataSheetInterface;
-use exface\Core\Factories\DataSheetFactory;
-use exface\Core\DataTypes\ComparatorDataType;
+use exface\Core\Widgets\KPI;
+use exface\Core\Widgets\Filter;
+use exface\Core\Widgets\DataLookupDialog;
+use exface\Core\Interfaces\Actions\iRefreshInputWidget;
 
 /**
  * 
@@ -89,16 +89,22 @@ class UI5PWA extends AbstractPWA
                     break;
                 }
                 $action = $widget->getAction();
+                
+                if ($this->isActionIgnored($action)) {
+                    break;
+                }
+                
                 $this->addAction($action, $widget);
                 switch (true) {
                     case $action instanceof iReadData:
                     case $widget instanceof iSupportLazyLoading && $widget->getLazyLoadingAction() === $action:
                         $inputWidget = $widget instanceof iUseInputWidget ? $widget->getInputWidget() : $widget;
-                        if ($this->getActionOfflineStrategy($action) === OfflineStrategyDataType::PRESYNC) {
-                            $data = $action instanceof ReadPrefill ?  $inputWidget->prepareDataSheetToPrefill() : $inputWidget->prepareDataSheetToRead();
-                            $dataSet = $this->addData($data, $action, $widget);
-                            yield $logIndent . 'Data for ' . $this->getDescriptionOf($dataSet) . PHP_EOL;
+                        if ($this->getActionOfflineStrategy($action) !== OfflineStrategyDataType::PRESYNC) {
+                            break;
                         }
+                        $data = $action instanceof ReadPrefill ?  $inputWidget->prepareDataSheetToPrefill() : $inputWidget->prepareDataSheetToRead();
+                        $dataSet = $this->addData($data, $action, $widget);
+                        yield $logIndent . 'Data for ' . $this->getDescriptionOf($dataSet) . PHP_EOL;
                         break;
                     case $action instanceof iShowWidget:
                         if (null !== $widgetActionWidget = $widget->getAction()->getWidget()) {
@@ -121,9 +127,33 @@ class UI5PWA extends AbstractPWA
                 break;
         }
         
-        foreach ($widget->getChildren() as $child) {
-            yield from $this->generateModelForWidget($child, ($linkDepth-1));
+        $furtherDepth = ($linkDepth-1);
+        // Do not load offline data for KPI filters as they are not visible in UI5
+        if ($widget instanceof KPI) {
+            $furtherDepth = 1;
         }
+        // Do not take autosuggest-filters inside of lookup dialogs offline - this will produce a lot of useless data
+        if (($widget instanceof Filter) && $widget->getParentByClass(DataLookupDialog::class)) {
+            return;
+        }
+        foreach ($widget->getChildren() as $child) {
+            yield from $this->generateModelForWidget($child, $furtherDepth);
+        }
+    }
+    
+    /**
+     * 
+     * @param ActionInterface $action
+     * @return bool
+     */
+    protected function isActionIgnored(ActionInterface $action) : bool
+    {
+        switch (true) {
+            // Ignore refresh, reload and search-buttons as they behave exactly like their target widget
+            case $action instanceof iRefreshInputWidget:
+                return true;
+        }
+        return false;
     }
     
     protected function isWidgetLazyLoading(WidgetInterface $widget) : bool
