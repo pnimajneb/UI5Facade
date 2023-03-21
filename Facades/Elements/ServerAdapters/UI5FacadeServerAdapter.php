@@ -174,7 +174,6 @@ JS;
         
         return <<<JS
 
-                        (function(oModel, oParams){
                             var bSkipIfOffline = $skipOfflineJs;
                             var response;
                             var aEffects = [];
@@ -186,16 +185,16 @@ JS;
                             };
                             var fnOnError = function() {
                                 $onErrorJs
-                            }
+                            };
 
-                            {$this->buildJsEffects($action, 'oParams', 'aEffects')};
+                            {$this->buildJsEffects($action, $oParamsJs, 'aEffects')};
 
-							oParams.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';
+							$oParamsJs.webapp = '{$this->getElement()->getFacade()->getWebapp()->getRootPage()->getAliasWithNamespace()}';
                             var oComponent = {$controller->buildJsComponentGetter()};                
                             if (navigator.onLine === false) {
                                 if (bSkipIfOffline) {
                                     fnOnModelLoaded();
-                                    return oModel;
+                                    return $oModelJs;
                                 }
                                 if (exfPWA) {
                                     var actionParams = {
@@ -213,7 +212,7 @@ JS;
                                     )
                                     .then(function(key) {
                                         response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};
-                                        oModel.setData(response);
+                                        $oModelJs.setData(response);
                                         fnOnModelLoaded.apply(this);
                                     })
                                     .catch(function(error) {
@@ -226,13 +225,13 @@ JS;
                                 } else {
                                     fnOnOffline();
                                 }
-                                return oModel;
+                                return $oModelJs;
                             } else {
                                 return $.ajax({
     								type: 'POST',
     								url: '{$this->getElement()->getAjaxUrl()}',
                                     {$headers}
-    								data: oParams,
+    								data: $oParamsJs,
     								success: function(data, textStatus, jqXHR) {
                                         if (typeof data === 'object') {
                                             response = data;
@@ -245,7 +244,7 @@ JS;
         									}
                                         }
     				                   	if (response.success){
-                                            oModel.setData(response);
+                                            $oModelJs.setData(response);
     										fnOnModelLoaded();
     				                    } else {
     										{$this->getElement()->buildJsShowMessageError('response.error', '"Server error"')}
@@ -262,10 +261,9 @@ JS;
     								}
     							})
                                 .then(function(){
-                                    return oModel;
+                                    return $oModelJs;
                                 });
                             }
-                        })($oModelJs, $oParamsJs);
                                         
 JS;
     }

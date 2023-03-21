@@ -51,7 +51,7 @@ class OfflineServerAdapter implements UI5ServerAdapterInterface
         $equals = EXF_COMPARATOR_EQUALS;
         $obj = $this->getElement()->getMetaObject();
         $uidColNameJs = $obj->hasUidAttribute() ? "'" . DataColumn::sanitizeColumnName($obj->getUidAttributeAlias()) . "'" : 'null';
-        return <<<JS
+        $js = <<<JS
 
                 var uid;
                 var uidCol = $uidColNameJs;
@@ -78,13 +78,14 @@ class OfflineServerAdapter implements UI5ServerAdapterInterface
                             object_alias: '{$obj->getAliasWithNamespace()}'
                         });
                     } else {
+                        {$onModelLoadedJs}
                         return Promise.resolve($oParamsJs.data.rows[0]);
                     }
                 }
 
 JS;
              
-        return $this->buildJsDataLoader($oModelJs, $oParamsJs, $onModelLoadedJs, $onOfflineJs, $fallBackRequest, true);
+        return $js . $this->buildJsDataLoader($oModelJs, $oParamsJs, $onModelLoadedJs, $onOfflineJs, $fallBackRequest, true);
     }
     
     protected function buildJsDataLoader(string $oModelJs, string $oParamsJs, string $onModelLoadedJs, string $onOfflineJs, string $fallBackRequest, bool $useFirstRowOnly = false) : string
