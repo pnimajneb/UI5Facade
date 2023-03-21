@@ -201,7 +201,7 @@ JS;
                                         type: 'POST',
         								url: '{$this->getElement()->getAjaxUrl()}',
                                         {$headers}
-        								data: {}
+        								data: {$oParamsJs}
                                     };                          
                                     exfPWA.actionQueue.add(
                                         actionParams, 
@@ -213,7 +213,7 @@ JS;
                                     .then(function(key) {
                                         response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};
                                         $oModelJs.setData(response);
-                                        fnOnModelLoaded.apply(this);
+                                        fnOnModelLoaded();
                                     })
                                     .catch(function(error) {
                                         console.error(error);
