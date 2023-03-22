@@ -1061,7 +1061,7 @@ class Webapp implements WorkbenchDependantInterface
     			console.warn("Failed loading offline data from $url");
     			oController.getOwnerComponent().showAjaxErrorDialog(jqXHR);
     		}
-    	})
+    	});
         exfPWA.model.addPWA('{$pwa->getURL()}');
     }
 })(this);

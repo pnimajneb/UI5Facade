@@ -25,8 +25,9 @@ class UI5FacadeApp extends App
         $installer = parent::getInstaller($injected_installer);
         
         // Install routes
+        $facade = FacadeFactory::createFromString('exface.UI5Facade.UI5Facade', $this->getWorkbench());
         $tplInstaller = new HttpFacadeInstaller($this->getSelector());
-        $tplInstaller->setFacade(FacadeFactory::createFromString('exface.UI5Facade.UI5Facade', $this->getWorkbench()));
+        $tplInstaller->setFacade($facade);
         $installer->addInstaller($tplInstaller);
         
         // Install SQL tables for UI5 export projects
@@ -43,7 +44,7 @@ class UI5FacadeApp extends App
         $installer->addInstaller($schema_installer); 
         
         // Install ServiceWorker
-        $installer->addInstaller(ServiceWorkerInstaller::fromConfig($this->getSelector(), $this->getConfig()));
+        $installer->addInstaller(ServiceWorkerInstaller::fromConfig($this->getSelector(), $this->getConfig(), $facade->getFileVersionHash()));
         
         return $installer;
     }
