@@ -248,11 +248,11 @@ JS;
     										fnOnModelLoaded();
     				                    } else {
     										{$this->getElement()->buildJsShowMessageError('response.error', '"Server error"')}
-                                            onError();
+                                            fnOnError();
     				                    }
     								},
     								error: function(jqXHR, textStatus, errorThrown){
-                                        onError();
+                                        fnOnError();
                                         if (navigator.onLine === false) {
                                             fnOnOffline();
                                         } else {
