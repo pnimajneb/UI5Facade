@@ -684,14 +684,8 @@ JS;
                 
         }
         
-        // Get rid of readonly columns
-        $readOnlyColNames = [];
-        foreach ($widget->getColumns() as $col) {
-            if ($col->isReadonly()) {
-                $readOnlyColNames[] = $col->getDataColumnName();
-            }
-        }
-        $readOnlyColNamesJs = json_encode($readOnlyColNames);
+        // Determine the columns we need in the actions data
+        $colNamesList = implode(',', $widget->getActionDataColumnNames());
         
         // TODO Get rid of model columns, that are neither in the widgets columns (e.g. sorting, etc.) nor system
         
@@ -699,21 +693,11 @@ JS;
     function() {
         var oTable = sap.ui.getCore().byId('{$this->getId()}');
         var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
-        var aReadOnlyColNames = $readOnlyColNamesJs;
-        var aRows = {$aRowsJs}
-
-        if (oTable.getModel().getProperty('/_dirty') || (oDirtyColumn && oDirtyColumn.getVisible() === true)) {
-            for (var i = 0; i < aRows.length; i++) {
-                delete aRows[i]['{$this->getDirtyFlagAlias()}'];
-            }
-        }
-
-        aReadOnlyColNames.forEach(function(sColName){
-            for (var i = 0; i < aRows.length; i++) {
-                delete aRows[i][sColName];
-            }
-        });
+        var aRows = {$aRowsJs};
         
+        // Remove any keys, that are not in the columns of the widget
+        aRows = aRows.map(({ $colNamesList }) => ({ $colNamesList }));
+
         return $data;
     }()
 JS;

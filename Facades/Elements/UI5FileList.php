@@ -588,6 +588,9 @@ JS;
         $widget = $this->getWidget();
         $dataObj = $this->getMetaObjectForDataGetter($action);
         
+        // Determine the columns we need in the actions data
+        $colNamesList = implode(',', $widget->getActionDataColumnNames());
+        
         switch (true) {
             // Editable tables with modifying actions return all rows either directly or as subsheet
             case $widget->isUploadEnabled() && ($action instanceof iModifyData):
@@ -598,9 +601,12 @@ JS;
                     case $action->getInputMapper($widget->getMetaObject()) !== null:
                         return <<<JS
     function() {
+        var aRows = {$this->buildJsGetRowsAll("sap.ui.getCore().byId('{$this->getId()}')")};
+        // Remove any keys, that are not in the columns of the widget
+        aRows = aRows.map(({ $colNamesList }) => ({ $colNamesList }));
         return {
             oId: '{$this->getWidget()->getMetaObject()->getId()}',
-            rows: {$this->buildJsGetRowsAll("sap.ui.getCore().byId('{$this->getId()}')")}
+            rows: aRows
         };
     }()
 
@@ -643,35 +649,15 @@ JS;
                 
         }
         
-        // Get rid of readonly columns
-        $readOnlyColNames = [];
-        foreach ($widget->getColumns() as $col) {
-            if ($col->isReadonly()) {
-                $readOnlyColNames[] = $col->getDataColumnName();
-            }
-        }
-        $readOnlyColNamesJs = json_encode($readOnlyColNames);
-        
         // FIX move this copy-pasted code to UI5DataElementTrait and remove it from UI5DataTable too.
         
         return <<<JS
     function() {
         var oTable = sap.ui.getCore().byId('{$this->getId()}');
         var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
-        var aReadOnlyColNames = $readOnlyColNamesJs;
         var aRows = {$aRowsJs};
-        
-        if (oTable.getModel().getProperty('/_dirty') || (oDirtyColumn && oDirtyColumn.getVisible() === true)) {
-            for (var i = 0; i < aRows.length; i++) {
-                delete aRows[i]['{$this->getDirtyFlagAlias()}'];
-            }
-        }
-        
-        aReadOnlyColNames.forEach(function(sColName){
-            for (var i = 0; i < aRows.length; i++) {
-                delete aRows[i][sColName];
-            }
-        });
+        // Remove any keys, that are not in the columns of the widget
+        aRows = aRows.map(({ $colNamesList }) => ({ $colNamesList }));
         
         return $data;
     }()

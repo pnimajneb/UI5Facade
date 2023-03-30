@@ -2161,7 +2161,14 @@ JS;
      */
     protected function buildJsGetRowsAll(string $oControlJs) : string
     {
-        return "{$oControlJs}.getModel().getData().rows";
+        $colNames = [];
+        foreach ($this->getWidget()->getColumns() as $col) {
+            if ($col->isReadonly()) {
+                continue;
+            }
+            $colNames[] = $col->getDataColumnName();
+        }
+        return "({$oControlJs}.getModel().getData().rows || [])";
     }
     
     /**
@@ -2180,18 +2187,18 @@ JS;
         } else {
             $getRows = "var rows = {$this->buildJsGetRowsSelected('oControl')};";
         }
+        
+        // Determine the columns we need in the actions data
+        $colNamesList = implode(',', $this->getDataWidget()->getActionDataColumnNames());
+        
         return <<<JS
     function() {
         var oDirtyCtrl = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
         var oControl = sap.ui.getCore().byId('{$this->getId()}');
         {$getRows}
-        rows = rows || [];
-
-        if (oControl.getModel().getProperty('/_dirty') || (oDirtyCtrl && oDirtyCtrl.getVisible() === true)) {
-            for (var i = 0; i < rows.length; i++) {
-                delete rows[i]['{$this->getDirtyFlagAlias()}'];
-            }
-        }
+        rows = rows || [];        
+        // Remove any keys, that are not in the columns of the widget
+        rows = rows.map(({ $colNamesList }) => ({ $colNamesList }));
 
         return {
             oId: '{$this->getWidget()->getMetaObject()->getId()}',
