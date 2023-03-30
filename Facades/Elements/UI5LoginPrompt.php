@@ -13,6 +13,7 @@ class UI5LoginPrompt extends UI5Container
     {
         // Disable value binding for all inputs - otherwise common fields (like username/password) 
         // of all forms will be filled simultanuously because of being bound to the same model.
+        $widget = $this->getWidget();
         foreach ($this->getWidget()->getInputWidgets() as $input) {
             $this->getFacade()->getElement($input)->setValueBindingDisabled(true);
         }
@@ -20,11 +21,28 @@ class UI5LoginPrompt extends UI5Container
         $iconTabBar = $this->buildJsIconTabBar($oControllerJs);
         $captionJs = json_encode($this->getCaption());
         
+        $messageContent = '';
+        if ($widget->hasMessages()) {
+            foreach ($widget->getMessageList()->getMessages() as $message) {
+                if ($this->isStandalone()) {
+                    $message->setWidth("{$this->getWidthRelativeUnit()}px");
+                }
+                switch ($widget->getVisibility()) {
+                    case EXF_WIDGET_VISIBILITY_HIDDEN:
+                        $message->setHidden(true);
+                        break;
+                }
+                $messageEl = $this->getFacade()->getElement($message);
+                $messageContent .= $messageEl->buildJsConstructorForMainControl($oControllerJs) . ',';
+            }
+        }
+        
         $panel = <<<JS
 
     new sap.m.Panel({
         headerText: $captionJs,
         content: [
+            $messageContent
             $iconTabBar
         ]
     }).addStyleClass('sapUiNoContentPadding exf-loginprompt-panel')
@@ -109,5 +127,10 @@ JS;
                         }).addStyleClass('exf-loginprompt-flexbox')
                         
 JS;
+    }
+    
+    protected function isStandalone() : bool
+    {
+        return $this->getWidget()->hasParent() === false;
     }
 }

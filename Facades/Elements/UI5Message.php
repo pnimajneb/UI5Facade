@@ -20,19 +20,44 @@ class UI5Message extends UI5Value
      */
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {        
+        $this->registerMessageStripCss();
         return <<<JS
 
         new sap.m.MessageStrip("{$this->getId()}", {
             text: {$this->buildJsValue()},
-            {$this->buildJsPropertyWidth()}
             {$this->buildJsProperties()}
 			{$this->buildJsPropertyType()}
 			showIcon: true,
             enableFormattedText: true,
-		}).addStyleClass('sapUiResponsiveMargin')
+		}).addStyleClass('sapUiResponsiveMargin').addStyleClass('exf-message-strip')
 
 JS;
     }
+    
+    protected function registerMessageStripCss()
+    {
+        $css = ".exf-message-strip { width: {$this->buildCssWidth()} }";
+        $cssId = $this->getId();
+        if (! $this->getUseWidgetId()) {
+            $this->setUseWidgetId(true);
+            $cssId = $this->getId();
+            $this->setUseWidgetId(false);
+        }
+        $cssId .= '_color_css';
+        
+        $this->getController()->addOnInitScript(<<<JS
+            
+(function(){
+    var jqTag = $('#{$cssId}');
+    if (jqTag.length === 0) {
+        $('head').append($('<style type="text/css" id="{$cssId}"></style>').text('$css'));
+    }
+})();
+
+JS, false);
+        return;
+    }
+    
     
     /**
      * Returns inline javascript code for the value of the value property (without the property name).
