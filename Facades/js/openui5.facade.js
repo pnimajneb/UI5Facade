@@ -417,7 +417,7 @@ const exfLauncher = {};
 		dialog.addButton(button);
 		list = new sap.m.List({});
 		//check if possible to acces storage (means https connection)
-		if (navigator.storage) {
+		if (navigator.storage && navigator.storage.estimate) {
 			var promise = navigator.storage.estimate()
 			.then(function(estimate) {
 				list = new sap.m.List({
