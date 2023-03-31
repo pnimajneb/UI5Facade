@@ -463,11 +463,6 @@ const exfLauncher = {};
 			});
 			//wait for the promise to resolve
 			await promise;
-		} else {
-			list.addItem(new sap.m.GroupHeaderListItem({
-				title: "{i18n>WEBAPP.SHELL.NETWORK.STORAGE_OVERVIEW_ERROR}",
-				upperCase: false
-			}))
 		}
 		
 		list.addItem(new sap.m.GroupHeaderListItem({
