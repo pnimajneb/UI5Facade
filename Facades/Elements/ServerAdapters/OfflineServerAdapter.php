@@ -111,6 +111,8 @@ JS;
                 .then(oDataSet => {
                     var bGetFirstRowOnly = $useFirstRowJs;
                     var aData = [];
+                    var sUrlFilterPrefix = '{$this->getElement()->getFacade()->getUrlFilterPrefix()}';
+                    var oFilters = {operator: 'AND', conditions: [], ignore_empty_values: true};
                     var iFiltered = null;
 
                     if (oDataSet === undefined || ! Array.isArray(oDataSet.rows)) {
@@ -119,9 +121,28 @@ JS;
                     }
                     
                     aData = oDataSet.rows;
-                    if ({$oParamsJs}.data && {$oParamsJs}.data.filters) {
-                        aData = exfTools.data.filterRows(aData, {$oParamsJs}.data.filters);
+                    for (var k in {$oParamsJs}) {
+                        if (k.startsWith(sUrlFilterPrefix)) {
+                            oFilters.conditions.push({
+                                expression: k.substring(sUrlFilterPrefix.length),
+                                comparator: '=',
+                                value: {$oParamsJs}[k]
+                            });
+                        }
                     }
+                    if ({$oParamsJs}.data && {$oParamsJs}.data.filters) {
+                        if (oFilters.conditions.length === 0) {
+                            oFilters = {$oParamsJs}.data.filters;
+                        } else {
+                            if ({$oParamsJs}.data.filters.operator === 'AND') {
+                                {$oParamsJs}.data.filters.conditions.push(...oFilters.conditions);
+                                oFilters = {$oParamsJs}.data.filters;
+                            } else {
+                                oFilters.nested_groups = [{$oParamsJs}.data.filters];
+                            }
+                        }
+                    } 
+                    aData = exfTools.data.filterRows(aData, oFilters);
 
                     if ({$oParamsJs}.q !== undefined && {$oParamsJs}.q !== '') {
                         var sQuery = {$oParamsJs}.q.toString().toLowerCase();
@@ -140,7 +161,8 @@ JS;
                         {$oModelJs}.setData({
                             oId: '{$widget->getMetaObject()->getId()}', 
                             rows: aData, 
-                            recordsFiltered: iFiltered
+                            recordsFiltered: iFiltered,
+                            recordsTotal: iFiltered
                         });
                     }
                     
