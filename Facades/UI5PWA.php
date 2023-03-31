@@ -82,7 +82,6 @@ class UI5PWA extends AbstractPWA
                         yield $logIndent . 'Data for ' . $this->getDescriptionOf($dataSet) . PHP_EOL;
                     }
                 }
-                yield from $this->generateModelForWidget($widget, ($linkDepth-1));
                 break;
             case $widget instanceof iTriggerAction:
                 if (! $widget->hasAction()) {

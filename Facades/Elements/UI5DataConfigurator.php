@@ -6,7 +6,6 @@ use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\DataTypes\SortingDirectionsDataType;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Widgets\Dialog;
-use exface\Core\Interfaces\Widgets\iTakeInput;
 use exface\Core\Widgets\Data;
 
 /**
