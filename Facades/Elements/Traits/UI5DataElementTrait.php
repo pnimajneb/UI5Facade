@@ -513,9 +513,37 @@ JS;
         $id = $this->getId() . '_fullscreenButton';
         
         $script = <<<JS
+
 var jqFullscreenContainer = {$this->buildJsFullscreenContainerGetter()};
 var oButton = sap.ui.getCore().getElementById('{$id}');
 var jqButton = $('#{$this->getId()}')[0];
+
+//set the z-index of the fullscreen dynamically so it works with popovers
+var iZIndex = 0;
+var iMaxZIndex = 0;
+var parent = jqFullscreenContainer.parent();
+if (isNaN(jqFullscreenContainer.css('z-index'))) {
+    //get the maximum z-index of parent elements of the data element
+    while (parent.length !== 0 && parent[0].tagName !== "BODY") {
+        iZIndex = parseInt(parent.css("z-index"));
+        
+        if (!isNaN(iZIndex) && iZIndex > iMaxZIndex) {
+            iMaxZIndex = iZIndex;
+        }    
+        parent = parent.parent();
+    }
+
+    //check if the currently found maximum z-index is bigger than the z-index of the app header 
+    var jqHeaderElement = $('.sapUiUfdShellHead');
+    iZIndex = parseInt(jqHeaderElement.css("z-index"));
+    if (!isNaN(iZIndex) && iZIndex > iMaxZIndex) {
+        iMaxZIndex = iZIndex;
+    }
+    
+    iMaxZIndex = iMaxZIndex + 1;
+    jqFullscreenContainer.css('z-index', iMaxZIndex);
+}
+
 if (jqFullscreenContainer.hasClass('fullscreen') === false) {
     jqButton._originalParent = jqFullscreenContainer.parent();
     jqFullscreenContainer.appendTo($('#sap-ui-static')[0]).addClass('fullscreen');
