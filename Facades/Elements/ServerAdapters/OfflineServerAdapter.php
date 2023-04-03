@@ -51,41 +51,54 @@ class OfflineServerAdapter implements UI5ServerAdapterInterface
         $equals = EXF_COMPARATOR_EQUALS;
         $obj = $this->getElement()->getMetaObject();
         $uidColNameJs = $obj->hasUidAttribute() ? "'" . DataColumn::sanitizeColumnName($obj->getUidAttributeAlias()) . "'" : 'null';
-        $js = <<<JS
+        // TODO this does not load any prefill if there is no input data. What about prefills for formula values or
+        // context values? Probably need some separate "prefill" row in the offline data of an object if there
+        // is such kind of prefill needed for the object.
+        $checkIfPrefillRequiredJs = <<<JS
 
-                var uid;
-                var uidCol = $uidColNameJs;
-                if ($oParamsJs.data && $oParamsJs.data.rows && $oParamsJs.data.rows[0]) {
-                    if (uidCol) {
-                        uid = $oParamsJs.data.rows[0][uidCol]; 
-    
-                        if (uid === undefined || uid === '') {
-                            console.warn('Cannot prefill from preload data: no UID value found in input rows!');
+                if (navigator.onLine === false) {
+                    var uid;
+                    var uidCol = $uidColNameJs;
+                    var bStopPrefill = false;
+                    if ($oParamsJs.data && $oParamsJs.data.rows && $oParamsJs.data.rows[0]) {
+                        if (uidCol) {
+                            uid = $oParamsJs.data.rows[0][uidCol]; 
+        
+                            if (uid === undefined || uid === '') {
+                                console.warn('Cannot prefill from preload data: no UID value found in input rows!');
+                            }
+            
+                            if ($oParamsJs.data.filters === undefined) {
+                                $oParamsJs.data.filters = {};
+                            }
+            
+                            if ($oParamsJs.data.filters.conditions === undefined) {
+                                $oParamsJs.data.filters.conditions = [];
+                            }     
+            
+                            $oParamsJs.data.filters.conditions.push({
+                                expression: uidCol,
+                                comparator: '{$equals}',
+                                value: uid,
+                                object_alias: '{$obj->getAliasWithNamespace()}'
+                            });
+                        } else {
+                            $oModelJs.setData($oParamsJs.data.rows[0]);
+                            bStopPrefill = true;
                         }
-        
-                        if ($oParamsJs.data.filters === undefined) {
-                            $oParamsJs.data.filters = {};
-                        }
-        
-                        if ($oParamsJs.data.filters.conditions === undefined) {
-                            $oParamsJs.data.filters.conditions = [];
-                        }     
-        
-                        $oParamsJs.data.filters.conditions.push({
-                            expression: uidCol,
-                            comparator: '{$equals}',
-                            value: uid,
-                            object_alias: '{$obj->getAliasWithNamespace()}'
-                        });
                     } else {
+                        bStopPrefill = true;
+                    }
+    
+                    if(bStopPrefill === true) {
                         {$onModelLoadedJs}
-                        return Promise.resolve($oParamsJs.data.rows[0]);
+                        return Promise.resolve($oModelJs);
                     }
                 }
 
 JS;
              
-        return $js . $this->buildJsDataLoader($oModelJs, $oParamsJs, $onModelLoadedJs, $onOfflineJs, $fallBackRequest, true);
+        return $checkIfPrefillRequiredJs . $this->buildJsDataLoader($oModelJs, $oParamsJs, $onModelLoadedJs, $onOfflineJs, $fallBackRequest, true);
     }
     
     protected function buildJsDataLoader(string $oModelJs, string $oParamsJs, string $onModelLoadedJs, string $onOfflineJs, string $fallBackRequest, bool $useFirstRowOnly = false) : string
@@ -119,7 +132,7 @@ JS;
                         console.log('No ofline data found for {$widget->getMetaObject()->getAliasWithNamespace()}: falling back to server request');
                         return fnFallback();
                     }
-                    
+                    console.log('offline data loaded');
                     aData = oDataSet.rows;
                     for (var k in {$oParamsJs}) {
                         if (k.startsWith(sUrlFilterPrefix)) {

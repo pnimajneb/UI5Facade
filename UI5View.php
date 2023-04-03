@@ -158,7 +158,7 @@ JS;
     public function getModel(string $name = '') : ui5ModelInterface
     {
         if ($this->model === null) {
-            $this->model =  $this->webapp->getViewModel($this->getName(), $name);
+            $this->model =  $this->webapp->getViewModel($this, $name);
         }
         return $this->model;
     }

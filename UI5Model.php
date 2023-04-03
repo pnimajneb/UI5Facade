@@ -6,28 +6,24 @@ use exface\Core\Interfaces\DataSheets\DataPointerInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ModelInterface;
 use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
 use exface\Core\Interfaces\Widgets\iShowDataColumn;
+use exface\Core\Interfaces\Widgets\PrefillModelInterface;
+use exface\Core\Widgets\Parts\PrefillModel;
 
-class UI5Model implements UI5ModelInterface
+class UI5Model extends PrefillModel implements UI5ModelInterface
 {    
     private $name = null;
     
     private $viewName = null;
     
-    private $webapp = null;
-    
-    private $rootElement = null;
-    
-    private $bindings = [];
-    
     /**
      * 
-     * @param Webapp $webapp
+     * @param WidgetInterface $widget
      * @param string $viewName
      * @param string $modelName
      */
-    public function __construct(Webapp $webapp, string $viewName, string $modelName = '')
+    public function __construct(WidgetInterface $widget, string $viewName, string $modelName = '')
     {
-        $this->webapp = $webapp;
+        parent::__construct($widget);
         $this->viewName = $viewName;
         $this->name = $modelName;
     }  
@@ -55,22 +51,11 @@ class UI5Model implements UI5ModelInterface
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Interfaces\UI5ModelInterface::setBindingPointer()
-     */
-    public function setBindingPointer(WidgetInterface $widget, string $bindingName, DataPointerInterface $pointer) : UI5ModelInterface
-    {
-        $this->bindings[$widget->getId()][$bindingName] = $pointer;
-        return $this;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Interfaces\UI5ModelInterface::getBindingPath()
      */
     public function getBindingPath(WidgetInterface $widget, string $bindingName) : string
     {
-        $binding = $this->bindings[$widget->getId()][$bindingName];
+        $binding = $this->getBinding($widget, $bindingName);
         
         if ($binding === null) {
             return '';
@@ -86,16 +71,6 @@ class UI5Model implements UI5ModelInterface
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Interfaces\UI5ModelInterface::hasBinding()
-     */
-    public function hasBinding(WidgetInterface $widget, string $bindingName) : bool
-    {
-        return $this->bindings[$widget->getId()][$bindingName] !== null;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Interfaces\UI5ModelInterface::hasBindingConflict()
      */
     public function hasBindingConflict(WidgetInterface $widget, string $bindingName) : bool
@@ -103,9 +78,10 @@ class UI5Model implements UI5ModelInterface
         // If there is not binding for the given widget and property, check if they conflict
         // with another binding
         if (! $this->hasBinding($widget, $bindingName)) {
-            // Iterat through bindings looking for those with the same binding name, but a different
+            // Iterate through bindings looking for those with the same binding name, but a different
             // widget id.
-            foreach ($this->bindings as $widgetId => $bindings) {
+            foreach ($this->getBoundWidgetIds() as $widgetId) {
+                $bindings = $this->getBindingsForWidgetId($widgetId);
                 if ($bindings[$bindingName] !== null && $widgetId !== $widget->getId()) {
                     $bindingWidget = $widget->getPage()->getWidget($widgetId);
                     // If the other binding's widget or the current widget are not showing a single attribute,

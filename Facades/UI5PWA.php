@@ -71,6 +71,7 @@ class UI5PWA extends AbstractPWA
         }
         
         switch (true) {
+            // Data widgets with lazy loading
             case $widget instanceof iSupportLazyLoading:
                 if ($this->isWidgetLazyLoading($widget) && $widget->hasAction()) {
                     $action = $widget->getAction();
@@ -83,41 +84,67 @@ class UI5PWA extends AbstractPWA
                     }
                 }
                 break;
+            // Buttons
             case $widget instanceof iTriggerAction:
+                // Don't bother if the button has no action
                 if (! $widget->hasAction()) {
                     break;
                 }
                 $action = $widget->getAction();
                 
+                // Some actions are ignored - e.g. iRefreshInputWidget
+                // There is no point even marking them as client-only as they only will bloat the PWA model
                 if ($this->isActionIgnored($action)) {
                     break;
                 }
                 
+                // Add the action to the PWA model in any case
                 $this->addAction($action, $widget);
+                
+                // Add other stuff like data or routes for certain actions
                 switch (true) {
+                    // Buttons with actions to read data
                     case $action instanceof iReadData:
+                    // ... or other types of actions that are used to read data by lazy loading widgets like data widgets
                     case $widget instanceof iSupportLazyLoading && $widget->getLazyLoadingAction() === $action:
+                        // Will need the create an offline data set for these actions if they are to be presynced
                         $inputWidget = $widget instanceof iUseInputWidget ? $widget->getInputWidget() : $widget;
                         if ($this->getActionOfflineStrategy($action) !== OfflineStrategyDataType::PRESYNC) {
                             break;
                         }
-                        $data = $action instanceof ReadPrefill ?  $inputWidget->prepareDataSheetToPrefill() : $inputWidget->prepareDataSheetToRead();
+                        $data = $action instanceof ReadPrefill ? $inputWidget->prepareDataSheetToPrefill() : $inputWidget->prepareDataSheetToRead();
                         $dataSet = $this->addData($data, $action, $widget);
                         yield $logIndent . 'Data for ' . $this->getDescriptionOf($dataSet) . PHP_EOL;
                         break;
+                    // Buttons with actions that show widgets
                     case $action instanceof iShowWidget:
+                        // If the action shows a specific widget (e.g. dialog) within a page
+                        // - add the route in any case
+                        // - add prefill data set if the action if it should work offline
+                        // - continue to search for actions within that widget if it should work offline
+                        // Otherwise, if the action points to an entire page, simply call generateModelForWidget for
+                        // the root of that page - it will take care of everything.
                         if (null !== $widgetActionWidget = $widget->getAction()->getWidget()) {
                             $route = new PWARoute(
                                 $this,
                                 $this->getViewForWidget($widgetActionWidget)->getRouteName(),
                                 $widgetActionWidget,
                                 $widget->getAction()
-                                );
+                            );
                             $this->addRoute($route);
                             yield $logIndent . 'Route for ' . $this->getDescriptionOf($route) . PHP_EOL;
+                            
                             if ($this->getActionOfflineStrategy($action) !== OfflineStrategyDataType::ONLINE_ONLY) {
+                                // Make sure, prefill data is available offline if the action is not online-only
+                                $this->addDataForPrefill($widgetActionWidget, $action);
+                                yield $logIndent . 'Prefill data for ' . $this->getDescriptionOf($route) . PHP_EOL;
+                                
+                                // Continue to search for actions inside the dialog/widget
                                 yield from $this->generateModelForWidget($widgetActionWidget, ($linkDepth-1), $logIndent . '  ');
+                            } else {
+                                yield $logIndent . $logIndent . 'Online-only route: stop processing nested routes' . PHP_EOL;
                             }
+                            
                         } elseif (null !== $widgetActionPage = $widget->getAction()->getPage()) {
                             yield from $this->generateModelForWidget($widgetActionPage->getWidgetRoot(), ($linkDepth-1), $logIndent . '  ');
                         }
@@ -125,6 +152,8 @@ class UI5PWA extends AbstractPWA
                 }
                 break;
         }
+        
+        // In any case, continue to search for actions among the children of the widget
         
         $furtherDepth = ($linkDepth-1);
         // Do not load offline data for KPI filters as they are not visible in UI5

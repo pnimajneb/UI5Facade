@@ -19,22 +19,17 @@ use GuzzleHttp\Psr7\Uri;
 use exface\Core\Interfaces\Log\LoggerInterface;
 use exface\Core\Interfaces\Tasks\HttpTaskInterface;
 use exface\Core\Interfaces\Widgets\iTriggerAction;
-use exface\Core\Interfaces\Tasks\ResultWidgetInterface;
-use exface\Core\Interfaces\Actions\iShowWidget;
-use exface\Core\Events\Widget\OnPrefillChangePropertyEvent;
 use exface\Core\Exceptions\Facades\FacadeLogicError;
 use exface\Core\Interfaces\Exceptions\ExceptionInterface;
 use exface\Core\Exceptions\Facades\FacadeRoutingError;
-use exface\Core\Interfaces\DataSheets\DataSheetInterface;
-use exface\Core\Events\DataSheet\OnBeforeReadDataEvent;
 use exface\Core\CommonLogic\Security\Authorization\UiPageAuthorizationPoint;
 use exface\Core\Widgets\LoginPrompt;
 use exface\Core\Exceptions\Security\AuthenticationFailedError;
 use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
-use exface\Core\Events\Widget\OnPrefillDataLoadedEvent;
-use exface\Core\Events\Action\OnActionInputValidatedEvent;
-use exface\Core\Events\Action\OnBeforeActionInputValidatedEvent;
 use exface\Core\DataTypes\OfflineStrategyDataType;
+use exface\Core\CommonLogic\Tasks\GenericTask;
+use exface\Core\Actions\ShowWidget;
+use exface\Core\Interfaces\Tasks\TaskInterface;
 
 class Webapp implements WorkbenchDependantInterface
 {
@@ -91,171 +86,22 @@ class Webapp implements WorkbenchDependantInterface
      * handled by the workbench and the resulting prefilled widget is returned.
      * 
      * @param WidgetInterface $widget
-     * @param HttpTaskInterface $task
+     * @param TaskInterface $task
      * 
      * @return WidgetInterface
      */
-    public function handlePrefill(WidgetInterface $widget, HttpTaskInterface $task) : WidgetInterface
+    public function handlePrefill(UI5ViewInterface $view, TaskInterface $task) : Webapp
     {
         // The whole trick only makes sense for widgets, that are created by actions (e.g. via button press).
         // Otherwise we would not be able to find out, if the widget is supposed to be prefilled because 
         // actions controll the prefill.
-        if ($widget->getParent() instanceof iTriggerAction) {
-            $button = $widget->getParent();
-            // Make sure, the task has page and widget selectors (they are not set automatically, for routed URLs)
-            $task->setPageSelector($button->getPage()->getSelector());
-            $task->setWidgetIdTriggeredBy($button->getId());
-            
-            // Now see, what action, we are dealing with and whether it requires a prefill
-            $action = $button->getAction();
-            if (($action instanceof iShowWidget) && ($action->getPrefillWithInputData() || $action->getPrefillWithPrefillData() || $action->getPrefillWithFilterContext())) {
-                // If a prefill is required, but there is no input data (e.g. a button with ShowObjectEditDialog was pressed and
-                // the corresponding view or viewcontroller is being loaded), just fake the input data by reading the first row of
-                // the default data for the input widget. Since we are just interested in model bindings, id does not matter, what
-                // data we use as prefill - only it's structure matters!
-                if (! $task->hasInputData() && $action->getPrefillWithInputData()) {
-                    try {
-                        $inputData = $button->getInputWidget()->prepareDataSheetToRead();
-                        $inputData = $this->handlePrefillGenerateDummyData($inputData);
-                        $task->setInputData($inputData);
-                    } catch (\Throwable $e) {
-                        throw new FacadeLogicError('Cannot load prefill data for UI5 view. ' . $e->getMessage(), null, $e);
-                    }
-                }
-                if (! $task->hasPrefillData() && $action->getPrefillWithInputData() === false && $action->getPrefillWithPrefillData()) {
-                    try {
-                        $prefillData = $button->getInputWidget()->prepareDataSheetToRead();
-                        $prefillData = $this->handlePrefillGenerateDummyData($prefillData);
-                        $task->setPrefillData($prefillData);
-                    } catch (\Throwable $e) {
-                        throw new FacadeLogicError('Cannot load prefill data for UI5 view. ' . $e->getMessage(), null, $e);
-                    }
-                }
-                
-                // Listen to OnPrefillChangePropertyEvent and generate model bindings from it
-                $model = $this->createViewModel($this->getViewName($widget));
-                $prefillAppliedHandler = function($event) use ($model) {
-                    $model->setBindingPointer($event->getWidget(), $event->getPropertyName(), $event->getPrefillValuePointer());
-                };
-                $this->getWorkbench()->eventManager()->addListener(OnPrefillChangePropertyEvent::getEventName(), $prefillAppliedHandler);
-                
-                // Listen to the OnBeforePrefill event and empty data before prefilling the action's widget
-                // to make sure there are no hard-coded values! This is important because we added a dummy
-                // UID value above and also because filter contexts will add values directly to the sheet.
-                $widget = $action->getWidget();
-                $this->getWorkbench()->eventManager()->addListener(OnPrefillDataLoadedEvent::getEventName(), function(OnPrefillDataLoadedEvent $event) use ($widget) {
-                    if ($event->getWidget() === $widget) {
-                        $event->addExplanation('- Removing all values from the prefill data rows and filters to make sure there are no hard-coded values in the UI5 view. The real values will be loaded via `ReadPrefill` action later on.' . PHP_EOL);
-                        // Empty all values
-                        foreach ($event->getDataSheet()->getColumns() as $col) {
-                            $col->setValueOnAllRows('');
-                        }
-                        // Empty all filters
-                        foreach ($event->getDataSheet()->getFilters()->getConditionsRecursive() as $cond) {
-                            $cond->unsetValue();
-                        }
-                    }
-                    return;
-                });
-                    
-                // Listen to OnBeforeActionInputValidated to disable any validators to ensure the
-                // dummy data does not cause validations to fail.
-                $this->getWorkbench()->eventManager()->addListener(OnBeforeActionInputValidatedEvent::getEventName(), function(OnBeforeActionInputValidatedEvent $event) use ($action) {
-                    if ($event->getAction() !== $action) {
-                        return;
-                    }
-                    $event->getAction()->getInputChecks()->setDisabled(true);
-                });
-                
-                // Listen to OnActionInputValidated to make sure, the input data of the action always
-                // has dummy data - even if it was modified by input mappers or anything else.
-                $this->getWorkbench()->eventManager()->addListener(OnActionInputValidatedEvent::getEventName(), function(OnActionInputValidatedEvent $event) use ($action) {
-                    if ($event->getAction() !== $action) {
-                        return;
-                    }
-                    $event->getAction()->getInputChecks()->setDisabled(false);
-                    $ds = $event->getDataSheet();
-                    if (! $ds->isEmpty() && $ds->hasUidColumn()) {
-                        $this->handlePrefillGenerateDummyData($ds);
-                    }
-                });
-                
-            }
-            // Overwrite the task's action with the action of the trigger widget to make sure, the prefill is really performed
-            $task->setActionSelector($action->getSelector());
-            
-            // Handle the modified task
-            try {
-                $result = $this->getWorkbench()->handle($task);
-                if ($result instanceof ResultWidgetInterface) {
-                    $widget = $result->getWidget();
-                }
-            } catch (\Throwable $e) {
-                // TODO
-                throw $e;
-            }
+        if ($view->getRootElement()->getWidget()->getParent() instanceof iTriggerAction) {
+            $model = $this->createViewModel($view);
+            $model->addBindingsFromTask($task);
+            $this->addViewModel($model);
         }
         
-        return $widget;
-    }
-    
-    /**
-     * Adds a dummy-row to the prefill data and makes sure it triggers the prefill logic.
-     * 
-     * @param DataSheetInterface $dataSheet
-     * @return DataSheetInterface
-     */
-    protected function handlePrefillGenerateDummyData(DataSheetInterface $dataSheet) : DataSheetInterface
-    {
-        $row = [];
-        
-        // Make sure, there is a UID column - otherwise no prefill will take place!
-        if ($dataSheet->hasUidColumn() === false && $dataSheet->getMetaObject()->hasUidAttribute() === true) {
-            $dataSheet->getColumns()->addFromUidAttribute();
-        }
-        
-        // Create empty values for every column and at least one row
-        if ($dataSheet->isEmpty()) {
-            foreach ($dataSheet->getColumns() as $col) {
-                $row[$col->getName()] = '';
-            }
-            $dataSheet->addRow($row);
-        } else {
-            foreach ($dataSheet->getColumns() as $col) {
-                $col->setValueOnAllRows('');
-            }
-        }
-        
-        // If the resulting sheet has a UID column, make sure it has a value - otherwise
-        // the prefill logic will not attempt to ask the target widget for more columns
-        // via prepareDataSheetToPrefill() because there would not be a way to read missing
-        // values.
-        if ($dataSheet->hasUidColumn(false) === true) {
-            $dataSheet->getUidColumn()->setValue(0, 1);
-        }
-        
-        // Make sure, that if a read operation is attempted for our dummy data, that will
-        // not really take place! Otherwise our data will be removed if there are no rows
-        // matching our dummy-UID.
-        $this->getWorkbench()->eventManager()->addListener(OnBeforeReadDataEvent::getEventName(), function(OnBeforeReadDataEvent $event) use ($dataSheet) {
-            $eventSheet = $event->getDataSheet();
-            // Prevent read operations on our dummy-sheet as they will change or even remove our data!
-            // If the prefill will cause a read operation, the prefill-sheet will be
-            // a copy of our sheet, so we cant simply check if they are equal. However,
-            // the prefill sheet will have our values and may have other columns with NULL
-            // values.
-            if ($eventSheet->getMetaObject()->isExactly($dataSheet->getMetaObject()) === true) {
-                $row = $dataSheet->getRow(0);
-                foreach ($eventSheet->getRow(0) as $fld => $val) {
-                    if ($val !== null && $val !== $row[$fld]) {
-                        return;
-                    }
-                }
-                $event->preventRead();
-            }
-        });
-        
-        return $dataSheet;
+        return $this;
     }
     
     public function get(string $route, HttpTaskInterface $task = null) : string
@@ -288,8 +134,9 @@ class Webapp implements WorkbenchDependantInterface
                     try {
                         $widget = $this->getWidgetFromPath($path);
                         if ($widget) {
-                            $widget = $this->handlePrefill($widget, $task);
-                            return $this->getViewForWidget($widget)->buildJsView();
+                            $view = $this->getViewForWidget($widget);
+                            $this->handlePrefill($view, $task);
+                            return $view->buildJsView();
                         } 
                     } catch (\Throwable $e) {
                         $this->getWorkbench()->getLogger()->logException($e);
@@ -305,8 +152,9 @@ class Webapp implements WorkbenchDependantInterface
                     try {
                         $widget = $this->getWidgetFromPath($path);
                         if ($widget) {
-                            $widget = $this->handlePrefill($widget, $task);
-                            return $this->getControllerForWidget($widget)->buildJsController();
+                            $controller = $this->getControllerForWidget($widget);
+                            $this->handlePrefill($controller->getView(), $task);
+                            return $controller->buildJsController();
                         }
                     } catch (\Throwable $e) {
                         $this->getWorkbench()->getLogger()->logException($e);
@@ -321,8 +169,8 @@ class Webapp implements WorkbenchDependantInterface
                     try {
                         $widget = $this->getWidgetFromPath($path);
                         if ($widget) {
-                            $widget = $this->handlePrefill($widget, $task);
                             $controller = $this->getControllerForWidget($widget);
+                            $this->handlePrefill($controller->getView(), $task);
                             return $controller->buildJsController() . "\n\n" . $controller->getView()->buildJsView();
                         }
                     } catch (\Throwable $e) {
@@ -788,8 +636,9 @@ class Webapp implements WorkbenchDependantInterface
                     $routePath = $this->convertNameToPath($route->getUrl(), '');
                     $widget = $this->getWidgetFromPath($routePath);
                     if ($widget) {
-                        // $widget = $this->handlePrefill($widget, $task);
                         $routeController = $this->getControllerForWidget($widget);
+                        $routeLoadTask = (new GenericTask($this->getWorkbench()))->setActionSelector($route->getAction() ? $route->getAction()->getSelector() : ShowWidget::class);
+                        $this->handlePrefill($routeController->getView(), $routeLoadTask);
                     }
                     $resources = array_merge($resources, $this->getComponentPreloadForController($routeController));
                 } catch (\Throwable $e) {
@@ -906,18 +755,42 @@ class Webapp implements WorkbenchDependantInterface
         return $this->config['app_title'] ? $this->config['app_title'] : $this->getRootPage()->getName();
     }
     
-    public function createViewModel(string $viewName, string $modelName = '') : UI5Model
+    /**
+     * 
+     * @param UI5ViewInterface $view
+     * @param string $modelName
+     * @return UI5Model
+     */
+    protected function createViewModel(UI5ViewInterface $view, string $modelName = '') : UI5Model
     {
-        $model = new UI5Model($this, $viewName, $modelName);
-        $this->models[$viewName . ':' . $modelName] = $model;
+        $model = new UI5Model($view->getRootElement()->getWidget(), $view->getName(), $modelName);
         return $model;
     }
     
-    public function getViewModel(string $viewName, string $modelName = '') : UI5Model
+    /**
+     * 
+     * @param UI5Model $model
+     * @return Webapp
+     */
+    protected function addViewModel(UI5Model $model) : Webapp
     {
+        $this->models[$model->getViewName() . ':' . $model->getName()] = $model;
+        return $this;
+    }
+    
+    /**
+     * 
+     * @param UI5ViewInterface $view
+     * @param string $modelName
+     * @return UI5Model
+     */
+    public function getViewModel(UI5ViewInterface $view, string $modelName = '') : UI5Model
+    {
+        $viewName = $view->getName();
         $model = $this->models[$viewName . ':' . $modelName];
         if ($model === null) {
-            $model = $this->createViewModel($viewName, $modelName);
+            $model = $this->createViewModel($view, $modelName);
+            $this->addViewModel($model);
         }
         return $model;
     }
