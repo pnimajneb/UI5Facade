@@ -126,6 +126,7 @@ JS;
                     var aData = [];
                     var sUrlFilterPrefix = '{$this->getElement()->getFacade()->getUrlFilterPrefix()}';
                     var oFilters = {operator: 'AND', conditions: [], ignore_empty_values: true};
+                    var aSorters = [];
                     var iFiltered = null;
 
                     if (oDataSet === undefined || ! Array.isArray(oDataSet.rows)) {
@@ -166,6 +167,16 @@ JS;
                     
                     if ({$oParamsJs}.start >= 0 && {$oParamsJs}.length > 0) {
                         aData = aData.slice({$oParamsJs}.start, {$oParamsJs}.start+{$oParamsJs}.length);
+                    }
+
+                    if ({$oParamsJs}.sort !== undefined && {$oParamsJs}.order !== undefined) {
+                        {$oParamsJs}.sort.split(',').forEach(function(sSort, iPos) {
+                            aSorters.push({
+                                columnName: sSort,
+                                direction: ({$oParamsJs}.order.split(',')[iPos] || 'asc')
+                            });
+                        });
+                        aData = exfTools.data.sortRows(aData, aSorters);
                     }
 
                     if (bGetFirstRowOnly) {
