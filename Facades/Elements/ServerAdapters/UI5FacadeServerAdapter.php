@@ -6,14 +6,10 @@ use exface\UI5Facade\Facades\Interfaces\UI5ServerAdapterInterface;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Actions\ReadData;
 use exface\Core\Actions\ReadPrefill;
-use exface\UrlDataConnector\Actions\CallOData2Operation;
-use exface\Core\Interfaces\WidgetInterface;
-use exface\Core\Interfaces\Widgets\iTriggerAction;
-use exface\Core\Interfaces\Actions\iShowDialog;
 use exface\Core\Interfaces\Model\MetaObjectInterface;
-use exface\Core\Widgets\Dialog;
 use exface\Core\Widgets\Button;
 use exface\Core\DataTypes\OfflineStrategyDataType;
+use exface\UI5Facade\Facades\Elements\UI5Button;
 
 class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
 {
@@ -116,11 +112,17 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
      */
     protected function buildJsEffects(ActionInterface $action, string $oRequestParamsJs, string $aEffectsJs) : string
     {
-        $thisObj = $this->getElement()->getMetaObject();
-        $selfEffectName = json_encode($this->getElement()->getWidget()->getCaption());
+        $triggerEl = $this->getElement();
+        $thisObj = $triggerEl->getMetaObject();
+        $selfEffectName = json_encode($triggerEl->getWidget()->getCaption());
+        if ($triggerEl instanceof UI5Button) {
+            $eventParamsJs = $triggerEl->buildJsTriggerActionEffects($action, true);
+        } else {
+            $eventParamsJs = '[]';
+        }
         $effectsJs .= <<<JS
         
-                            aEffects.push({
+                            $aEffectsJs.push({
                                 name: {$selfEffectName},
                                 effected_object_alias: "{$thisObj->getAliasWithNamespace()}",
                                 effected_object_uid: "{$thisObj->getId()}",
@@ -130,7 +132,8 @@ class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
                                     return ({$oRequestParamsJs}.data.rows || []).map(function(row,index) {
                                         return row['{$thisObj->getUidAttributeAlias()}'];
                                     })
-                                }()
+                                }(),
+                                event_params: $eventParamsJs
                             });
 JS;
         foreach ($this->getEffectedRelations($action, $thisObj) as $effect) {
@@ -139,7 +142,7 @@ JS;
             $effectedKeyDataCol = $effectedRel->getLeftKeyAttribute()->getAlias();
             $effectsJs .= <<<JS
             
-                            aEffects.push({
+                            $aEffectsJs.push({
                                 name: "{$effect['name']}",
                                 effected_object_alias: "{$effectedObj->getAliasWithNamespace()}",
                                 effected_object_uid: "{$effectedObj->getId()}",
