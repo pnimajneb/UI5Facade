@@ -358,4 +358,19 @@ interface UI5ControllerInterface {
      * @return string
      */
     public function buildJsComponentGetter() : string;
+    
+    /**
+     * Returns the JS to include an external CSS.
+     *
+     * CSS files are automatically included only once.
+     *
+     * @return string[]
+     */
+    public function buildJsImportCSS() : array;
+    
+    /**
+     *
+     * @return string[]
+     */
+    public function buildJsImportModuleRegistrations() : array;
 }

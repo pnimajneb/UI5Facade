@@ -621,6 +621,8 @@ class Webapp implements WorkbenchDependantInterface
         $pwa = $this->getFacade()->getPWA($rootPage->getPWASelector());
         $authToken = $this->getWorkbench()->getSecurity()->getAuthenticatedToken();
         $cacheSheet = $pwa->getBuildCache('Offline-preload.js', $authToken);
+        $moduleRegistrations = [];
+        $cssIncludes = [];
         if (! $cacheSheet->isEmpty()) {
             $preloadJs = $cacheSheet->getCellValue('CONTENT', 0);
         } else {
@@ -641,12 +643,17 @@ class Webapp implements WorkbenchDependantInterface
                         $this->handlePrefill($routeController->getView(), $routeLoadTask);
                     }
                     $resources = array_merge($resources, $this->getComponentPreloadForController($routeController));
+                    $moduleRegistrations = array_merge($moduleRegistrations, $routeController->buildJsImportModuleRegistrations());
+                    $cssIncludes = array_merge($cssIncludes, $routeController->buildJsImportCSS());
                 } catch (\Throwable $e) {
                     $ex = new FacadeLogicError('Failed to preload offline route ' . $route->getPWA()->getDescriptionOf($route) . ': ' . $e->getMessage(), null, $e);
                     $this->getWorkbench()->getLogger()->logException($ex);
                 }
             }
-            $preloadJs = $this->getComponentPreloadFromResources($resources, $this->getComponentPath() . '/' . 'Offline-preload') . ';';
+            $moduleRegistrations = array_unique($moduleRegistrations);
+            $cssIncludes = array_unique($cssIncludes);
+            $importsJs = implode("\n", $moduleRegistrations) . "\n" . implode("\n", $cssIncludes) . "\n";
+            $preloadJs = $importsJs . $this->getComponentPreloadFromResources($resources, $this->getComponentPath() . '/' . 'Offline-preload') . ';';
             $pwa->setBuildCache('Offline-preload.js', $preloadJs, 'text/javascript', $authToken);
         }
         return $preloadJs;

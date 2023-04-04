@@ -8,7 +8,6 @@ use exface\Core\Exceptions\Facades\FacadeLogicError;
 use exface\UI5Facade\Facades\Interfaces\UI5ViewInterface;
 use exface\Core\Exceptions\OutOfBoundsException;
 use exface\Core\Interfaces\Widgets\iTriggerAction;
-use exface\Core\Interfaces\Widgets\iCanPreloadData;
 use exface\Core\Interfaces\Actions\iShowWidget;
 use exface\UI5Facade\Facades\Elements\UI5Dialog;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
@@ -342,7 +341,7 @@ JS;
                 $controllerGlobals .= "\n/* global {$properties['globalVarName']} */";
             }
         }
-        $cssIncludes = $this->buildJsCssIncludes();
+        $cssIncludes = implode("\n", $this->buildJsImportCSS());
         return <<<JS
 
 {$cssIncludes}
@@ -756,26 +755,32 @@ JS;
     } 
     
     /**
-     * Returns the JS to include an external CSS.
      * 
-     * CSS files are automatically included only once.
-     * 
-     * @return string
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface::buildJsImportCSS()
      */
-    protected function buildJsCssIncludes() : string
+    public function buildJsImportCSS() : array
     {
-        $js = '';
+        $includes = [];
         foreach ($this->externalCss as $id => $path) {
-            $js .= <<<JS
-
-if (sap.ui.getCore().byId("{$id}") === undefined) {
-    jQuery.sap.includeStyleSheet('{$path}', '{$id}');
-}
-
-JS;
+            $includes[] = "if (sap.ui.getCore().byId('{$id}') === undefined) {jQuery.sap.includeStyleSheet('{$path}', '{$id}');}";
         }
-        return $js;
-    }  
+        return $includes;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface::buildJsImportModuleRegistrations()
+     */
+    public function buildJsImportModuleRegistrations() : array
+    {
+        $imports = [];
+        foreach ($this->externalModules as $name => $properties) {
+            $imports[] = $this->buildJsModulePathRegistration($name, $properties['path']);
+        }
+        return $imports;
+    }
     
     /**
      * 
