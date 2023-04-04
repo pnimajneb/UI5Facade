@@ -10,9 +10,19 @@ use exface\Core\Interfaces\Model\MetaObjectInterface;
 use exface\Core\Widgets\Button;
 use exface\Core\DataTypes\OfflineStrategyDataType;
 use exface\UI5Facade\Facades\Elements\UI5Button;
+use exface\Core\Interfaces\Actions\iCreateData;
+use exface\Core\Interfaces\Actions\iUpdateData;
+use exface\Core\Actions\CopyData;
+use exface\Core\Interfaces\Actions\iDeleteData;
 
 class UI5FacadeServerAdapter implements UI5ServerAdapterInterface
 {
+    const OFFLINE_DATA_EFFECT_CREATE = 'create';
+    const OFFLINE_DATA_EFFECT_UPDATE = 'update';
+    const OFFLINE_DATA_EFFECT_COPY = 'copy';
+    const OFFLINE_DATA_EFFECT_DELETE = 'delete';
+    const OFFLINE_DATA_EFFECT_NONE = 'none';
+    
     private $element = null;
     
     public function __construct(UI5AbstractElement $element)
@@ -211,7 +221,8 @@ JS;
                                         '{$action->getMetaObject()->getAliasWithNamespace()}',
                                         {$actionNameJs},
                                         {$objectNameJs},
-                                        aEffects
+                                        aEffects,
+                                        '{$this->getOfflineDataEffect($action)}'                                    
                                     )
                                     .then(function(key) {
                                         response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};
@@ -269,6 +280,29 @@ JS;
                             }
                                         
 JS;
+    }
+    
+    protected function getOfflineDataEffect(ActionInterface $action) : string
+    {
+        switch (true) {
+            case $action instanceof CopyData:
+                $offlineDataEffect = self::OFFLINE_DATA_EFFECT_COPY;
+                break;
+            case $action instanceof iCreateData:
+                $offlineDataEffect = self::OFFLINE_DATA_EFFECT_CREATE;
+                break;
+            case $action instanceof iUpdateData:
+                $offlineDataEffect = self::OFFLINE_DATA_EFFECT_UPDATE;
+                break;
+            case $action instanceof iDeleteData:
+                $offlineDataEffect = self::OFFLINE_DATA_EFFECT_DELETE;
+                break;
+            default:
+                $offlineDataEffect = self::OFFLINE_DATA_EFFECT_NONE;
+                break;
+        }
+        
+        return $offlineDataEffect;
     }
     
     protected function buildJsDataLoader(string $oModelJs, string $oParamsJs, string $onModelLoadedJs, string $onErrorJs = '', string $onOfflineJs = '') : string
