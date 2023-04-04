@@ -674,6 +674,8 @@ const exfLauncher = {};
 			};
 			aEffects.forEach(function(oEffect){
 				var oRow = oEffect.offline_queue_item;
+				// TODO filter over sUidColumn, sUidValue passed to the method here! Otherwise
+				// it shows all actions for the object, not only those effecting the row!
 				oRow.effect_name = oEffect.name;
 				oData.rows.push(oRow);
 			});
@@ -851,8 +853,12 @@ const exfLauncher = {};
 									selectedIds.push(bindingObj.id);
 								})
 								exfPWA.actionQueue.getByIds(selectedIds)
-								.then(function(data) {
-									data = JSON.stringify(data);
+								.then(function(aQItems) {
+									var oData = {
+										deviceId: _pwa.getDeviceId(),
+										actions: aQItems
+									};
+									var sJson = JSON.stringify(oData);
 									var date = new Date();
 									var dateString = date.toISOString();
 									dateString = dateString.substr(0,16);
@@ -860,7 +866,7 @@ const exfLauncher = {};
 									dateString = dateString.replace("T","_");
 									dateString = dateString.replace(":","");
 									oButton.setBusyIndicatorDelay(0).setBusy(false);
-									exfPWA.download(data,'offlineActions_'+ dateString, 'application/json')
+									exfPWA.download(sJson,'offlineActions_'+ dateString, 'application/json')
 									var text = exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.NETWORK.ENTRIES_EXPORTED");
 									_oLauncher.showMessageToast(text);
 									return;

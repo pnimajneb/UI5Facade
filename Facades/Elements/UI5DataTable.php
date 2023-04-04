@@ -687,8 +687,6 @@ JS;
         // Determine the columns we need in the actions data
         $colNamesList = implode(',', $widget->getActionDataColumnNames());
         
-        // TODO Get rid of model columns, that are neither in the widgets columns (e.g. sorting, etc.) nor system
-        
         return <<<JS
     function() {
         var oTable = sap.ui.getCore().byId('{$this->getId()}');

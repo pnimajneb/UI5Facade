@@ -128,6 +128,7 @@ JS;
                     var oFilters = {operator: 'AND', conditions: [], ignore_empty_values: true};
                     var aSorters = [];
                     var iFiltered = null;
+                    var aRowsAddedOffline = exfPWA.data.getRowsAddedOffline(oDataSet);
 
                     if (oDataSet === undefined || ! Array.isArray(oDataSet.rows)) {
                         console.log('No ofline data found for {$widget->getMetaObject()->getAliasWithNamespace()}: falling back to server request');
@@ -135,6 +136,13 @@ JS;
                     }
                     console.log('offline data loaded');
                     aData = oDataSet.rows;
+
+                    // TODO add offline data here always once filtering and sorting
+                    // reliably works offline. Currently sorting over date/time goes wrong
+                    if (bGetFirstRowOnly === true && aRowsAddedOffline.length > 0) {
+                        aData = aRowsAddedOffline.concat(aData);
+                    }
+
                     for (var k in {$oParamsJs}) {
                         if (k.startsWith(sUrlFilterPrefix)) {
                             oFilters.conditions.push({
@@ -162,12 +170,6 @@ JS;
                         var sQuery = {$oParamsJs}.q.toString().toLowerCase();
                         {$this->buildJsQuickSearchFilter('sQuery', 'aData')}
                     }
-                    
-                    iFiltered = aData.length;
-                    
-                    if ({$oParamsJs}.start >= 0 && {$oParamsJs}.length > 0) {
-                        aData = aData.slice({$oParamsJs}.start, {$oParamsJs}.start+{$oParamsJs}.length);
-                    }
 
                     if ({$oParamsJs}.sort !== undefined && {$oParamsJs}.order !== undefined) {
                         {$oParamsJs}.sort.split(',').forEach(function(sSort, iPos) {
@@ -177,6 +179,16 @@ JS;
                             });
                         });
                         aData = exfTools.data.sortRows(aData, aSorters);
+                    }
+
+                    if (bGetFirstRowOnly === false && aRowsAddedOffline.length > 0) {
+                        aData = aRowsAddedOffline.concat(aData);
+                    }
+
+                    iFiltered = aData.length;
+                    
+                    if ({$oParamsJs}.start >= 0 && {$oParamsJs}.length > 0) {
+                        aData = aData.slice({$oParamsJs}.start, {$oParamsJs}.start+{$oParamsJs}.length);
                     }
 
                     if (bGetFirstRowOnly) {

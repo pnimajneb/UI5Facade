@@ -1722,7 +1722,8 @@ JS;
                 var oDirtyColumn = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
                 aEffects.forEach(function(oEffect){
                     for (var j = 0; j < aRows.length; j++) {
-                        if (oEffect.key_values.indexOf(aRows[j]['{$uidAttributeAlias}']) > -1) {
+                        if (oEffect.key_values.indexOf(aRows[j]['{$uidAttributeAlias}']) > -1
+                        || (aRows[j]._actionQueueIds && aRows[j]._actionQueueIds.includes(oEffect.offline_queue_item.id))) {
                             aRows[j]['{$this->getDirtyFlagAlias()}'] = true;
                             bRowsDirty = true;
                             break;
@@ -2221,7 +2222,6 @@ JS;
         
         return <<<JS
     function() {
-        var oDirtyCtrl = sap.ui.getCore().byId('{$this->getDirtyFlagAlias()}');
         var oControl = sap.ui.getCore().byId('{$this->getId()}');
         {$getRows}
         rows = rows || [];        
