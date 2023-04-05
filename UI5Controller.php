@@ -882,11 +882,28 @@ JS;
     public function addOnEventScript(UI5AbstractElement $triggerElement, string $eventName, string $js) : UI5ControllerInterface
     {
         $controllerMethodName = $this->buildJsMethodName($this->buildJsEventHandlerMethodName($eventName), $triggerElement);
-        if ($this->onEventScripts[$controllerMethodName]['__element'] === null) {
-            $this->onEventScripts[$controllerMethodName]['__element'] = $triggerElement;
-            $this->onEventScripts[$controllerMethodName]['__eventName'] = $eventName;
-        } elseif($this->onEventScripts[$controllerMethodName]['__element'] !== $triggerElement) {
-            throw new FacadeRuntimeError('Cannot add event handler for ' . $triggerElement->getWidget()->getWidgetType() . ' "' . $triggerElement->getWidget()->getId() . '": element class changed in the mean time!');
+        switch (true) {
+            // If no event handler exists so far, create it
+            case $this->onEventScripts[$controllerMethodName]['__element'] === null:
+                $this->onEventScripts[$controllerMethodName]['__element'] = $triggerElement;
+                $this->onEventScripts[$controllerMethodName]['__eventName'] = $eventName;
+                break;
+            // If it exists, but was created for a different facade element, double check, that
+            // the current element is compatible - otherwise it might not be able to handle the 
+            // event at all!
+            // In most cases, the instance representing a widget will never change, but on rare
+            // occasions, the facade element behind a control is replaced over time - e.g.
+            // a UI5Display may evolve into a UI5ObjectStatus in a dialog header if it
+            // requires additional formatting. It is important, that it still is compatible!
+            case $this->onEventScripts[$controllerMethodName]['__element'] !== $triggerElement:
+                if (! is_a($triggerElement, get_class($this->onEventScripts[$controllerMethodName]['__element']))) {
+                    throw new FacadeRuntimeError('Cannot add event handler for ' . $triggerElement->getWidget()->getWidgetType() . ' "' . $triggerElement->getWidget()->getId() . '": element class changed in the mean time!');
+                }
+                break;
+            // In most cases, it will be the exact same facade element
+            default:
+                // No extra logic needed here, just proceed with adding the JS code below
+                
         }
         $this->onEventScripts[$controllerMethodName][] = $js;
         return $this;
