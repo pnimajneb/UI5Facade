@@ -246,14 +246,26 @@ JS;
     }
         
     /**
+     * Escapes a string to be used in a UI5 property
+     * 
+     * This is similar to `escapeString()`, but includes some UI5 specifics like escaping
+     * curly braces, that would otherwise be treated as bindings.
+     * 
+     * Rule of thumb:
+     * - use `escapeJsTextValue()` to escape values in UI5 view properties
+     * - use `escapeString()` to escape strings in regular javascript
      * 
      * @param mixed $text
      * @return string
      */
-    protected function escapeJsTextValue($text)
+    protected function escapeJsTextValue($text, bool $escapeCurlyBraces = true)
     {
         if ($text === null || $text === '') {
             return $text;
+        }
+        
+        if ($escapeCurlyBraces) {
+            $text = str_replace(['{', '}'], ['\\{', '\\}'], $text);
         }
         
         // json_encode() escapes " and ' really well
