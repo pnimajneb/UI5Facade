@@ -318,7 +318,11 @@ JS;
             
             // All the onShow/Hide events need to be triggered manually too.
             // Basic idea taken from here: https://stackoverflow.com/questions/36792358/access-model-in-js-view-to-render-programmatically
-
+            
+            // If the dialog is not cacheable, we need to force the loader to fetch the view from
+            // the server. Otherwise, it will be in the module cache of UI5 after being first loaded
+            
+            $forceLoadFromServerJs = $targetWidget->isCacheable() ? 'false' : 'true';
             $output .= <<<JS
                         var sViewName = this.getViewName('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$targetWidget->getId()}'); 
                         var sViewId = this.getViewId(sViewName);
@@ -435,7 +439,7 @@ JS;
                                     {$this->buildJsOpenDialogForUnexpectedView('oDialog')};
                                 }
                             }
-                        }, xhrSettings);
+                        }, xhrSettings, $forceLoadFromServerJs);
                         
 JS;
         }

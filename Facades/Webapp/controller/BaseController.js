@@ -56,30 +56,34 @@ sap.ui.define([
 		/**
 		 * Loads a view using async jQuery.ajax() instead of the sync-only ui5Loader.
 		 * 
-		 * The view is only loaded via AJAX if not found in the UI5 cache. However,
-		 * the callback function provided here will be executed once the view is
+		 * The view is only loaded via AJAX if not found in the UI5 cache or if bForceLoad 
+		 * is explicitly set to true. 
+		 * 
+		 * However, the callback function provided here will be executed once the view is
 		 * available regardless of where it was loaded from.
 		 * 
 		 * Returns the the jQuery XHR object used to load the view or nothing if no request
 		 * to the server was made (view loaded from cache).
 		 * 
-		 * @param String sViewName
-		 * @param function fnCallback
-		 * @param Object oXHRSettings
+		 * @param {String} sViewName
+		 * @param {callable} fnCallback
+		 * @param {Object} oXHRSettings
+		 * @param {boolean} bForceLoad
 		 * 
 		 * @return jqXHR|undefined
 		 */
-		_loadView : function(sViewName, fnCallback, oXHRSettings) {
+		_loadView : function(sViewName, fnCallback, oXHRSettings, bForceLoad) {
 			var sViewId = this.getViewId(sViewName);
 			var oController = this;		
 			var bUseCombinedViewControllers	= oController.getOwnerComponent().getManifest()['exface']['useCombinedViewControllers']
 			var bViewPreloaded = this.isPreloaded(this._getModulePath(sViewName, 'view'));
+			bForceLoad = bForceLoad === undefined ? false : bForceLoad;
 			console.log('Loading view', sViewName);
 			// Load view and controller with a custom async AJAX if running on UI server. 
 			// Reasons:
 			// 1) By default, views and controllers are loaded with sync requests (not compatible with CacheAPI)
 			// 2) Loading a single viewcontroller is faster, than the view and the controller separately
-			if (bUseCombinedViewControllers === true && ! bViewPreloaded && ! sap.ui.getCore().byId(sViewId)) {
+			if (bForceLoad || (bUseCombinedViewControllers === true && ! bViewPreloaded && ! sap.ui.getCore().byId(sViewId))) {
 				if (oXHRSettings) {
 					var oCallbacks = {
 						success: oXHRSettings.success,
