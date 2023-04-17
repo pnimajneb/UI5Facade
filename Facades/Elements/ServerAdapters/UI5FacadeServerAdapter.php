@@ -197,7 +197,7 @@ JS;
                                 {$onOfflineJs}
                             };
                             var fnOnError = function() {
-                                $onErrorJs
+                                {$onErrorJs}
                             };
 
                             {$this->buildJsEffects($action, $oParamsJs, 'aEffects')};
@@ -262,6 +262,7 @@ JS;
     										fnOnModelLoaded();
     				                    } else {
     										{$this->getElement()->buildJsShowMessageError('response.error', '"Server error"')}
+                                            console.log('AJAX error');
                                             fnOnError();
     				                    }
     								},
