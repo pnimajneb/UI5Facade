@@ -80,13 +80,18 @@ JS;
     {
         return '<div class="exf-html">' . $innerHtml . '</div>';
     }
-                
-    protected function escapeJsTextValue($text)
+        
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::escapeJsTextValue()
+     */
+    protected function escapeJsTextValue($text, bool $escapeCurlyBraces = true)
     {
-        // IDEA maybe use json_encode() if the others don't work? Helped in other cases...
-        // $text = json_encode($text)
         $text = parent::escapeJsTextValue($text);
-        $text = str_replace(['{', '}'], ['&#123;', '&#125;'], $text);
+        if ($escapeCurlyBraces) {
+            $text = str_replace(['{', '}'], ['&#123;', '&#125;'], $text);
+        }
         return $text;
     }
     
