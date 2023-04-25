@@ -151,6 +151,8 @@ JS;
      */
     protected function buildJsPageWrapper(string $contentJs, string $footerConstructor = '', string $headerContentJs = '') : string
     {
+        $this->getController()->addOnShowViewScript($this->buildJsFocusFirstInput());
+        
         $showNavButton = $this->getView()->isWebAppRoot() ? 'false' : 'true';
         
         $caption = $this->getCaption();
