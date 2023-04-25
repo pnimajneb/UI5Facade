@@ -2190,13 +2190,6 @@ JS;
      */
     protected function buildJsGetRowsAll(string $oControlJs) : string
     {
-        $colNames = [];
-        foreach ($this->getWidget()->getColumns() as $col) {
-            if ($col->isReadonly()) {
-                continue;
-            }
-            $colNames[] = $col->getDataColumnName();
-        }
         return "({$oControlJs}.getModel().getData().rows || [])";
     }
     

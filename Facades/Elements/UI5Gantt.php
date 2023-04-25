@@ -205,6 +205,52 @@ JS;
 JS;
     }
     
+    /**
+     * 
+     * @param string $oControlJs
+     * @return string
+     */
+    protected function buildJsGetRowsAll(string $oControlJs) : string
+    {
+        // NOTE: oTable.getModel().getData() returns only the top level rows, but .getJSON() yields
+        // all. This is why the JSON parsing became neccessary
+        return "({$this->buildJsTransformFromTree("JSON.parse({$oControlJs}.getModel().getJSON()")}).rows || [])";
+    }
+    
+    /**
+     * 
+     * @param string $oDataJs
+     * @return string
+     */
+    protected function buildJsTransformFromTree(string $oDataJs) : string
+    {
+        return <<<JS
+        
+                (function(oDataTree) {
+                    var oDataFlat = $.extend({}, oDataTree);
+                    var fnFlatten = function(aRows) {
+                        var aFlat = [];
+                        aRows.forEach(function(oRow) {
+                            aFlat.push(oRow);
+                            if (Array.isArray(oRow._children) && oRow._children.length > 0) {
+                                aFlat.push(...fnFlatten(oRow._children));
+                            }
+                            delete oRow._children;
+                        });
+                        return aFlat;
+                    };
+                    oDataFlat.rows = fnFlatten(oDataTree.rows || []);                  
+                    return oDataFlat;
+                })($oDataJs)
+                
+JS;
+    }
+    
+    /**
+     * 
+     * @param string $oDataJs
+     * @return string
+     */
     protected function buildJsTransformToTree(string $oDataJs) : string
     {
         return <<<JS
