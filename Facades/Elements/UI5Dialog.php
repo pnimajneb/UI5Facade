@@ -81,6 +81,8 @@ class UI5Dialog extends UI5Form
         // Fire on-change when prefilled
         $controller->addOnPrefillDataChangedScript($this->getOnChangeScript());
         
+        $this->getController()->addOnShowViewScript($this->buildJsFocusFirstInput());
+        
         if ($this->isMaximized() === false) {
             $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
 
