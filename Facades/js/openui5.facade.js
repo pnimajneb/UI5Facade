@@ -479,8 +479,8 @@ const exfLauncher = {};
 					content: [
 						new sap.m.ToolbarSpacer(),
 						new sap.m.Button({
-							text: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_SYNC}",
-							tooltip: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_SYNC_TOOLTIP}",
+							text: "{i18n>WEBAPP.SHELL.PWA.MENU_SYNC}",
+							tooltip: "{i18n>WEBAPP.SHELL.PWA.MENU_SYNC_TOOLTIP}",
 							icon: "sap-icon://synchronize",
 							enabled: "{/_network/online}",
 							press: function(oEvent) {
@@ -498,8 +498,8 @@ const exfLauncher = {};
 							},
 						}),
 						new sap.m.Button({
-							text: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_RESET}",
-							tooltip: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_RESET_TOOLTIP}",
+							text: "{i18n>WEBAPP.SHELL.PWA.MENU_RESET}",
+							tooltip: "{i18n>WEBAPP.SHELL.PWA.MENU_RESET_TOOLTIP}",
 							icon: "sap-icon://sys-cancel",
 							press: function(oEvent) {
 								var oButton = oEvent.getSource();
@@ -1146,10 +1146,10 @@ const exfLauncher = {};
 		.reset()
 		.then(() => {
 			oButton.setBusy(false);
-			exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.PRELOAD.CLEARED'));
+			exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.PWA.CLEARED'));
 		}).catch(() => {
 			oButton.setBusy(false);
-			exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.PRELOAD.CLEARED_ERROR}'));
+			exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.PWA.CLEARED_ERROR}'));
 		})
 	};
 	
@@ -1196,12 +1196,12 @@ const exfLauncher = {};
 								press: _oLauncher.showOfflineErrors,
 							}),
 							new sap.m.GroupHeaderListItem({
-								title: '{i18n>WEBAPP.SHELL.PRELOAD.MENU}',
+								title: '{i18n>WEBAPP.SHELL.PWA.MENU}',
 								upperCase: false
 							}),
 							new sap.m.StandardListItem({
-								title: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_SYNC}",
-								tooltip: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_SYNC_TOOLTIP}",
+								title: "{i18n>WEBAPP.SHELL.PWA.MENU_SYNC}",
+								tooltip: "{i18n>WEBAPP.SHELL.PWA.MENU_SYNC_TOOLTIP}",
 								icon: "sap-icon://synchronize",
 								type: "{= ${/_network/online} > 0 ? 'Active' : 'Inactive' }",
 								press: _oLauncher.syncOffline,
@@ -1213,8 +1213,8 @@ const exfLauncher = {};
 								press: _oLauncher.showStorage,
 							}),
 							new sap.m.StandardListItem({
-								title: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_RESET}",
-								tooltip: "{i18n>WEBAPP.SHELL.PRELOAD.MENU_RESET_TOOLTIP}",
+								title: "{i18n>WEBAPP.SHELL.PWA.MENU_RESET}",
+								tooltip: "{i18n>WEBAPP.SHELL.PWA.MENU_RESET_TOOLTIP}",
 								icon: "sap-icon://sys-cancel",
 								type: "Active",
 								press: _oLauncher.clearPreload,
