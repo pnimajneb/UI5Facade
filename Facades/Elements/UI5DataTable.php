@@ -801,22 +801,27 @@ JS;
         } 
         
         if ($this->isMTable()) {
+            // NOTE: sap.m.Table with row groups will count group headers as "items" - same as the actual rows.
+            // So we can't call `indexOfItem()` here. Instead, to get the index of the real row, we need to filter 
+            // away the group headers explicitly
             return <<<JS
 (function(){
     var jqTr = $({$oDomElementClickedJs}).parents('tr');
     var oItem;
-
+    var iIdx = -1;
     if (jqTr.hasClass('sapMListTblSubRow')) {
         jqTr = jqTr.prev();
     }
-
     oItem = sap.ui.getCore().byId(jqTr[0].id);
-
     if (oItem) {
-        return sap.ui.getCore().byId('{$this->getId()}').indexOfItem(oItem);
+        iIdx = sap.ui.getCore().byId('{$this->getId()}')
+            .getItems()
+            .filter(function(oItem){
+                return oItem.getBindingContext() !== undefined
+            })
+            .indexOf(oItem);
     }
-    
-    return -1;
+    return iIdx;
 })()
 JS;
         }
@@ -1106,9 +1111,14 @@ JS;
             //necessary as row groupers add item without binding to table
             return <<<JS
 
-                var oItem = {$oTableJs}.getItems().filter(function(oItem){return oItem.getBindingContext() !== undefined})[{$iRowIdxJs}];
+                var oItem = {$oTableJs}.getItems().filter(function(oItem){
+                    return oItem.getBindingContext() !== undefined
+                })[{$iRowIdxJs}];
                 {$oTableJs}.setSelectedItem(oItem, {$setSelectJs});
-                {$oTableJs}.fireSelectionChange({listItem: oItem, selected: $setSelectJs});
+                {$oTableJs}.fireSelectionChange({
+                    listItem: oItem, 
+                    selected: $setSelectJs
+                });
                 oItem.focus();
 
 JS;
