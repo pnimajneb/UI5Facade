@@ -73,8 +73,11 @@ JS, false);
                 $value = '""';
             } else {
                 $value = $this->getWidget()->getValue();
-                if ($caption = $this->getCaption()) {
+                $caption = $this->getCaption();
+                if ($value && $caption) {
                     $value = '<strong>' . $caption . ': </strong> ' . $value;
+                } elseif ($caption && ! $value) {
+                    $value = $caption;
                 }
                 $value = '"' . nl2br($this->escapeJsTextValue($value)) . '"';
             }
