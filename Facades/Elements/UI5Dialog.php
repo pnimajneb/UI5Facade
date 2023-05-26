@@ -155,9 +155,7 @@ JS
             
             // Register conditional reactions BEFORE rendering the layout - otherwise it will
             // be too late to add them to appropriate event handlers inside the layout.
-            foreach ($widget->getButtons() as $btn) {
-                $this->getFacade()->getElement($btn)->registerConditionalProperties();
-            }
+            $this->registerConditionalProperties();
             
             if ($this->isObjectPageLayout()) {
                 return $this->buildJsPage($this->buildJsObjectPageLayout($oControllerJs), $oControllerJs);
@@ -165,6 +163,22 @@ JS
                 return $this->buildJsPage($this->buildJsChildrenConstructors());
             }
         }        
+    }
+    
+    /**
+     * 
+     * @return Tabs|NULL
+     */
+    protected function getObjectPageTabs() : ?Tabs
+    {
+        if ($this->isObjectPageLayout()) {
+            foreach ($this->getWidget()->getWidgets() as $child) {
+                if ($child instanceof Tabs) {
+                    return $child;
+                }
+            }
+        }
+        return null;
     }
     
     /**
@@ -888,17 +902,6 @@ JS;
         }
         
         $tabElement = $this->getFacade()->getElement($tab);
-        
-        if ($condProp = $tab->getHiddenIf()) {
-            $this->getController()->addOnPrefillDataChangedScript( 
-                $this->buildJsConditionalPropertyInitializer(
-                    $condProp,
-                    "sap.ui.getCore().byId('{$tabElement->getId()}').setVisible(false);",
-                    "sap.ui.getCore().byId('{$tabElement->getId()}').setVisible(true);",
-                    )
-                );
-        } 
-        
         return <<<JS
 
                 // BOF ObjectPageSection
@@ -1000,5 +1003,31 @@ JS;
             }
         }
         return null;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
+     */
+    public function registerConditionalProperties() : UI5AbstractElement
+    {
+        $result = parent::registerConditionalProperties();
+        foreach ($this->getWidget()->getButtons() as $btn) {
+            $this->getFacade()->getElement($btn)->registerConditionalProperties();
+        }
+        
+        // Register conditional props for tabs here explicitly because Tab widget inside
+        // a UI5Dialog are not really rendered - instead UI5Dialog::buildJsObjectPageSectionFromTab()
+        // is used. So we need to do stuff related to the Tab constructor here.
+        // @see UI5Tab::buildJsConstructor()
+        if ($this->isObjectPageLayout()) {
+            $tabs = $this->getObjectPageTabs();
+            foreach ($tabs->getTabs() as $tab) {
+                $tabElement = $this->getFacade()->getElement($tab);
+                $tabElement->registerConditionalProperties();
+            }
+        }
+        return $result;
     }
 }
