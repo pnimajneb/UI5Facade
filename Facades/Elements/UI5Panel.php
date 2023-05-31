@@ -15,6 +15,7 @@ use exface\Core\Factories\WidgetDimensionFactory;
 use exface\Core\Widgets\ImageGallery;
 use exface\Core\Interfaces\Widgets\iHaveContextualHelp;
 use exface\Core\Interfaces\Widgets\iTakeInput;
+use exface\Core\Widgets\Image;
 
 /**
  * Generates a `sap.m.Panel` with a `sap.ui.layout.form.Form` inside for a Panel widget.
@@ -412,7 +413,7 @@ JS;
         
         // If we have inherited the width from the only inner widget, it should now be
         // full-width relative to the FormContainer
-        if (count($widgets) === 1 && $width) {
+        if (count($widgets) === 1 && $width && ! ($widgets[0] instanceof Image)) {
             $widgets[0]->setWidth('100%');
         }
         
