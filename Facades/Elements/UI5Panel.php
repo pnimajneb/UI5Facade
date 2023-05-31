@@ -386,19 +386,24 @@ JS;
         $title = '';
         $layout = '';
         $width = null;
+        $widthInheritedFromChild = null;
         $id = '';
         
-        if ($containerWidget !== null && ! $containerWidget->getWidth()->isUndefined()) {
-            $width = $containerWidget->getWidth(); 
-        } elseif ($containerWidget instanceof WidgetGroup && $containerWidget->getWidth()->isUndefined()) {
-            $width = WidgetDimensionFactory::createFromString($this->getWorkbench(), '1');
-        } else {
-            foreach ($widgets as $widget) {
-                if (! $widget->getWidth()->isUndefined()) {
-                    $width = $widget->getWidth();
-                    break;
+        switch (true) {
+            case $containerWidget !== null && ! $containerWidget->getWidth()->isUndefined():
+                $width = $containerWidget->getWidth(); 
+                break;
+            case ($containerWidget instanceof WidgetGroup) && $containerWidget->getWidth()->isUndefined():
+                $width = WidgetDimensionFactory::createFromString($this->getWorkbench(), '1');
+                break;
+            default:
+                foreach ($widgets as $widget) {
+                    if (! $widget->getWidth()->isUndefined() && ! $widget->getWidth()->isAuto()) {
+                        $width = $widget->getWidth();
+                        $widthInheritedFromChild = $widget;
+                        break;
+                    }
                 }
-            }
         }
         
         // Only add a layoutData if the width is explicitly set. Otherwise all the FormContainers
@@ -413,7 +418,7 @@ JS;
         
         // If we have inherited the width from the only inner widget, it should now be
         // full-width relative to the FormContainer
-        if (count($widgets) === 1 && $width && ! ($widgets[0] instanceof Image)) {
+        if ($widthInheritedFromChild !== null && $width !== null && count($widgets) === 1) {
             $widgets[0]->setWidth('100%');
         }
         
