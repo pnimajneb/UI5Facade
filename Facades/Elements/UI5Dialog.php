@@ -191,7 +191,12 @@ JS
         $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget) {
             return $widget->isHidden() === false;
         });
-        return ! ($widget->hasHeader() === false && count($visibleChildren) === 1 && $visibleChildren[0] instanceof iFillEntireContainer && ! $visibleChildren[0] instanceof Tabs);
+        return ! (
+            $widget->hasHeader() === false 
+            && count($visibleChildren) === 1 
+            && $visibleChildren[0] instanceof iFillEntireContainer 
+            && ! $visibleChildren[0] instanceof Tabs
+        );
     }
     
     /**
@@ -1023,9 +1028,11 @@ JS;
         // @see UI5Tab::buildJsConstructor()
         if ($this->isObjectPageLayout()) {
             $tabs = $this->getObjectPageTabs();
-            foreach ($tabs->getTabs() as $tab) {
-                $tabElement = $this->getFacade()->getElement($tab);
-                $tabElement->registerConditionalProperties();
+            if ($tabs !== null) {
+                foreach ($tabs->getTabs() as $tab) {
+                    $tabElement = $this->getFacade()->getElement($tab);
+                    $tabElement->registerConditionalProperties();
+                }
             }
         }
         return $result;
