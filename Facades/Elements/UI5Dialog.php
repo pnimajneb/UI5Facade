@@ -1023,9 +1023,11 @@ JS;
         // @see UI5Tab::buildJsConstructor()
         if ($this->isObjectPageLayout()) {
             $tabs = $this->getObjectPageTabs();
-            foreach ($tabs->getTabs() as $tab) {
-                $tabElement = $this->getFacade()->getElement($tab);
-                $tabElement->registerConditionalProperties();
+            if ($tabs !== null) {
+                foreach ($tabs->getTabs() as $tab) {
+                    $tabElement = $this->getFacade()->getElement($tab);
+                    $tabElement->registerConditionalProperties();
+                }
             }
         }
         return $result;
