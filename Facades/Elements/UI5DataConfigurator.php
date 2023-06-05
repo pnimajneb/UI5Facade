@@ -332,7 +332,7 @@ JS;
          * and allows table designers to position optional columns meaningfully.
          */
         if ($resetSelection === true) {
-            $resetSelection = "oItem.persistentSelected = oItem.persistentSelected = oColConfig.visible = oColConfig.visible; ";
+            $resetSelection = "oItem.persistentSelected = oColConfig._initialVisibility; oColConfig.visible = oColConfig._initialVisibility; oItem.persistentIndex = iItemIdx";
         } else {
             $resetSelection = '';
         }
@@ -343,30 +343,32 @@ JS;
                             var oTableModel = oTable.getModel();
                             var oConfigModel = oPanel.getModel('{$this->getModelNameForConfig()}');
                             if (oTableModel === undefined || oConfigModel === undefined) return;
-                            setTimeout(function(){
+                            
                                 try {
                                     var aColsConfig = oConfigModel.getProperty('/columns');
+                                    
+                                    // only use items that are toggleable
+                                    var oVisibleFilter = new sap.ui.model.Filter("toggleable", sap.ui.model.FilterOperator.EQ, true);
+                                    oPanel.getBinding("items").filter(oVisibleFilter);
+                                    
                                     var aItems = oTableModel.getProperty('/items');
-                                    var aListItems = oTable.getItems();
                                     var aItemsNew = [];
+                                    
                                     aColsConfig.forEach(function(oColConfig){
                                         aItems.forEach(function(oItem, iItemIdx){
                                             if (oItem.columnKey === oColConfig.column_id) {
                                                 $resetSelection;
-                                                if (oColConfig.toggleable === false && aListItems[iItemIdx] !== undefined) {
-                                                    aListItems[iItemIdx].setVisible(false);
-                                                }
                                                 aItemsNew.push(oItem);
                                                 return;
                                             }
                                         })
                                     });
-                                    
                                     oTableModel.setProperty('/items', aItemsNew);
+                                    // update counts of selected items, else the counter is wrong after a reset
+                                    oPanel._updateCounts(aItemsNew);
                                 } catch (e) {
                                     console.warn('Cannot properly sort columns for personalization - using default sorting: ', e);
                                 }
-                            });
                         } catch (e) {
                             console.warn('Cannot properly sort columns for personalization - using default sorting: ', e);
                         }
@@ -432,6 +434,7 @@ JS;
                     "column_name" => $col->getDataColumnName(),
                     "caption" => $col->getCaption(),
                     "visible" => $col->isHidden() || $col->getVisibility() === EXF_WIDGET_VISIBILITY_OPTIONAL ? false : true,
+                    "_initialVisibility" => $col->isHidden() || $col->getVisibility() === EXF_WIDGET_VISIBILITY_OPTIONAL ? false : true,
                     "toggleable" => $col->isHidden() ? false : true
                 ];
             }
@@ -456,7 +459,7 @@ JS;
             ];
         }
         foreach ($table->getColumns() as $col) {
-            if (! $col->isBoundToAttribute()) {
+            if (! $col->isSortable()) {
                 continue;
             }
             if (in_array($col->getAttributeAlias(), $sorters)) {
