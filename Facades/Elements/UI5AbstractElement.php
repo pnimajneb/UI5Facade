@@ -190,7 +190,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildCssIconClass($icon)
      */
-    public function buildCssIconClass($icon)
+    public function buildCssIconClass(string $icon) : string
     {
         return $icon ? $this->getIconSrc($icon) : '';
     }
