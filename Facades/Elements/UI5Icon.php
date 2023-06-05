@@ -121,18 +121,22 @@ JS;
     
     public function buildJsValueBindingOptions()
     {
-        $js = parent::buildJsValueBindingOptions();
         $widget = $this->getWidget();
         if ($widget->hasIconScale()) {
-            return <<<JS
-
+            $valueJs = $this->buildJsScaleResolver('value', $widget->getIconScale(), $widget->isIconScaleRangeBased());
+        } else {
+            $valueJs = 'value';
+        }
+        return parent::buildJsValueBindingOptions() . <<<JS
+        
                 formatter: function(value){
-                    var sIcon = {$this->buildJsScaleResolver('value', $widget->getIconScale(), $widget->isIconScaleRangeBased())};
+                    var sIcon = {$valueJs};
+                    if (! sIcon.toString().startsWith('sap-icon://')) {
+                        sIcon = 'sap-icon://font-awesome/' + sIcon;
+                    }
                     return sIcon;
                 },
 JS;
-        }
-        return $js;
     }
     
     /**
