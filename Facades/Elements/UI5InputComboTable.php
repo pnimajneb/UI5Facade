@@ -441,7 +441,7 @@ JS;
                     curTokens = oInput.getTokens();
                 }
 
-                if (silent) {
+                if (bSilent) {
                     if (iRowsCnt === 1 && (curKey === '' || data[0]['{$widget->getValueColumn()->getDataColumnName()}'] == curKey)) {
                         if (oInput.destroyTokens !== undefined) {
                             oInput.destroyTokens();
@@ -535,7 +535,7 @@ JS;
                         oInput.fireChange();
                     }, 1);
                 }
-                
+
                 // Remove pure-whitespace values, loading the value again before doing so.
                 // Otherwise they will remain while still inivisble
                 // eventually causing input values consisting of whitespaces.
@@ -544,6 +544,13 @@ JS;
                     setTimeout(function(){
                         oInput.setValue('');
                     }, 0);
+                }
+                
+                // Force showing suggestion popup because if not done explicitly, it did not show up when typing
+                // if the control was the first one in the form and received focus automatically. In that case,
+                // the user needed to switch focus set it again before the autosuggest would start showing.
+                if (! bSilent) {
+                    oInput._openSuggestionPopup();
                 }
                 
 JS;
@@ -555,11 +562,11 @@ JS;
                 var q = {$oEventJs}.getParameter("suggestValue");
                 var fnCallback = {$oEventJs}.getParameter("onLoaded");
                 var qParams = {};
-                var silent = false;
+                var bSilent = false;
 
                 if (typeof q == 'object') {
                     qParams = q;
-                    silent = true;
+                    bSilent = true;
                 } else {
                     qParams.q = q;
                 }
@@ -589,7 +596,7 @@ JS;
                     });
                 }
 
-                if (silent) {
+                if (bSilent) {
                     {$this->buildJsBusyIconShow()}
                 }
 
