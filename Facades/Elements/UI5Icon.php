@@ -131,6 +131,9 @@ JS;
         
                 formatter: function(value){
                     var sIcon = {$valueJs};
+                    if (sIcon === undefined || sIcon === null || sIcon === '') {
+                        return null;
+                    }
                     if (! sIcon.toString().startsWith('sap-icon://')) {
                         sIcon = 'sap-icon://font-awesome/' + sIcon;
                     }
