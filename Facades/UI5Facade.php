@@ -140,9 +140,9 @@ class UI5Facade extends AbstractAjaxFacade implements PWAFacadeInterface
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::createResponseFromError($request, $exception, $page)
+     * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::createResponseFromError()
      */
-    public function createResponseFromError(ServerRequestInterface $request, \Throwable $exception, UiPageInterface $page = null) : ResponseInterface 
+    public function createResponseFromError(\Throwable $exception, ServerRequestInterface $request = null, UiPageInterface $page = null) : ResponseInterface 
     {
         // We need a webapp to create an error UI, so we must init one here if it's not there already!
         if ($this->webapp === null) {
@@ -153,7 +153,7 @@ class UI5Facade extends AbstractAjaxFacade implements PWAFacadeInterface
             }
             $this->initWebapp($rootPageAlias);
         }
-        return parent::createResponseFromError($request, $exception, $page);
+        return parent::createResponseFromError($exception, $request, $page);
     }
     
     /**
@@ -461,7 +461,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::buildHtmlFromError()
      */
-    protected function buildHtmlFromError(ServerRequestInterface $request, \Throwable $exception, UiPageInterface $page = null) : string
+    protected function buildHtmlFromError(\Throwable $exception, ServerRequestInterface $request = null, UiPageInterface $page = null) : string
     {
         return $exception->getMessage();
     }
@@ -584,7 +584,7 @@ JS;
      * 
      * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::createResponseUnauthorized()
      */
-    protected function createResponseUnauthorized(ServerRequestInterface $request, \Throwable $exception, UiPageInterface $page = null) : ?ResponseInterface
+    protected function createResponseUnauthorized(\Throwable $exception, ServerRequestInterface $request = null, UiPageInterface $page = null) : ?ResponseInterface
     {
         if ($page === null) {
             if ($this->isRequestAjax($request)) {

@@ -56,7 +56,7 @@ class UI5WebappRouter implements MiddlewareInterface
                 return $this->resolve($webappRoute, $this->getTask($request, $this->taskAttributeName, $this->facade));
             } catch (\Throwable $e) {
                 $this->facade->getWorkbench()->getLogger()->logException(new FacadeOutputError('Error in UI5 router: ' . $e->getMessage(), null, $e));
-                return $this->facade->createResponseFromError($request, $e);
+                return $this->facade->createResponseFromError($e, $request);
             }
         }
         return $handler->handle($request);
