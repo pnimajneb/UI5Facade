@@ -5,8 +5,6 @@ use exface\Core\Exceptions\Widgets\WidgetLogicError;
 use exface\Core\DataTypes\UrlDataType;
 use exface\Core\Interfaces\DataTypes\DataTypeInterface;
 use exface\Core\Exceptions\Facades\FacadeLogicError;
-use exface\Core\Interfaces\Widgets\iShowDataColumn;
-use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
 use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Exceptions\Widgets\WidgetConfigurationError;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;

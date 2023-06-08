@@ -12,10 +12,8 @@ use exface\Core\Widgets\WidgetGroup;
 use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 use exface\Core\CommonLogic\WidgetDimension;
 use exface\Core\Factories\WidgetDimensionFactory;
-use exface\Core\Widgets\ImageGallery;
 use exface\Core\Interfaces\Widgets\iHaveContextualHelp;
 use exface\Core\Interfaces\Widgets\iTakeInput;
-use exface\Core\Widgets\Image;
 
 /**
  * Generates a `sap.m.Panel` with a `sap.ui.layout.form.Form` inside for a Panel widget.
