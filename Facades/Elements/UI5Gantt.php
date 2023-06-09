@@ -93,7 +93,10 @@ class UI5Gantt extends UI5DataTable
                             domGanttContainer.scrollTo(iScrollLeft, 0);
                         },10);
                     }
-                }),
+                })
+                {$this->buildJsClickHandlers('oController')}
+                {$this->buildJsPseudoEventHandlers()}
+                ,
                 new sap.ui.core.HTML("{$this->getId()}_wrapper", {
                     content: "<div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
                     afterRendering: function(oEvent) {
