@@ -1732,7 +1732,17 @@ var Gantt = (function () {
             $.on(this.$svg, 'mousemove', (e) => {
                 if (!action_in_progress()) return;
                 const dx = e.offsetX - x_on_start;
-                e.offsetY - y_on_start;
+                var bDraggable = true;
+                bars.forEach((bar) => {
+                    if (bar.task.draggable === false) {
+						bDraggable = false;
+					}
+				});
+				if (bDraggable === false) {
+					e.preventDefault(); 
+					e.stopPropagation(); 
+					return false;
+				}
 
                 bars.forEach((bar) => {
                     const $bar = bar.$bar;
