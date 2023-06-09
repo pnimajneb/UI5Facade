@@ -2,16 +2,11 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
-use exface\Core\Interfaces\WidgetInterface;
-use exface\UI5Facade\Facades\Interfaces\UI5ValueBindingInterface;
 use exface\Core\Widgets\Parts\DataTimeline;
-use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Widgets\Parts\DataCalendarItem;
-use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
-use exface\Core\Facades\AbstractAjaxFacade\Formatters\JsDateFormatter;
-use exface\Core\DataTypes\DateDataType;
+use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 
 /**
  * 
@@ -23,6 +18,7 @@ use exface\Core\DataTypes\DateDataType;
 class UI5Gantt extends UI5DataTable
 {
     use JsValueScaleTrait;
+    use UI5ColorClassesTrait;
 
     const EVENT_NAME_TIMELINE_SHIFT = 'timeline_shift';
     
@@ -38,6 +34,11 @@ class UI5Gantt extends UI5DataTable
         $controller = $this->getController();
         $this->initConfiguratorControl($controller);
         $widget = $this->getWidget();
+        $calItem = $widget->getTasksConfig();
+        
+        if ($calItem->hasColorScale()) {
+            $this->registerColorClasses($calItem->getColorScale());
+        }
         
         $selection_mode = $widget->getMultiSelect() ? 'sap.ui.table.SelectionMode.MultiToggle' : 'sap.ui.table.SelectionMode.Single';
         $selection_behavior = $widget->getMultiSelect() ? 'sap.ui.table.SelectionBehavior.Row' : 'sap.ui.table.SelectionBehavior.RowOnly';
@@ -308,15 +309,21 @@ JS;
         $widget = $this->getWidget();
         $calItem = $widget->getTasksConfig();
         $draggableJs = $widget->isEditable() ? 'true' : 'false';
+        if ($calItem->hasColorScale()) {
+            $colorResolversJs = $this->buildJsColorResolver($calItem, 'oRow');
+        } else {
+            $colorResolversJs = 'null';
+        }
         return <<<JS
             (function(oTable) {
                 var oGantt = sap.ui.getCore().byId('{$this->getId()}').gantt;
                 var aTasks = [];
                 oTable.getRows().forEach(function(oTreeRow) {
                     var oCtxt = oTreeRow.getBindingContext();
-                    var oRow;
+                    var oRow, sColor;
                     if (! oCtxt) return;
                     oRow = oTable.getModel().getProperty(oCtxt.sPath);
+                    sColor = {$colorResolversJs};
                     var oTask = {
                         id: oRow['{$widget->getUidColumn()->getDataColumnName()}'],
                         name: oRow['{$calItem->getTitleColumn()->getDataColumnName()}'],
@@ -324,10 +331,12 @@ JS;
                         end: oRow["{$calItem->getEndTimeColumn()->getDataColumnName()}"],
                         progress: 0,
                         dependencies: '',
-                        draggable: $draggableJs/*,
-                        TODO
-                        custom_class: 'bar-style-' + */
+                        draggable: $draggableJs
                     };
+
+                    if(sColor !== null) {
+                        oTask.custom_class += 'exf-custom-color exf-color-' + sColor.replace("#", "");
+                    }
     
                     if(oRow._children.length > 0 && oTask.start && oTask.end) {
                         oTask.custom_class += ' bar-folder';
