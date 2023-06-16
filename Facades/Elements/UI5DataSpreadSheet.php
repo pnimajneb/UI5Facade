@@ -163,15 +163,6 @@ JS;
     
     /**
      * 
-     * @see JExcelTrait::buildJsFixAutoColumnWidth()
-     */
-    protected function buildJsFixAutoColumnWidth() : string
-    {
-        return '';
-    }
-    
-    /**
-     * 
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsBusyIconShow()
      */
