@@ -124,7 +124,7 @@ JS;
      */
     public function buildJsValueBindingOptions()
     {
-        if (! $this->getWidget()->isMultiLine() && ($this->getWidget()->getValueDataType() instanceof TextDataType)) {
+        if ($this->getWidget()->isMultiLine() && ($this->getWidget()->getValueDataType() instanceof TextDataType)) {
             return <<<JS
             
                 formatter: function(value) {
