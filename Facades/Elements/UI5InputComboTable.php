@@ -11,6 +11,20 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 
 /**
  * Generates sap.m.Input with tabular autosuggest and value help.
+ * 
+ * ## Technical details
+ * 
+ * ### SelectedKey vs. value
+ * 
+ * From the official docs: https://openui5.hana.ondemand.com/api/sap.m.Input#overview
+ * 
+ * The control has the following behavior regarding the selectedKey and value properties:
+ * 
+ * - On initial loading, if the control has a selectedKey set which corresponds to a matching item, and a set value, the value will be updated to the matching item's text.
+ * - If a selectedKey is set and the user types an input which corresponds to an item's text, the selectedKey will be updated with the matching item's key.
+ * - If a selectedKey is set and the user types an input which does not correspond to any item's text, the selectedKey will be set to an empty string ("")
+ * - If a selectedKey is set and the user selects an item, the selectedKey will be updated to match the selected item's key.
+ * - If a selectedKey is bound and the user types before the data is loaded, the user's input will be overwritten by the binding update.
  *
  * @method \exface\Core\Widgets\InputComboTable getWidget()
  *
@@ -298,7 +312,7 @@ JS;
             startSuggestion: function(){
                 return sap.ui.Device.system.phone ? 0 : 1;
             }(),
-            showTableSuggestionValueHelp: false,
+            showTableSuggestionValueHelp: true,
             filterSuggests: false,
             suggest: {$this->getController()->buildJsMethodCallFromView('onSuggest', $this, $oControllerJs)},
             suggestionRows: {
