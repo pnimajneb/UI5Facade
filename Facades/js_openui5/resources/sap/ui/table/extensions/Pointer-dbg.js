@@ -243,7 +243,9 @@ sap.ui.define([
 			}
 
 			ColumnResizeHelper._cleanupColumResizing(oTable);
+			/* MOD exface - see docs/UI5_modifications.md
 			oColumn.focus();
+			*/
 		},
 
 		/*
