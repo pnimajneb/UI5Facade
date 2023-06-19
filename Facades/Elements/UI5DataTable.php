@@ -944,13 +944,12 @@ JS;
                 $uiTablePostprocessing .= "oTable.setGroupBy('{$this->getFacade()->getElement($this->getWidget()->getRowGrouper()->getGroupByColumn())->getId()}');";
             }
             
-            // Optimize column width. This is not eays with sap.ui.table.Table :(
+            // Optimize column width. This is not easy with sap.ui.table.Table :(
             // 1) oTable.autoResizeColumn() sets the focus to the column, so it is scrolled into
-            // view. This is why the focus must be removed from the column immediately and restored 
-            // afterwards. This workaound also seems to work only if the columns are iterated over
-            // in reverse order!
+            // view. After a number of workaround attempts, a hack of UI5 solves the problem now. 
+            // See Docs/UI5_modifications.md for details.
             // 2) The optimizer only works AFTER all column were populated, so we need a setTimeout().
-            // TODO would be better to have an event, but none seemed suitable...
+            // TODO would be better to have an event, but none seemed suitable... Perhaps rowsUpdated? #ui5-update
             // 3) Since the optimizer works asynchronously, it will break if while it is running the
             // underlying data changes. In an attempt to avoid this, we do not optimize empty data.
             // 4) It seems, that the empty space on the right side of the table (if it is not occupied
@@ -965,31 +964,42 @@ JS;
 
             setTimeout(function(){
                 var bResized = false;
-                var domFocused = document.activeElement;
                 var oInitWidths = {};
+                /*
+                var domFocused = document.activeElement;
+                var domTableScroll = oTable.$().closest(".sapUiTableCtrlScr"); // Find the closest container element that wraps the table
+                var iTableLeft = domTableScroll.scrollLeft();
+                var domPageScroll = oTable.$().closest('.sapUxAPObjectPageScroll');
+                var iPageTop = domPageScroll.scrollTop();
+                */
                 if (! $oModelJs.getData().rows || $oModelJs.getData().rows.length === 0) {
                     return;
                 }
+                
                 oTable.getColumns().reverse().forEach(function(oCol, i) {
                     var oWidth = oCol.data('_exfWidth');
                     if (! oWidth || $('#'+oCol.getId()).length === 0) return;
                     oInitWidths[oTable.indexOfColumn(oCol)] = $('#'+oCol.getId()).width();
                     if (oCol.getVisible() === true && oWidth.auto === true) {
                         bResized = true;
-                        oCol.applyFocusInfo({preventScroll: true});
                         oTable.autoResizeColumn(oTable.indexOfColumn(oCol));
-                        document.activeElement.blur();
+                        // document.activeElement.blur();
+                        // domPageScroll.scrollTop(iPageTop);
                     }
                     if (oWidth.fixed) {
                         oCol.setWidth(oWidth.fixed);
                     }
                 });
+
                 if (bResized) {
                     setTimeout(function(){
+                        /*
                         var domHScroll = (oTable._getScrollExtension() || {}).getHorizontalScrollbar();
+
                         if (domFocused) {
                             domFocused.focus();
                         }
+                        */
 
                         oTable.getColumns().forEach(function(oCol){
                             var oWidth = oCol.data('_exfWidth');
