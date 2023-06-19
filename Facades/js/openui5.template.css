@@ -36,6 +36,8 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 /* Fix misaligned text on smartphones if table inside an editable form */
 .sapUiFormEdit .sapMListTblSubCnt .sapMText {min-height: inherit; padding-bottom: inherit; line-height: inherit;}
 .sapUiFormEdit .sapMListTblCell .sapMText {min-height: inherit; padding-bottom: inherit; line-height: inherit; padding-top: inherit; } 
+/* Fix to stretch InputSelect buttons to full width in mobile sap.m.Table */
+.sapMListTblSubCntRow > .sapMListTblSubCntVal {width: 100%}
 
 /* Panels */
 .exf-panel-no-border > .sapMPanelContent {border-bottom: none;}
