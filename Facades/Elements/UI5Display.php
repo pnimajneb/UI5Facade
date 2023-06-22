@@ -236,13 +236,9 @@ JS;
      */
     public function buildJsValueGetter()
     {
-        // #value-binding
-        // See comment in buildJsValueSetter()
+        // always return the normalized value, therefor we have to parse it
         $rawValueGetter = parent::buildJsValueGetter();
-        if (! $this->isValueBoundToModel()) {
-            $rawValueGetter = $this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatParser($rawValueGetter);
-        }
-        return $rawValueGetter;
+        return $this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatParser($rawValueGetter);
     }
         
     /**
