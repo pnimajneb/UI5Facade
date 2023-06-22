@@ -185,7 +185,7 @@ JS
      * 
      * @return bool
      */
-    protected function isObjectPageLayout () : bool
+    public function isObjectPageLayout () : bool
     {
         $widget = $this->getWidget();
         $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget) {
@@ -244,7 +244,7 @@ JS
         // difference between creating tables with new sap.ui.table.table or function(){ ... }()
         return <<<JS
 
-        new sap.uxap.ObjectPageLayout({
+        new sap.uxap.ObjectPageLayout('{$this->getIdOfObjectPageLayout()}', {
             useIconTabBar: false,
             upperCaseAnchorBar: false,
             enableLazyLoading: false,
@@ -1036,5 +1036,10 @@ JS;
             }
         }
         return $result;
+    }
+    
+    public function getIdOfObjectPageLayout() : string
+    {
+        return $this->getId() . '_opl';
     }
 }
