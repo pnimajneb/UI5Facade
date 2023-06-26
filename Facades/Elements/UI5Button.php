@@ -16,6 +16,7 @@ use exface\Core\Actions\SendToWidget;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\Factories\UiPageFactory;
 use exface\UI5Facade\Facades\UI5Facade;
+use exface\Core\Widgets\Dialog;
 
 /**
  * Generates sap.m.Button for Button widgets.
@@ -543,8 +544,12 @@ JS;
     protected function buildJsCloseDialog() : string
     {
         $widget = $this->getWidget();
-        if ($widget instanceof DialogButton && $widget->getCloseDialogAfterActionSucceeds()) {
-            return $this->getFacade()->getElement($widget->getDialog())->buildJsCloseDialog();
+        if ($widget instanceof DialogButton) {
+            if ($widget->getCloseDialogAfterActionSucceeds()) {
+                return $this->getFacade()->getElement($widget->getDialog())->buildJsCloseDialog();
+            } elseif (($dialog = $widget->getInputWidget()) instanceof Dialog && $widget->getRefreshInput() === true) {
+                return $this->getFacade()->getElement($dialog)->buildJsRefresh(true);
+            }
         }
         return "";
     }
@@ -584,7 +589,6 @@ JS;
     {
         $widget = $this->getWidget();
         $input_element = $this->getInputElement();
-        
         $onModelLoadedJs = <<<JS
 
 								

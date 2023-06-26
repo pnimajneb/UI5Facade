@@ -15,6 +15,10 @@ use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Interfaces\Actions\iShowDialog;
 use exface\Core\Widgets\Split;
+use exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement;
+use exface\Core\Actions\SaveData;
+use exface\Core\Interfaces\Actions\ActionInterface;
+use exface\Core\Interfaces\Actions\iCallOtherActions;
 
 /**
  * In OpenUI5 dialog widgets are either rendered as sap.m.Page (if maximized) or as sap.m.Dialog.
@@ -50,6 +54,7 @@ class UI5Dialog extends UI5Form
     
     const CONTROLLER_METHOD_FIX_HEIGHT = 'fixHeight';
     const CONTROLLER_METHOD_CLOSE_DIALOG = 'closeDialog';
+    const CONTROLLER_METHOD_PREFILL = 'prefill';
     
     /**
      * 
@@ -59,13 +64,15 @@ class UI5Dialog extends UI5Form
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
         $widget = $this->getWidget();
+        $controller = $this->getController();
                 
         // If we need a prefill, we need to let the view model know this, so all the wigdget built
         // for this dialog can see, that a prefill will be done. This is especially important for
         // widget with lazy loading (like tables), that should postpone loading until the prefill data
         // is there.
         if ($this->needsPrefill()) {
-            $this->getController()->addOnInitScript('this.getView().getModel("view").setProperty("/_prefill/pending", true);');
+            $controller->addOnInitScript('this.getView().getModel("view").setProperty("/_prefill/pending", true);');
+            $controller->addMethod(self::CONTROLLER_METHOD_PREFILL, $this, 'oView, bForceReload', $this->buildJsPrefillLoader('oView', 'bForceReload'));
         }
         
         // Submit on enter
@@ -73,7 +80,6 @@ class UI5Dialog extends UI5Form
         
         $triggerElement = $this->getFacade()->getElement($this->getDialogOpenButton());
         $triggerAction = $this->getDialogOpenAction();
-        $controller = $this->getController();
         
         // Mark dialog as not closed initially
         $controller->addOnShowViewScript("{$controller->getView()->buildJsViewGetter($this)}.getModel('view').setProperty('/_closed', false);");
@@ -81,7 +87,11 @@ class UI5Dialog extends UI5Form
         // Fire on-change when prefilled
         $controller->addOnPrefillDataChangedScript($this->getOnChangeScript());
         
-        $this->getController()->addOnShowViewScript($this->buildJsFocusFirstInput());
+        // Focus the first editable control when the dialog is opened
+        $controller->addOnShowViewScript($this->buildJsFocusFirstInput());
+        
+        // Listen to action affecting the data in this dialog
+        $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed($this->buildJsRefresh(true), false));
         
         if ($this->isMaximized() === false) {
             $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
@@ -408,13 +418,6 @@ JS;
 JS;
         }
         
-        // If the dialog requires a prefill, we need to load the data once the dialog is opened.
-        if ($this->needsPrefill()) {
-            $prefill = $this->buildJsPrefillLoader('oView');
-        } else {
-            $prefill = 'if (typeof this._onPrefill === "function") {this._onPrefill();}';
-        }
-        
         $cacheableJs = $this->getWidget()->isCacheable() ? 'true' : 'false';
         
         // Finally, instantiate the dialog
@@ -430,8 +433,7 @@ JS;
             buttons : [new sap.m.Button()],
             beforeOpen: function(oEvent) {
                 var oDialog = oEvent.getSource();
-                var oView = {$this->getController()->getView()->buildJsViewGetter($this)};
-                {$prefill}                    
+                {$this->buildJsRefresh()}                    
             },
             afterOpen: function(oEvent) {
                 var oView = {$this->getController()->getView()->buildJsViewGetter($this)};
@@ -569,12 +571,7 @@ JS;
      */
     protected function buildJsPage($content_js, string $oControllerJs = 'oController')
     {
-        if ($this->needsPrefill()) {
-            $prefillJs = $this->buildJsPrefillLoader('oView');
-        } else {
-            $prefillJs = 'this._onPrefill();';
-        }
-        $this->getController()->addOnRouteMatchedScript($prefillJs, 'loadPrefill');
+        $this->getController()->addOnRouteMatchedScript($this->buildJsRefresh(), 'loadPrefill');
         if ($this->getWidget()->isCacheable() === false) {
             $this->getController()->addOnHideViewScript("sap.ui.getCore().byId('{$this->getId()}').destroy()");
         }
@@ -636,7 +633,7 @@ JS;
      * @param string $oViewJs
      * @return string
      */
-    protected function buildJsPrefillLoader(string $oViewJs = 'oView') : string
+    protected function buildJsPrefillLoader(string $oViewJs = 'oView', string $bForceReloadJs = 'bForceReload') : string
     {
         $widget = $this->getWidget();
         $triggerWidget = $this->getDialogOpenButton() ?? $widget;
@@ -683,7 +680,7 @@ JS;
         
         return <<<JS
 
-        (function(){
+console.log("refreshing dialog {$this->getId()}");
             {$this->buildJsBusyIconShow()}
             var oViewModel = {$oViewJs}.getModel('view');
             var oResultModel = {$oViewJs}.getModel();
@@ -702,7 +699,7 @@ JS;
             
             {$filterRequestParams}
             
-            if (oLastRouteString === oCurrentRouteString) {
+            if (bForceReload === false && oLastRouteString === oCurrentRouteString) {
                 {$this->buildJsBusyIconHide()}
                 oViewModel.setProperty('/_prefill/pending', false);
                 return;
@@ -720,11 +717,16 @@ JS;
                 $action,
                 'oResultModel',
                 'data',
-                $hideBusyJs . " setTimeout(function(){ oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON())) }, 0);",
+                $hideBusyJs . <<<JS
+
+                setTimeout(function(){ 
+                    oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON()));
+                    oViewModel.setProperty('/_prefill/data_for_action_input', {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))}
+                }, 0);
+JS,
                 $hideBusyJs . $onErrorJs,
                 $showOfflineMsgJs
             )}
-        })();
 			
 JS;
     }
@@ -1038,8 +1040,65 @@ JS;
         return $result;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsRefresh()
+     */
+    public function buildJsRefresh(bool $forcePrefillRefresh = false)
+    { 
+        if ($this->needsPrefill()) {
+            $prefillJs .= $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_PREFILL, $this, 'oView, ' . ($forcePrefillRefresh ? 'true' : 'false'));
+        } else {
+            // If no real prefill is required, still mark the prefill as pending and back again
+            // to trigger listeners to prefill data changes (e.g. stuff added via `$controller->addOnPrefillDataChange()`)
+            $prefillJs .= <<<JS
+
+                oView.getModel("view").setProperty('/_prefill/pending', true).setProperty('/_prefill/pending', false);
+JS;
+        }
+        return <<<JS
+
+                (function(oView){
+                    $prefillJs;
+                })({$this->getController()->getView()->buildJsViewGetter($this)});
+JS;
+    }
+    
+    /**
+     * Returns the id of the sap.uxap.ObjectPageLayout used for dialogs with tabs
+     * 
+     * NOTE: This method just generates the id and will return it even if the ObjectPageLayout is not used.
+     * To find out, if the ObjectPageLayout is used, refer to `ìsObjectPageLayout()`
+     * 
+     * @return string
+     */
     public function getIdOfObjectPageLayout() : string
     {
         return $this->getId() . '_opl';
+    }
+    
+    /**
+     * 
+     * @param string $scriptJs
+     * @return string
+     */
+    protected function buildJsRegisterOnActionPerformed(string $scriptJs) : string
+    {
+        if ($this->needsPrefill() === false) {
+            return '';
+        }
+        return parent::buildJsRegisterOnActionPerformed($scriptJs);
+    }
+    
+    protected function buildJsChangesChecker() : string
+    {
+        return <<<JS
+
+        (function(oControl){
+            oViewModel = oControl.getModel('view');
+            oCurrentData = {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))}
+        })(sap.ui.getCore().byId('{$this->getId()}'));
+JS;
     }
 }

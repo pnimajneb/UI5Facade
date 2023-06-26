@@ -76,7 +76,7 @@ class UI5DataLookupDialog extends UI5Dialog
             beforeOpen: function(oEvent) {
                 var oDialog = oEvent.getSource();
                 var oView = {$this->getController()->getView()->buildJsViewGetter($this)};
-                {$this->buildJsPrefillLoader('oView')}
+                {$this->getController()->buildJsMethodCallFromController(UI5Dialog::CONTROLLER_METHOD_PREFILL, $this, 'oView')}
             },
             
 JS;
