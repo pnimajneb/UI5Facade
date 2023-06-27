@@ -15,6 +15,7 @@ use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Interfaces\Actions\iShowDialog;
 use exface\Core\Widgets\Split;
+use exface\Core\Interfaces\Actions\iCallOtherActions;
 
 /**
  * In OpenUI5 dialog widgets are either rendered as sap.m.Page (if maximized) or as sap.m.Dialog.
@@ -1004,7 +1005,23 @@ JS;
     {
         if ($button = $this->getDialogOpenButton()) {
             if ($button->hasAction()) {
-                return $button->getAction();
+                $action = $button->getAction();
+                switch (true) {
+                    // If the action shows a dialog, that's it
+                    case $action instanceof iShowDialog:
+                        return $action;
+                    // If the action calls other actions, see if one of them fits: that is, it shows exactly
+                    // our dialog. It is importantch to check for the dialog id as CallAction action might
+                    // have multiple actions calling each their own dialog!
+                    case $action instanceof iCallOtherActions:
+                        $thisDialogId = $this->getWidget()->getId();
+                        foreach ($action->getActionsRecursive() as $innerAction) {
+                            if (($innerAction instanceof iShowDialog) && $innerAction->getDialogWidget()->getId() === $thisDialogId) {
+                                return $innerAction;
+                            }
+                        }
+                        break;
+                }
             }
         }
         return null;
@@ -1038,6 +1055,10 @@ JS;
         return $result;
     }
     
+    /**
+     * 
+     * @return string
+     */
     public function getIdOfObjectPageLayout() : string
     {
         return $this->getId() . '_opl';
