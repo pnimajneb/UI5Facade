@@ -76,8 +76,8 @@ class UI5Dialog extends UI5Form
         // Submit on enter
         $this->registerSubmitOnEnter($oControllerJs);
         
-        $triggerElement = $this->getFacade()->getElement($this->getDialogOpenButton());
-        $triggerAction = $this->getDialogOpenAction();
+        $dialogOpenerBtnEl = $this->getFacade()->getElement($this->getDialogOpenButton());
+        $dialogOpenerAction = $this->getDialogOpenAction();
         
         // Mark dialog as not closed initially
         $controller->addOnShowViewScript("{$controller->getView()->buildJsViewGetter($this)}.getModel('view').setProperty('/_closed', false);");
@@ -89,7 +89,22 @@ class UI5Dialog extends UI5Form
         $controller->addOnShowViewScript($this->buildJsFocusFirstInput());
         
         // Listen to action affecting the data in this dialog
-        $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed($this->buildJsRefresh(true), false));
+        $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed(<<<JS
+
+            (function(oController){
+                var bHasChanges = false;
+                // Avoid errors if the view/dialog is closed
+                if (sap.ui.getCore().byId('{$this->getId()}') === undefined || sap.ui.getCore().byId('{$this->getId()}').getModel('view').getProperty('/_closed') === true) {
+                    return;
+                }
+                // Do not refresh silently if there are changes as they will be lost
+                bHasChanges = {$this->buildJsChangesChecker()};
+                if (bHasChanges === true) {
+                    return;
+                }
+                {$this->buildJsRefresh(true)}
+            })($oControllerJs);
+JS, false));
         
         if ($this->isMaximized() === false) {
             $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
@@ -102,7 +117,7 @@ class UI5Dialog extends UI5Form
                 } catch (e) { 
                     console.error('Could not close dialog: ' + e); 
                 }
-                {$triggerElement->buildJsTriggerActionEffects($triggerAction)}
+                {$dialogOpenerBtnEl->buildJsTriggerActionEffects($dialogOpenerAction)}
 JS
             );
             return $this->buildJsDialog();
@@ -114,7 +129,7 @@ JS
                 oViewModel.setProperty('/_prefill/current_data_hash', null); 
                 oViewModel.setProperty('/_closed', true);
                 this.onNavBack(oEvent);
-                {$triggerElement->buildJsTriggerActionEffects($triggerAction)}
+                {$dialogOpenerBtnEl->buildJsTriggerActionEffects($dialogOpenerAction)}
 JS
             );
             
@@ -678,7 +693,6 @@ JS;
         
         return <<<JS
 
-console.log("refreshing dialog {$this->getId()}");
             {$this->buildJsBusyIconShow()}
             var oViewModel = {$oViewJs}.getModel('view');
             var oResultModel = {$oViewJs}.getModel();
@@ -719,7 +733,7 @@ console.log("refreshing dialog {$this->getId()}");
 
                 setTimeout(function(){ 
                     oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON()));
-                    oViewModel.setProperty('/_prefill/data_for_action_input', {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))}
+                    oViewModel.setProperty('/_prefill/data_for_action_input', {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))});
                 }, 0);
 JS,
                 $hideBusyJs . $onErrorJs,
@@ -1105,13 +1119,19 @@ JS;
         return parent::buildJsRegisterOnActionPerformed($scriptJs);
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsChangesChecker() : string
     {
         return <<<JS
 
         (function(oControl){
-            oViewModel = oControl.getModel('view');
-            oCurrentData = {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))}
+            var oViewModel = oControl.getModel('view');
+            var oDataOfLastPrefill = oViewModel.getProperty('/_prefill/data_for_action_input');
+            var oDataCurrent = {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))};
+            return (JSON.stringify(oDataOfLastPrefill) !== JSON.stringify(oDataCurrent));
         })(sap.ui.getCore().byId('{$this->getId()}'));
 JS;
     }
