@@ -1082,7 +1082,9 @@ JS;
             // to trigger listeners to prefill data changes (e.g. stuff added via `$controller->addOnPrefillDataChange()`)
             $prefillJs .= <<<JS
 
-                oView.getModel("view").setProperty('/_prefill/pending', true).setProperty('/_prefill/pending', false);
+                var oViewModel = oView.getModel("view");
+                oViewModel.setProperty('/_prefill/pending', true);
+                oViewModel.setProperty('/_prefill/pending', false);
 JS;
         }
         return <<<JS
