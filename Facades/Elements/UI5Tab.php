@@ -47,14 +47,16 @@ JS;
         
         // required_if
         if ($activeIf = $this->getWidget()->getActiveIf()) {
-            $this->registerConditionalPropertyUpdaterOnLinkedElements($activeIf, $this->buildJsActiveSetter(true), $this->buildJsActiveSetter(false));
-            $contoller->addOnPrefillDataChangedScript(
-                $this->buildJsConditionalPropertyInitializer(
-                    $activeIf,
-                    $this->buildJsActiveSetter(true),
-                    $this->buildJsActiveSetter(false)
-                )
+            $this->registerConditionalPropertyUpdaterOnLinkedElements($activeIf, $this->buildJsSetActive(true), $this->buildJsSetActive(false));
+            $js = $this->buildJsConditionalProperty(
+                $activeIf,
+                $this->buildJsSetActive(true),
+                $this->buildJsSetActive(false),
+                true
             );
+            $contoller
+            ->addOnInitScript($js)
+            ->addOnPrefillDataChangedScript($js);
         }
         
         return $this;
@@ -65,7 +67,7 @@ JS;
      * @param bool $trueOrFalse
      * @return string
      */
-    public function buildJsActiveSetter(bool $trueOrFalse) : string
+    public function buildJsSetActive(bool $trueOrFalse) : string
     {
         if ($trueOrFalse === false) {
             return '';

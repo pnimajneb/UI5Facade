@@ -50,7 +50,7 @@ JS;
         }
         
         if ($this->getWidget()->isDisabled()) {
-            $initPropsJs .= $this->buildJsDisabler();
+            $initPropsJs .= $this->buildJsSetDisabled(true);
         }
         
         return <<<JS
@@ -115,21 +115,15 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsEnabler()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsSetDisabled()
      */
-    public function buildJsEnabler()
+    public function buildJsSetDisabled(bool $trueOrFalse) : string
     {
-        return $this->getWidget()->getScriptToEnable() ?? parent::buildJsEnabler();
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsDisabler()
-     */
-    public function buildJsDisabler()
-    {
-        return $this->getWidget()->getScriptToDisable() ?? parent::buildJsDisabler();
+        if ($trueOrFalse === true) {
+            return $this->getWidget()->getScriptToDisable() ?? parent::buildJsSetDisabled($trueOrFalse);
+        } else {
+            return $this->getWidget()->getScriptToEnable() ?? parent::buildJsSetDisabled($trueOrFalse);
+        }
     }
     
     /**

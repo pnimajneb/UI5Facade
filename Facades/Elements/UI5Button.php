@@ -658,25 +658,19 @@ JS;
 				
 JS;
     }
-
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsEnabler()
-     */
-    public function buildJsEnabler()
-    {
-        return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(true)";
-    }
     
     /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsDisabler()
+     *
+     * {@inheritdoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsSetDisabled()
      */
-    public function buildJsDisabler()
+    public function buildJsSetDisabled(bool $trueOrFalse) : string
     {
-        return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
+        if ($trueOrFalse === true) {
+            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
+        } else {
+            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(true)";
+        }
     }
     
     protected function getColorSemanticMap() : array
@@ -718,24 +712,6 @@ JS;
         }*/
         
         return $js;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
-     */
-    public function registerConditionalProperties() : UI5AbstractElement
-    {
-        parent::registerConditionalProperties();
-        $contoller = $this->getController();
-        
-        // disabled_if
-        $this->registerDisableConditionAtLinkedElement();
-        $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
-        $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
-        
-        return $this;
     }
     
     /**

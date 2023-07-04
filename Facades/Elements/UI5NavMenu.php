@@ -1,11 +1,9 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\NavMenu;
-
 /**
  *
- * @method NavMenu getWidget()
+ * @method \exface\Core\Widgets\NavMenu getWidget()
  * @method UI5ControllerInterface getController()
  *
  * @author Ralf Mulansky

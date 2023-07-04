@@ -36,10 +36,10 @@ class UI5InputPassword extends UI5Input
         $onChangeEnableDisableScript = <<<JS
         
                     if ({$this->buildJsValueGetter()} === '') {
-                        {$confirmInputElement->buildJsDisabler()}
+                        {$confirmInputElement->buildJsSetDisabled(true)}
                         {$confirmInputElement->buildJsValueSetter('')}
                     } else {
-                        {$confirmInputElement->buildJsEnabler()}
+                        {$confirmInputElement->buildJsSetDisabled(false)}
                     }
 JS;
         $this->addOnChangeScript($onChangeEnableDisableScript);
@@ -48,7 +48,7 @@ JS;
 
             setTimeout(function(){
                 if ({$this->buildJsValueGetter()} === '') {             
-                    {$confirmInputElement->buildJsDisabler()}
+                    {$confirmInputElement->buildJsSetDisabled(true)}
                     {$confirmInputElement->buildJsValueSetter('')}
                 }
             }, 0);

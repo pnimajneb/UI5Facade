@@ -1331,9 +1331,9 @@ JS;
                         $cellWidget = $col->getCellWidget();
                         $cellControlJs = 'oCellCtrl';
                         $cellElement =  $this->getFacade()->getElement($cellWidget);
-                        $disablerJS = $cellElement->buildJsDisabler();
+                        $disablerJS = $cellElement->buildJsSetDisabled(true);
                         $disablerJS = str_replace("sap.ui.getCore().byId('{$cellElement->getId()}')", $cellControlJs, $disablerJS);
-                        $enablerJS = $cellElement->buildJsEnabler();
+                        $enablerJS = $cellElement->buildJsSetDisabled(false);
                         $enablerJS = str_replace("sap.ui.getCore().byId('{$cellElement->getId()}')", $cellControlJs, $enablerJS);
                         $conditionalPropertyJs = $this->buildJsConditionalProperty($conditionalProperty, $disablerJS, $enablerJS);
                         

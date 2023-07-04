@@ -307,14 +307,14 @@ JS;
     /**
      *
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsVisibilitySetter()
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsSetHidden()
      */
-    protected function buildJsVisibilitySetter(bool $visible) : string
+    protected function buildJsSetHidden(bool $hidden) : string
     {
         if ($this->isWrappedInPanel()) {
-            return "sap.ui.getCore().byId('{$this->getId()}_panel')?.setVisible(" . ($visible ? 'true' : 'false') . ").$()?.trigger('visibleChange', [{visible: " . ($visible ? 'true' : 'false') . "}]);";
+            return "sap.ui.getCore().byId('{$this->getId()}_panel')?.setVisible(" . ($hidden ? 'false' : 'true') . ").$()?.trigger('visibleChange', [{visible: " . ($hidden ? 'false' : 'true') . "}]);";
         }
-        return parent::buildJsVisibilitySetter($visible);
+        return parent::buildJsSetHidden($hidden);
     }
     
     /**

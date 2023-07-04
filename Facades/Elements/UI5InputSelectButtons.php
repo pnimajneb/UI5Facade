@@ -102,9 +102,9 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsRequiredSetter()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsSetRequired()
      */
-    protected function buildJsRequiredSetter(bool $required) : string
+    protected function buildJsSetRequired(bool $required) : string
     {
         $val = $required ? 'true' : 'false';
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {

@@ -311,12 +311,12 @@ JS;
      * Additionally the DOM element MUST fire the custom `visibleChange` event, so other controls
      * can react to visibility changes. UI5 itself does not seem to provide a hide/show event.
      * 
-     * @param bool $visible
+     * @param bool $hidden
      * @return string
      */
-    protected function buildJsVisibilitySetter(bool $visible) : string
+    protected function buildJsSetHidden(bool $hidden) : string
     {
-        return "sap.ui.getCore().byId('{$this->getId()}').setVisible(" . ($visible ? 'true' : 'false') . ").$()?.trigger('visibleChange', [{visible: " . ($visible ? 'true' : 'false') . "}]);";
+        return "sap.ui.getCore().byId('{$this->getId()}').setVisible(" . ($hidden ? 'false' : 'true') . ").$()?.trigger('visibleChange', [{visible: " . ($hidden ? 'false' : 'true') . "}]);";
     }
     
     /**
@@ -582,25 +582,50 @@ JS;
         return $this;
     }
     
+    /**
+     * 
+     * @return UI5AbstractElement
+     */
     public function registerConditionalProperties() : UI5AbstractElement
     {
+        $widget = $this->getWidget();
+        
         // hidden_if
-        if (! $this->isVisible()) {
-            return $this;
-        }
-        if ($condProp = $this->getWidget()->getHiddenIf()) {
-            $this->registerConditionalPropertyUpdaterOnLinkedElements(
-                $condProp,
-                $this->buildJsVisibilitySetter(false),
-                $this->buildJsVisibilitySetter(true)
-            );
-            $this->getController()->addOnPrefillDataChangedScript(
-                $this->buildJsConditionalPropertyInitializer(
+        if ($this->isVisible()) {
+            if ($condProp = $widget->getHiddenIf()) {
+                $this->registerConditionalPropertyUpdaterOnLinkedElements(
                     $condProp,
-                    $this->buildJsVisibilitySetter(false),
-                    $this->buildJsVisibilitySetter(true)
-                )
+                    $this->buildJsSetHidden(true),
+                    $this->buildJsSetHidden(false)
+                );
+                $js = $this->buildJsConditionalProperty(
+                    $condProp,
+                    $this->buildJsSetHidden(true),
+                    $this->buildJsSetHidden(false),
+                    true
+                );
+                $this->getController()
+                ->addOnPrefillDataChangedScript($js)
+                ->addOnInitScript($js);
+            }
+        }
+        
+        // disabled_if
+        if ($condProp = $widget->getDisabledIf()) {
+            $this->registerConditionalPropertyUpdaterOnLinkedElements(
+                $condProp, 
+                $this->buildJsSetDisabled(true), 
+                $this->buildJsSetDisabled(false)
             );
+            $js = $this->buildJsConditionalProperty(
+                $condProp, 
+                $this->buildJsSetDisabled(true), 
+                $this->buildJsSetDisabled(false), 
+                true
+            );
+            $this->getController()
+            ->addOnInitScript($js)
+            ->addOnPrefillDataChangedScript($js);
         }
         
         return $this;

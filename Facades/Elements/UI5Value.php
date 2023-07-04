@@ -559,21 +559,21 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsVisibilitySetter()
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsSetHidden()
      */
-    protected function buildJsVisibilitySetter(bool $visible) : string
+    protected function buildJsSetHidden(bool $hidden) : string
     {
         $showHideLabelJs = '';        
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
-                $showHideLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setVisible(" . ($visible ? 'true' : 'false') . ");";
+                $showHideLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setVisible(" . ($hidden ? 'false' : 'true') . ");";
             }
         }
-        $js = parent::buildJsVisibilitySetter($visible) . ' ' . $showHideLabelJs;
+        $js = parent::buildJsSetHidden($hidden) . ' ' . $showHideLabelJs;
         
         //when value element is nested in a form element we have to hide the form element
         //so it doesnt occupy space even so the element inside is hidden
-        $vis = $visible ? 'true' : 'false';
+        $vis = $hidden ? 'false' : 'true';
         $fixJs = <<<JS
         
             var vis = {$vis};

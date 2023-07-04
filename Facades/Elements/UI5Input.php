@@ -1,7 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryDisableConditionTrait;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryInputValidationTrait;
 use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\DataTypes\BooleanDataType;
@@ -29,13 +28,13 @@ use exface\Core\Widgets\Input;
  * }
  * 
  * ```
- *
+ * 
+ * @method Input getWidget()
  * @author Andrej Kabachnik
  *        
  */
 class UI5Input extends UI5Value
 {
-    use JqueryDisableConditionTrait;
     use JqueryInputValidationTrait;
     
     /**
@@ -231,22 +230,16 @@ JS;
     
     /**
      *
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsEnabler()
+     * {@inheritdoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsSetDisabled()
      */
-    public function buildJsEnabler()
+    public function buildJsSetDisabled(bool $trueOrFalse) : string
     {
-        return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(true)";
-    }
-    
-    /**
-     *
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsDisabler()
-     */
-    public function buildJsDisabler()
-    {
-        return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
+        if ($trueOrFalse === true) {
+            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
+        } else {
+            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(true)";
+        }
     }
     
     /**
@@ -254,7 +247,7 @@ JS;
      * @param bool $required
      * @return string
      */
-    protected function buildJsRequiredSetter(bool $required) : string
+    protected function buildJsSetRequired(bool $required) : string
     {
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
@@ -274,26 +267,23 @@ JS;
         return "sap.ui.getCore().byId('{$this->getId()}').getRequired()";
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::registerConditionalProperties()
+     */
     public function registerConditionalProperties() : UI5AbstractElement
     {
         parent::registerConditionalProperties();
-        $contoller = $this->getController();
-        
-        // disabled_if
-        $this->registerDisableConditionAtLinkedElement();
-        $contoller->addOnInitScript($this->buildJsDisableConditionInitializer());
-        $contoller->addOnPrefillDataChangedScript($this->buildJsDisableCondition());
+        $widget = $this->getWidget();
         
         // required_if
-        if ($requiredIf = $this->getWidget()->getRequiredIf()) {
-            $this->registerConditionalPropertyUpdaterOnLinkedElements($requiredIf, $this->buildJsRequiredSetter(true), $this->buildJsRequiredSetter(false));
-            $contoller->addOnPrefillDataChangedScript(
-                $this->buildJsConditionalPropertyInitializer(
-                    $requiredIf,
-                    $this->buildJsRequiredSetter(true),
-                    $this->buildJsRequiredSetter(false)
-                )
-            );
+        if ($propertyIf = $widget->getRequiredIf()) {
+            $this->registerConditionalPropertyUpdaterOnLinkedElements($propertyIf, $this->buildJsSetRequired(true), $this->buildJsSetRequired(false));
+            $js = $this->buildJsConditionalProperty($propertyIf, $this->buildJsSetRequired(true), $this->buildJsSetRequired(false), true);
+            $this->getController()
+            ->addOnInitScript($js)
+            ->addOnPrefillDataChangedScript($js);
         }
 
         return $this;
