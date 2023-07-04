@@ -425,6 +425,7 @@ JS;
         }
         
         if ($containerWidget instanceof WidgetGroup) {
+            $containerEl = $this->getFacade()->getElement($containerWidget);
             // Mark the entire group as required if it only contains required widgets
             // This is particularly important if the inner widget do not have their own
             // label controls - in this case it will not be visible to the user, that
@@ -437,7 +438,10 @@ JS;
                 }
             }
             $title = $containerWidget->getCaption() ? 'text: ' . $this->escapeString($containerWidget->getCaption() . ($required ? ' *' : '')) . ',' : '';
-            $id = "'{$this->getFacade()->getElement($containerWidget)->getId()}',";            
+            $id = "'{$containerEl->getId()}',";    
+            // Since the FormContainer now has an id, register conditional properties for its
+            // widget - e.g. hidden_if, disabled_if, etc.
+            $containerEl->registerConditionalProperties();
         }
         
         // Hide the entire form container if all of its widgets are hidden
