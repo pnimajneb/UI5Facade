@@ -606,16 +606,16 @@ JS;
         // hidden_if
         if ($this->isVisible()) {
             if ($condProp = $widget->getHiddenIf()) {
-                $reset = $condProp->hasResetWidgetOnChange() ?? true;
+                $resetOnChange = $condProp->hasResetWidgetOnChange() ?? true;
                 $this->registerConditionalPropertyUpdaterOnLinkedElements(
                     $condProp,
-                    $this->buildJsSetHidden(true, $reset),
-                    $this->buildJsSetHidden(false, $reset)
+                    $this->buildJsSetHidden(true, $resetOnChange),
+                    $this->buildJsSetHidden(false, $resetOnChange)
                 );
                 $js = $this->buildJsConditionalProperty(
                     $condProp,
-                    $this->buildJsSetHidden(true, $reset),
-                    $this->buildJsSetHidden(false, $reset),
+                    $this->buildJsSetHidden(true),
+                    $this->buildJsSetHidden(false),
                     true
                 );
                 $this->getController()
@@ -626,16 +626,16 @@ JS;
         
         // disabled_if
         if ($condProp = $widget->getDisabledIf()) {
-            $reset = $condProp->hasResetWidgetOnChange() ?? true;
+            $resetOnChange = $condProp->hasResetWidgetOnChange() ?? true;
             $this->registerConditionalPropertyUpdaterOnLinkedElements(
                 $condProp, 
-                $this->buildJsSetDisabled(true, $reset), 
-                $this->buildJsSetDisabled(false, $reset)
+                $this->buildJsSetDisabled(true, $resetOnChange), 
+                $this->buildJsSetDisabled(false, $resetOnChange)
             );
             $js = $this->buildJsConditionalProperty(
                 $condProp, 
-                $this->buildJsSetDisabled(true, $reset), 
-                $this->buildJsSetDisabled(false, $reset), 
+                $this->buildJsSetDisabled(true), 
+                $this->buildJsSetDisabled(false), 
                 true
             );
             $this->getController()
