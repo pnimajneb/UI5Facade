@@ -117,7 +117,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsSetDisabled()
      */
-    public function buildJsSetDisabled(bool $trueOrFalse) : string
+    public function buildJsSetDisabled(bool $trueOrFalse, bool $resetWidgetOnChange = false) : string
     {
         if ($trueOrFalse === true) {
             return $this->getWidget()->getScriptToDisable() ?? parent::buildJsSetDisabled($trueOrFalse);

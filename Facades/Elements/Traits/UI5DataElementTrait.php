@@ -309,12 +309,10 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsSetHidden()
      */
-    protected function buildJsSetHidden(bool $hidden) : string
+    protected function buildJsSetHidden(bool $hidden, bool $resetWidget = false, string $elementId = null) : string
     {
-        if ($this->isWrappedInPanel()) {
-            return "sap.ui.getCore().byId('{$this->getId()}_panel')?.setVisible(" . ($hidden ? 'false' : 'true') . ").$()?.trigger('visibleChange', [{visible: " . ($hidden ? 'false' : 'true') . "}]);";
-        }
-        return parent::buildJsSetHidden($hidden);
+        $elementId = $elementId ?? $this->getId() . '_panel';
+        return parent::buildJsSetHidden($hidden, $resetWidget, $elementId);
     }
     
     /**

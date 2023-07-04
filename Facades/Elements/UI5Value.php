@@ -556,36 +556,39 @@ JS;
         return $this->getUseWidgetId() ? $this->getId() . '__label' : '';
     }
     
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsSetHidden()
-     */
-    protected function buildJsSetHidden(bool $hidden) : string
+    protected function buildJsSetHidden(bool $hidden, bool $resetWidget = false, string $elementId = null) : string
     {
-        $showHideLabelJs = '';        
+        $showHideLabelJs = '';
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
-                $showHideLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setVisible(" . ($hidden ? 'false' : 'true') . ");";
+                $showHideLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setVisible(bVisible);";
             }
         }
-        $js = parent::buildJsSetHidden($hidden) . ' ' . $showHideLabelJs;
         
-        //when value element is nested in a form element we have to hide the form element
-        //so it doesnt occupy space even so the element inside is hidden
-        $vis = $hidden ? 'false' : 'true';
-        $fixJs = <<<JS
-        
-            var vis = {$vis};
-            var oElem = sap.ui.getCore().byId('{$this->getId()}');
-            if (oElem.getParent().getMetadata().getName() == 'sap.ui.layout.form.FormElement') {
-                oElem.getParent().setVisible(vis);
-                oElem.$()?.trigger('visibleChange', [{visible: vis}]);
-            } else {
-                {$js}
-            }
+        $bVisibleJs = ($hidden ? 'false' : 'true');
+        $bResetJs = ($resetWidget ? 'true' : 'false');
+        $elementId = $elementId ?? $this->getId();
+        return <<<JS
+(function(bVisible, oCtrl, bReset){
+console.log(bVisible, oCtrl, bReset);
+    if (oCtrl.getParent().getMetadata().getName() == 'sap.ui.layout.form.FormElement') {
+        if (bVisible === oCtrl.getParent().getVisible()) {
+            return;
+        }
+        oCtrl.getParent().setVisible(bVisible);
+    } else {
+        if (bVisible === oCtrl.getVisible()) {
+            return;
+        }
+        oCtrl.setVisible(bVisible);
+        {$showHideLabelJs}
+    }
+    oCtrl.$()?.trigger('visibleChange', [{visible: bVisible}]);
+    if (bReset === true) {
+        {$this->buildJsResetter()}
+    }
+})($bVisibleJs, sap.ui.getCore().byId('{$elementId}'), $bResetJs)
 JS;
-        return $fixJs;
     }
     
     /**

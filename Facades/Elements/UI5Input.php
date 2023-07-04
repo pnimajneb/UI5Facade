@@ -233,13 +233,19 @@ JS;
      * {@inheritdoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsSetDisabled()
      */
-    public function buildJsSetDisabled(bool $trueOrFalse) : string
+    public function buildJsSetDisabled(bool $trueOrFalse, bool $resetWidgetOnChange = false) : string
     {
-        if ($trueOrFalse === true) {
-            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false)";
-        } else {
-            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(true)";
-        }
+        $bEnabledJs = ($trueOrFalse ? 'false' : 'true');
+        $bResetJs = ($resetWidgetOnChange ? 'true' : 'false');
+        return <<<JS
+(function(bEnabled, oCtrl, bReset){
+    if (bEnabled === oCtrl.getEnabled()) return;
+    oCtrl.setEnabled(bEnabled);
+    if (bReset === true) {
+        {$this->buildJsResetter()}
+    }
+})($bEnabledJs, sap.ui.getCore().byId('{$this->getId()}'), $bResetJs)
+JS;
     }
     
     /**

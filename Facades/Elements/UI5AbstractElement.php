@@ -312,11 +312,24 @@ JS;
      * can react to visibility changes. UI5 itself does not seem to provide a hide/show event.
      * 
      * @param bool $hidden
+     * @param bool $resetWidget
+     * @param string $elementId
      * @return string
      */
-    protected function buildJsSetHidden(bool $hidden) : string
+    protected function buildJsSetHidden(bool $hidden, bool $resetWidget = false, string $elementId = null) : string
     {
-        return "sap.ui.getCore().byId('{$this->getId()}').setVisible(" . ($hidden ? 'false' : 'true') . ").$()?.trigger('visibleChange', [{visible: " . ($hidden ? 'false' : 'true') . "}]);";
+        $bVisibleJs = ($hidden ? 'false' : 'true');
+        $bResetJs = ($resetWidget ? 'true' : 'false');
+        $elementId = $elementId ?? $this->getId();
+        return <<<JS
+(function(bVisible, oCtrl, bReset){
+    if (bVisible === oCtrl.getVisible()) return;
+    oCtrl.setVisible(bVisible).$()?.trigger('visibleChange', [{visible: bVisible}]);
+    if (bReset === true) {
+        {$this->buildJsResetter()}
+    }
+})($bVisibleJs, sap.ui.getCore().byId('{$elementId}'), $bResetJs)
+JS;
     }
     
     /**
@@ -593,15 +606,16 @@ JS;
         // hidden_if
         if ($this->isVisible()) {
             if ($condProp = $widget->getHiddenIf()) {
+                $reset = $condProp->hasResetWidgetOnChange() ?? true;
                 $this->registerConditionalPropertyUpdaterOnLinkedElements(
                     $condProp,
-                    $this->buildJsSetHidden(true),
-                    $this->buildJsSetHidden(false)
+                    $this->buildJsSetHidden(true, $reset),
+                    $this->buildJsSetHidden(false, $reset)
                 );
                 $js = $this->buildJsConditionalProperty(
                     $condProp,
-                    $this->buildJsSetHidden(true),
-                    $this->buildJsSetHidden(false),
+                    $this->buildJsSetHidden(true, $reset),
+                    $this->buildJsSetHidden(false, $reset),
                     true
                 );
                 $this->getController()
@@ -612,15 +626,16 @@ JS;
         
         // disabled_if
         if ($condProp = $widget->getDisabledIf()) {
+            $reset = $condProp->hasResetWidgetOnChange() ?? true;
             $this->registerConditionalPropertyUpdaterOnLinkedElements(
                 $condProp, 
-                $this->buildJsSetDisabled(true), 
-                $this->buildJsSetDisabled(false)
+                $this->buildJsSetDisabled(true, $reset), 
+                $this->buildJsSetDisabled(false, $reset)
             );
             $js = $this->buildJsConditionalProperty(
                 $condProp, 
-                $this->buildJsSetDisabled(true), 
-                $this->buildJsSetDisabled(false), 
+                $this->buildJsSetDisabled(true, $reset), 
+                $this->buildJsSetDisabled(false, $reset), 
                 true
             );
             $this->getController()
