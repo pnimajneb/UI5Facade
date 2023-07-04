@@ -208,7 +208,7 @@ JS;
     {
         parent::registerConditionalProperties();
         $this->registerConditionalPropertiesOfColumns();
-        $this->getController()->addOnPrefillDataChangedScript("{$this->buildJsJqueryElement()}[0].exfWidget.refreshConditionalProperties()");
+        $this->getController()->addOnPrefillDataChangedScript("(function(jqEl){if (jqEl.length) jqEl[0].exfWidget.refreshConditionalProperties()})({$this->buildJsJqueryElement()})");
         return $this;
     }
     
