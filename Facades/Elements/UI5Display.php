@@ -22,6 +22,11 @@ class UI5Display extends UI5Value
 {
     use JsValueScaleTrait;
     
+    const ICON_YES_TABLE = "'sap-icon://accept'";
+    const ICON_NO_TABLE = "null";
+    const ICON_YES_FORM = "'sap-icon://message-success'";
+    const ICON_NO_FORM = "'sap-icon://border'";
+    
     private $alignmentProperty = null;
     
     private $onChangeHandlerRegistered = false;
@@ -41,6 +46,15 @@ class UI5Display extends UI5Value
     
     /**
      * 
+     * @return bool
+     */
+    protected function isIcon() : bool
+    {
+        return $this->getWidget()->getValueDataType() instanceof BooleanDataType;
+    }
+    
+    /**
+     * 
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsConstructorForMainControl()
      */
@@ -51,19 +65,19 @@ class UI5Display extends UI5Value
         $this->registerExternalModules($this->getController());
         
         $widget = $this->getWidget();
-        if ($widget->getValueDataType() instanceof BooleanDataType) {
+        if ($this->isIcon()) {
             if ($this->getWidget()->isInTable() === true) {
-                $icon_yes = "'sap-icon://accept'";
-                $icon_no = "null";
+                $icon_yes = self::ICON_YES_TABLE;
+                $icon_no = self::ICON_NO_TABLE;
                 $icon_width = '"100%"';
             } else {
-                $icon_yes = "'sap-icon://message-success'";
-                $icon_no = "'sap-icon://border'";
+                $icon_yes = self::ICON_YES_FORM;
+                $icon_no = self::ICON_NO_FORM;
                 $icon_width = "'16px'";
             }
             $js = <<<JS
 
-        new sap.ui.core.Icon({
+        new sap.ui.core.Icon("{$this->getId()}", {
             width: {$icon_width},
             {$this->buildJsPropertyTooltip()}
             src: {$this->buildJsValueBinding("formatter: function(value) {
@@ -197,6 +211,19 @@ JS;
      */
     public function buildJsValueSetterMethod($value)
     {
+        if ($this->isIcon()) {
+            if ($this->getWidget()->isInTable() === true) {
+                $icon_yes = self::ICON_YES_TABLE;
+                $icon_no = self::ICON_NO_TABLE;
+            } else {
+                $icon_yes = self::ICON_YES_FORM;
+                $icon_no = self::ICON_NO_FORM;
+            }
+            return "setSrc((function(value) {
+                    if (value === '1' || value === 'true' || value === 1 || value === true) return $icon_yes;
+                    else return $icon_no;
+                })($value))";
+        }
         return "setText({$value})";
     }
     
@@ -236,6 +263,18 @@ JS;
      */
     public function buildJsValueGetter()
     {
+        if ($this->isIcon()) {
+            if ($this->getWidget()->isInTable() === true) {
+                $icon_yes = self::ICON_YES_TABLE;
+            } else {
+                $icon_yes = self::ICON_YES_FORM;
+            }
+            return <<<JS
+                (function(oIcon){
+                    return (oIcon.getSrc() === $icon_yes);
+                })(sap.ui.getCore().byId('{$this->getId()}'))
+JS;
+        }
         // always return the normalized value, therefor we have to parse it
         $rawValueGetter = parent::buildJsValueGetter();
         return $this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatParser($rawValueGetter);
@@ -362,5 +401,15 @@ JS;
     {
         $this->getValueBindingFormatter()->registerExternalModules($controller);
         return $this;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsValueBindingPropertyName()
+     */
+    public function buildJsValueBindingPropertyName() : string
+    {
+        return $this->isIcon() ? 'src' : 'text';
     }
 }
