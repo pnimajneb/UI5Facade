@@ -570,7 +570,6 @@ JS;
         $elementId = $elementId ?? $this->getId();
         return <<<JS
 (function(bVisible, oCtrl, bReset){
-console.log(bVisible, oCtrl, bReset);
     if (oCtrl.getParent().getMetadata().getName() == 'sap.ui.layout.form.FormElement') {
         if (bVisible === oCtrl.getParent().getVisible()) {
             return;
