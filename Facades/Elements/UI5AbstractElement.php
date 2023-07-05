@@ -8,8 +8,6 @@ use exface\Core\DataTypes\StringDataType;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\Exceptions\LogicException;
 use exface\UI5Facade\Facades\Interfaces\UI5ServerAdapterInterface;
-use exface\Core\Interfaces\Widgets\iCanPreloadData;
-use exface\UI5Facade\Facades\Elements\ServerAdapters\PreloadServerAdapter;
 use exface\UI5Facade\Facades\Interfaces\UI5ViewInterface;
 use exface\Core\Interfaces\Widgets\iHaveIcon;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
@@ -323,7 +321,7 @@ JS;
         $elementId = $elementId ?? $this->getId();
         return <<<JS
 (function(bVisible, oCtrl, bReset){
-    if (bVisible === oCtrl.getVisible()) return;
+    if (! oCtrl || bVisible === oCtrl.getVisible()) return;
     oCtrl.setVisible(bVisible).$()?.trigger('visibleChange', [{visible: bVisible}]);
     if (bReset === true) {
         {$this->buildJsResetter()}

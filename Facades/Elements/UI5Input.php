@@ -239,7 +239,7 @@ JS;
         $bResetJs = ($resetWidgetOnChange ? 'true' : 'false');
         return <<<JS
 (function(bEnabled, oCtrl, bReset){
-    if (bEnabled === oCtrl.getEnabled()) return;
+    if (! oCtrl || bEnabled === oCtrl.getEnabled()) return;
     oCtrl.setEnabled(bEnabled);
     if (bReset === true) {
         {$this->buildJsResetter()}
