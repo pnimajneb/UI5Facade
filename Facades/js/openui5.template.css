@@ -18,6 +18,8 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 .sapUiUfdShellCntnt > .sapMIBar.sapMTB {height: 44px; padding: 0 0.5rem 0 0;}
 .sapUiUfdShellCntnt > .sapMIBar.sapMTB .sapMBtnIcon:before {font-size: 16px}
 .exf-context-popup .sapMPanelContent {border-bottom: 0 !important}
+/* Fix for vertical scroll bar due to 4px in shell container */
+.sapUiUfdSpltContCntnt {overflow: hidden}
 
 /* sap.m.Input */
 /* fix for suggest-table being hidden the first time the phone-suggest-dialog opens 
