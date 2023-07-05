@@ -196,7 +196,7 @@ JS;
      */
     public function buildJsEditableChangesChecker(string $oTableJs = null) : string
     {
-        return "{$this->buildJsJqueryElement()}[0].exfWidget.hasChanges()";
+        return "({$this->buildJsJqueryElement()}.length === 0 ? false : {$this->buildJsJqueryElement()}[0].exfWidget.hasChanges())";
     }
     
     /**
