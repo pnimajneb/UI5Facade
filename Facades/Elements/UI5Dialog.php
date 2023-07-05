@@ -76,8 +76,8 @@ class UI5Dialog extends UI5Form
         // Submit on enter
         $this->registerSubmitOnEnter($oControllerJs);
         
-        $dialogOpenerBtnEl = $this->getFacade()->getElement($this->getDialogOpenButton());
-        $dialogOpenerAction = $this->getDialogOpenAction();
+        $dialogOpenerBtnEl = $this->getFacade()->getElement($widget->getOpenButton());
+        $dialogOpenerAction = $widget->getOpenAction();
         
         // Mark dialog as not closed initially
         $controller->addOnShowViewScript("{$controller->getView()->buildJsViewGetter($this)}.getModel('view').setProperty('/_closed', false);");
@@ -251,7 +251,7 @@ JS
             if ($width->isPercentual() && $width->getValue() === '100%') {
                 return true;
             }
-            if ($action = $this->getDialogOpenAction()) {
+            if ($action = $widget->getOpenAction()) {
                 $action_setting = $this->getFacade()->getConfigMaximizeDialogByDefault($action);
                 return $action_setting;
             }
@@ -626,7 +626,7 @@ JS;
      */
     protected function needsPrefill(string $prefillType = self::PREFILL_WITH_ANY) : bool
     {
-        if (($action = $this->getDialogOpenAction()) instanceof iShowWidget) {
+        if (($action = $this->getWidget()->getOpenAction()) instanceof iShowWidget) {
             switch (true) {
                 case $action->getPrefillWithInputData() && ($prefillType === self::PREFILL_WITH_ANY || $prefillType === self::PREFILL_WITH_INPUT):
                     return true;
@@ -649,7 +649,7 @@ JS;
     protected function buildJsPrefillLoader(string $oViewJs = 'oView', string $bForceReloadJs = 'bForceReload') : string
     {
         $widget = $this->getWidget();
-        $triggerWidget = $this->getDialogOpenButton() ?? $widget;
+        $triggerWidget = $widget->getOpenButton() ?? $widget;
         
         // If the prefill cannot be fetched due to being offline, show the offline message view
         // (if the dialog is a page) or an error-popup (if the dialog is a regular dialog).
@@ -993,53 +993,6 @@ JS;
     public function hasButtonBack() : bool
     {
         return true;
-    }
-    
-    /**
-     * Returns the button that opened the dialog or NULL if not available
-     * 
-     * @return iTriggerAction|NULL
-     */
-    protected function getDialogOpenButton() : ?iTriggerAction
-    {
-        if ($this->getWidget()->hasParent()) {
-            $parent = $this->getWidget()->getParent();
-            if ($parent instanceof iTriggerAction) {
-                return $parent;
-            }
-        }
-        return null;
-    }
-    
-    /**
-     * Returns the action that opened the dialog or NULL if not available
-     * 
-     * @return iShowDialog|NULL
-     */
-    protected function getDialogOpenAction() : ?iShowDialog
-    {
-        if ($button = $this->getDialogOpenButton()) {
-            if ($button->hasAction()) {
-                $action = $button->getAction();
-                switch (true) {
-                    // If the action shows a dialog, that's it
-                    case $action instanceof iShowDialog:
-                        return $action;
-                    // If the action calls other actions, see if one of them fits: that is, it shows exactly
-                    // our dialog. It is importantch to check for the dialog id as CallAction action might
-                    // have multiple actions calling each their own dialog!
-                    case $action instanceof iCallOtherActions:
-                        $thisDialogId = $this->getWidget()->getId();
-                        foreach ($action->getActionsRecursive() as $innerAction) {
-                            if (($innerAction instanceof iShowDialog) && $innerAction->getDialogWidget()->getId() === $thisDialogId) {
-                                return $innerAction;
-                            }
-                        }
-                        break;
-                }
-            }
-        }
-        return null;
     }
     
     /**
