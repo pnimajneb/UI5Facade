@@ -63,7 +63,7 @@ JS;
                         var aParents = {$this->buildJsJqueryElement()}.parents();
                         for (var i = 0; i < aParents.length; i++) {
                             var jqParent = $(aParents[i]);
-                            if (jqParent.hasClass('sapUiRespGrid ') === true) {
+                            if (jqParent.hasClass('sapUiRespGrid') === true) {
                                 break;
                             }
                             $(jqParent).css('overflow', 'visible');
