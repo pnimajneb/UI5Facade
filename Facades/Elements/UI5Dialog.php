@@ -920,6 +920,7 @@ JS;
             }
         }
         
+        $showTitleJs = $tab->getTabIndex() === 0 ? 'showTitle: false,' : '';
         $tabElement = $this->getFacade()->getElement($tab);
         return <<<JS
 
@@ -927,6 +928,7 @@ JS;
                 new sap.uxap.ObjectPageSection('{$tabElement->getId()}', {
 					title: {$this->escapeString($tabElement->getCaption())},
                     titleUppercase: false,
+                    {$showTitleJs}
 					subSections: new sap.uxap.ObjectPageSubSection({
 						blocks: [
                             {$tabElement->buildJsLayoutConstructor()}
@@ -1076,7 +1078,7 @@ JS;
     public function buildJsRefresh(bool $forcePrefillRefresh = false)
     { 
         if ($this->needsPrefill()) {
-            $prefillJs .= "console.log('refresh {$this->getCaption()}');" . $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_PREFILL, $this, 'oView, ' . ($forcePrefillRefresh ? 'true' : 'false'));
+            $prefillJs .= $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_PREFILL, $this, 'oView, ' . ($forcePrefillRefresh ? 'true' : 'false'));
         } else {
             // If no real prefill is required, still mark the prefill as pending and back again
             // to trigger listeners to prefill data changes (e.g. stuff added via `$controller->addOnPrefillDataChange()`)
