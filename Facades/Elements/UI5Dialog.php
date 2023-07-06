@@ -88,21 +88,46 @@ class UI5Dialog extends UI5Form
         // Focus the first editable control when the dialog is opened
         $controller->addOnShowViewScript($this->buildJsFocusFirstInput());
         
+        // Reload the dialog after it is shown if prefill refresh is needed (e.g. because of action effects)
+        // Use setTimeout() to make sure all controls are rendered when refreshing. Otherwise some required
+        // filters may not resolve - e.g. in Charts inside the dialog
+        $controller->addOnShowViewScript("(function(oCtrl){
+            if(oCtrl.getModel('view').getProperty('/_prefill/refresh_needed') === true) {
+                // Do not refresh silently if there are changes as they will be lost
+                var bHasChanges = {$this->buildJsChangesChecker()};
+                if (bHasChanges === true) {
+                    return;
+                }
+                oCtrl.getModel('view').setProperty('/_prefill/refresh_needed', false);
+                setTimeout(function(){
+                    {$this->buildJsRefresh(true)};
+                }, 0);
+            }
+        })(sap.ui.getCore().byId('{$this->getId()}'));", false);
+        
         // Listen to action affecting the data in this dialog
         $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed(<<<JS
 
             (function(oController){
                 var bHasChanges = false;
+                var oCtrl = sap.ui.getCore().byId('{$this->getId()}');
+                var jqCtrl = oCtrl.$();
                 // Avoid errors if the view/dialog is closed
-                if (sap.ui.getCore().byId('{$this->getId()}') === undefined || sap.ui.getCore().byId('{$this->getId()}').getModel('view').getProperty('/_closed') === true) {
+                if (oCtrl === undefined || oCtrl.getModel('view').getProperty('/_closed') === true) {
                     return;
                 }
-                // Do not refresh silently if there are changes as they will be lost
-                bHasChanges = {$this->buildJsChangesChecker()};
-                if (bHasChanges === true) {
-                    return;
+                // If the dialog is not visible, wait till it is - just mark the prefill to be refreshed
+                if (jqCtrl.length === 0 || jqCtrl.is(':visible') === false) {
+                    oCtrl.getModel('view').setProperty('/_prefill/refresh_needed', true);
+                } else {
+                    // Do not refresh silently if there are changes as they will be lost
+                    bHasChanges = {$this->buildJsChangesChecker()};
+                    if (bHasChanges === true) {
+                        oCtrl.getModel('view').setProperty('/_prefill/refresh_needed', true);
+                        return;
+                    }
+                    {$this->buildJsRefresh(true)};
                 }
-                {$this->buildJsRefresh(true)}
             })($oControllerJs);
 JS, false));
         
@@ -112,6 +137,7 @@ JS, false));
                 try { 
                     var oViewModel = this.getView().getModel('view');
                     oViewModel.setProperty('/_prefill/current_data_hash', null); 
+                    oViewModel.setProperty('/_prefill/refresh_needed', false); 
                     oViewModel.setProperty('/_closed', true);
                     sap.ui.getCore().byId('{$this->getFacade()->getElement($widget)->getId()}').close(); 
                 } catch (e) { 
@@ -127,6 +153,7 @@ JS
 
                 var oViewModel = this.getView().getModel('view');
                 oViewModel.setProperty('/_prefill/current_data_hash', null); 
+                oViewModel.setProperty('/_prefill/refresh_needed', false); 
                 oViewModel.setProperty('/_closed', true);
                 this.onNavBack(oEvent);
                 {$dialogOpenerBtnEl->buildJsTriggerActionEffects($dialogOpenerAction)}
@@ -584,7 +611,7 @@ JS;
      */
     protected function buildJsPage($content_js, string $oControllerJs = 'oController')
     {
-        $this->getController()->addOnRouteMatchedScript($this->buildJsRefresh(), 'loadPrefill');
+        $this->getController()->addOnRouteMatchedScript($this->buildJsRefresh(false), 'loadPrefill');
         if ($this->getWidget()->isCacheable() === false) {
             $this->getController()->addOnHideViewScript("sap.ui.getCore().byId('{$this->getId()}').destroy()");
         }
@@ -732,6 +759,7 @@ JS;
                 $hideBusyJs . <<<JS
 
                 setTimeout(function(){ 
+                    oViewModel.setProperty('/_prefill/refresh_needed', false);
                     oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON()));
                     oViewModel.setProperty('/_prefill/data_for_action_input', {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))});
                 }, 0);
