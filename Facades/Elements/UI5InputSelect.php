@@ -26,7 +26,16 @@ class UI5InputSelect extends UI5Input
         } else {
             $control = 'sap.m.ComboBox';
         }
-        return <<<JS
+        
+        // open the selectable options when space bar ist pressed
+        $js = <<<JS
+    var combobox = sap.ui.getCore().byId("{$this->getId()}");
+    setTimeout(function(){combobox.open()},0);
+    
+JS;
+        $this->addPseudoEventHandler('onsapspace', $js);
+        
+                return <<<JS
         new {$control}("{$this->getId()}", {
 			{$this->buildJsProperties()}
         }){$this->buildJsPseudoEventHandlers()}
