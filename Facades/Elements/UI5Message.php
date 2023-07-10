@@ -39,13 +39,17 @@ JS;
      */
     protected function registerMessageStripCss()
     {
+        $cssWidth = $this->buildCssWidth();
+        if ($cssWidth === '100%') {
+            return;
+        }
         $cssId = $this->getId();
         if (! $this->getUseWidgetId()) {
             $this->setUseWidgetId(true);
             $cssId = $this->getId();
             $this->setUseWidgetId(false);
         }
-        $css = "#{$cssId}.exf-message-strip { width: {$this->buildCssWidth()} }";
+        $css = "#{$cssId}.exf-message-strip { width: {$cssWidth} }";
         $cssId .= '_color_css';
         
         $this->getController()->addOnInitScript(<<<JS
