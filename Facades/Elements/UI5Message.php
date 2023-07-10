@@ -34,15 +34,18 @@ class UI5Message extends UI5Value
 JS;
     }
     
+    /**
+     * @return void
+     */
     protected function registerMessageStripCss()
     {
-        $css = ".exf-message-strip { width: {$this->buildCssWidth()} }";
         $cssId = $this->getId();
         if (! $this->getUseWidgetId()) {
             $this->setUseWidgetId(true);
             $cssId = $this->getId();
             $this->setUseWidgetId(false);
         }
+        $css = "#{$cssId}.exf-message-strip { width: {$this->buildCssWidth()} }";
         $cssId .= '_color_css';
         
         $this->getController()->addOnInitScript(<<<JS
