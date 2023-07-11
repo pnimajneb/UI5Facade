@@ -22,7 +22,6 @@ class UI5InlineGroup extends UI5Value
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
     
@@ -54,7 +53,6 @@ JS;
         $separatorWidgets = $this->getWidget()->getSeparatorWidgets();
         $stretch = $this->getWidget()->isStretched();
         foreach ($this->getWidget()->getWidgets() as $widget) {
-
             $element = $this->getFacade()->getElement($widget);
             if (in_array($widget, $separatorWidgets, true) === true) {
                 $element->setAlignment("sap.ui.core.TextAlign.Center");
@@ -147,5 +145,20 @@ JS;
             }
         }
         return false;
+    }
+    
+    /**
+     *
+     * {@inheritdoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsSetDisabled()
+     */
+    public function buildJsSetDisabled(bool $trueOrFalse, bool $resetWidgetOnChange = false) : string
+    {
+        $js = '';
+        foreach ($this->getWidget()->getWidgets() as $child) {
+            $el = $this->getFacade()->getElement($child);
+            $js .= $el->buildJsSetDisabled($trueOrFalse, $resetWidgetOnChange) . ';';
+        }
+        return "(function(){ $js })()";
     }
 }
