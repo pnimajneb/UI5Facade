@@ -2,14 +2,12 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryContainerTrait;
-use exface\Core\Widgets\Container;
 use exface\Core\Widgets\Input;
-use exface\Core\Interfaces\Actions\ActionInterface;
 
 /**
  * Renders a sap.m.Panel with no margins or paddings for a simple Container widget.
  * 
- * @method Container getWidget()
+ * @method \exface\Core\Widgets\Container getWidget()
  * 
  * @author Andrej Kabachnik
  *
@@ -18,9 +16,7 @@ class UI5Container extends UI5AbstractElement
 {
     const CONTROLLER_METHOD_GET_DATA = 'getData';
     
-    use JqueryContainerTrait {
-        buildJsDataGetter as buildJsDataGetterMethodBody;
-    }
+    use JqueryContainerTrait;
     
     /**
      * 
@@ -233,19 +229,5 @@ JS;
         }
         
         return '';
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsDataGetter()
-     */
-    public function buildJsDataGetter(ActionInterface $action = null)
-    {
-        $controller = $this->getController();
-        if (! $controller->hasMethod(self::CONTROLLER_METHOD_GET_DATA, $this)) {
-            $this->getController()->addMethod(self::CONTROLLER_METHOD_GET_DATA, $this, '', 'return ' . $this->buildJsDataGetterMethodBody());
-        }
-        return $controller->buildJsMethodCallFromController(self::CONTROLLER_METHOD_GET_DATA, $this, '');
     }
 }
