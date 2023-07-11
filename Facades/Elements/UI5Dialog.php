@@ -4,7 +4,6 @@ namespace exface\UI5Facade\Facades\Elements;
 use exface\Core\Widgets\Tabs;
 use exface\Core\Widgets\Tab;
 use exface\Core\Widgets\Image;
-use exface\Core\Interfaces\Widgets\iTriggerAction;
 use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\Interfaces\Actions\iShowWidget;
 use exface\Core\Interfaces\Model\MetaAttributeInterface;
@@ -13,10 +12,7 @@ use exface\Core\CommonLogic\UxonObject;
 use exface\Core\Interfaces\WidgetInterface;
 use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Factories\ActionFactory;
-use exface\Core\Interfaces\Actions\iShowDialog;
 use exface\Core\Widgets\Split;
-use exface\Core\Actions\SaveData;
-use exface\Core\Interfaces\Actions\iCallOtherActions;
 
 /**
  * In OpenUI5 dialog widgets are either rendered as sap.m.Page (if maximized) or as sap.m.Dialog.
@@ -93,11 +89,7 @@ class UI5Dialog extends UI5Form
         // filters may not resolve - e.g. in Charts inside the dialog
         $controller->addOnShowViewScript("(function(oCtrl){
             if(oCtrl.getModel('view').getProperty('/_prefill/refresh_needed') === true) {
-                // Do not refresh silently if there are changes as they will be lost
-                var bHasChanges = {$this->buildJsChangesChecker()};
-                if (bHasChanges === true) {
-                    return;
-                }
+                // TODO Do not refresh silently if there are changes as they will be lost
                 oCtrl.getModel('view').setProperty('/_prefill/refresh_needed', false);
                 setTimeout(function(){
                     {$this->buildJsRefresh(true)};
@@ -120,12 +112,7 @@ class UI5Dialog extends UI5Form
                 if (jqCtrl.length === 0 || jqCtrl.is(':visible') === false) {
                     oCtrl.getModel('view').setProperty('/_prefill/refresh_needed', true);
                 } else {
-                    // Do not refresh silently if there are changes as they will be lost
-                    bHasChanges = {$this->buildJsChangesChecker()};
-                    if (bHasChanges === true) {
-                        oCtrl.getModel('view').setProperty('/_prefill/refresh_needed', true);
-                        return;
-                    }
+                    // TODO Do not refresh silently if there are changes as they will be lost
                     {$this->buildJsRefresh(true)};
                 }
             })($oControllerJs);
@@ -757,7 +744,6 @@ JS;
                 setTimeout(function(){ 
                     oViewModel.setProperty('/_prefill/refresh_needed', false);
                     oViewModel.setProperty('/_prefill/data', JSON.parse(oResultModel.getJSON()));
-                    oViewModel.setProperty('/_prefill/data_for_action_input', {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))});
                 }, 0);
 JS,
                 $hideBusyJs . $onErrorJs,
@@ -1076,16 +1062,21 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsChangesChecker() : string
+    protected function buildJsHasChanges() : string
     {
-        return <<<JS
-
-        (function(oControl){
-            var oViewModel = oControl.getModel('view');
-            var oDataOfLastPrefill = oViewModel.getProperty('/_prefill/data_for_action_input');
-            var oDataCurrent = {$this->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), SaveData::class))};
-            return (JSON.stringify(oDataOfLastPrefill) !== JSON.stringify(oDataCurrent));
-        })(sap.ui.getCore().byId('{$this->getId()}'));
-JS;
+        $checks = [];
+        foreach ($this->getWidget()->getInputWidgets() as $w) {
+            $el = $this->getFacade()->getElement($w);
+            if (method_exists($el, 'buildJsHasChanges')) {
+                if ('' !== $check = $el->buildJsHasChanges()) {
+                    $checks[] = $check;
+                }
+            }
+        }
+        if (empty($checks)) {
+            return 'false';
+        }
+        
+        return "(function(){var bChanged = " . implode(' || ', $checks) . "; console.log('Dialog changed {$this->getCaption()}', bChanged); return bChanged;})()";
     }
 }

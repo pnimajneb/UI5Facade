@@ -508,7 +508,7 @@ JS;
     var sPath = "{$this->getValueBindingPath()}";
     var mVal = null;
     if (oViewModel && sPath !== '') {
-        mVal = oViewModel.getProperty(sPath);
+        mVal = oViewModel.getProperty('/_prefill/data' + sPath);
     }
     {$this->buildJsValueSetter('mVal')};
     if (oInput.setValueState !== undefined) {

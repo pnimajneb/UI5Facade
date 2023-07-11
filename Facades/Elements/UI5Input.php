@@ -358,6 +358,43 @@ JS;
         return $js;
     }
     
+    public function buildJsHasChanges() : string
+    {
+        $widget = $this->getWidget();
+        
+        if ($widget->getValueWidgetLink() !== null) {
+            return '';
+        }
+        
+        if (! $this->isValueBoundToModel()) {
+            $staticDefault = $widget->getValueWithDefaults();
+            $initialValueJs = json_encode($staticDefault);
+            $js = "($initialValueJs == {$this->buildJsValueGetter()})";
+        } else {
+            $js = <<<JS
+            
+(function(){
+    var oInput = sap.ui.getCore().byId('{$this->getId()}');
+    var oViewModel = oInput.getModel('view');
+    var oModel = oInput.getModel();
+    var sPath = "{$this->getValueBindingPath()}";
+    var mValPrefill = null;
+    var mValCurrent = null;
+    if (oViewModel && sPath !== '') {
+        mValPrefill = oViewModel.getProperty('/_prefill/data' + sPath);
+    }
+    if (oModel && sPath !== '') {
+        mValCurrent = oModel.getProperty(sPath);
+    }
+    return mValCurrent != mValPrefill ;
+})()
+
+JS;
+        }
+        
+        return $js;
+    }
+    
     /**
      * Returns inline JS-code to give focus to this widget
      * @return string
