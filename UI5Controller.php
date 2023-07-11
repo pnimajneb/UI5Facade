@@ -13,6 +13,7 @@ use exface\UI5Facade\Facades\Elements\UI5Dialog;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Widgets\Dialog;
+use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 
 class UI5Controller implements UI5ControllerInterface
 {
@@ -1008,6 +1009,9 @@ JS;
     {
         $rootElement = $this->getView()->getRootElement();
         $widget = $rootElement->getWidget();
+        /*if (! $widget->isPrefillable() || (($widget instanceof iContainOtherWidgets) && $widget->countWidgets() === 1 && ! $widget->getWidgetFirst()->isPrefillable())) {
+            return false;
+        }*/
         if ($widget->getParent() instanceof iTriggerAction) {
             $action = $widget->getParent()->getAction();
             if (($action instanceof iShowWidget) && ($action->getPrefillWithInputData() || $action->getPrefillWithPrefillData())) {
