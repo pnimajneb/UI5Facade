@@ -90,7 +90,7 @@ JS;
         return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
 
         {$this->buildJsDataSetter('oModel.getData()')}
-        {$this->buildJsFooterRefresh('data', 'jqSelf')}
+        {$this->buildJsFooterRefresh('oModel.getData()', $this->buildJsJqueryElement())}
 
 JS;
     }
@@ -219,5 +219,14 @@ JS;
     protected function isWrappedInPanel() : bool
     {
         return true;
+    }
+    
+    /**
+     * 
+     * @see JExcelTrait::buildJsCheckHidden()
+     */
+    protected function buildJsCheckHidden(string $jqElement) : string
+    {
+        return "($jqElement.parents().filter('.sapUiHidden').length > 0)";
     }
 }
