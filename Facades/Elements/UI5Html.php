@@ -22,8 +22,6 @@ class UI5Html extends UI5Value
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
-        
         if ($js = $this->getWidget()->getJavascript()) {
             $this->getController()->addOnInitScript($js);
         }

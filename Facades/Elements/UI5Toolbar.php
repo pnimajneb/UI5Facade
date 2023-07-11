@@ -27,8 +27,6 @@ class UI5Toolbar extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
-        
         $left_buttons = $this->buildJsConstructorsForLeftButtons();
         $right_buttons = $this->buildJsConstructorsForRightButtons();
         

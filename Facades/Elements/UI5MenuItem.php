@@ -21,8 +21,6 @@ class UI5MenuItem extends UI5Button
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {       
         $this->registerExternalModules($this->getController());
-        // Register conditional reactions
-        $this->registerConditionalProperties();
         
         $startsSectionJs = '';
         

@@ -99,7 +99,6 @@ class UI5Button extends UI5AbstractElement
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
         $this->registerExternalModules($this->getController());
-        $this->registerConditionalProperties();
         
         return <<<JS
 

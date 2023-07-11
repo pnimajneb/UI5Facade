@@ -13,7 +13,6 @@ class UI5Tab extends UI5Panel
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         // Since the tab is allways a child of Tabs, we don't need to check for hasPageWrapper() here
         return $this->buildJsIconTabFilter();
     }

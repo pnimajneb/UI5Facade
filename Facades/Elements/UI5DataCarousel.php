@@ -42,7 +42,6 @@ class UI5DataCarousel extends UI5Split
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
         $this->registerSyncOnMaster();
-        $this->registerConditionalProperties();
         
         $initSplitter = $this->buildJsSetSizesInitial("sap.ui.getCore().byId('{$this->getId()}')") . "setTimeout(function(){ {$this->buildJsEmptyHintShow()} }, 100);";
         $this->getController()

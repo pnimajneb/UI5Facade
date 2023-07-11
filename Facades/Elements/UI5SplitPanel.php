@@ -25,8 +25,6 @@ class UI5SplitPanel extends UI5Panel
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
-        
         $widget = $this->getWidget();
         if ($widget->isFilledBySingleWidget() && $widget->getFillerWidget() instanceof Split) {
             // If the panel contains a nested split, make its UI5Split render the content

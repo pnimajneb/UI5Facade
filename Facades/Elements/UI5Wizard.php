@@ -25,7 +25,6 @@ class UI5Wizard extends UI5Container
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {   
-        $this->registerConditionalProperties();
         $this->registerHeightFix();
         $wizardConstructorJs = $this->buildJsConstructorForWizard($oControllerJs);
         $this->getController()->addOnHideViewScript($this->buildJsResetter());

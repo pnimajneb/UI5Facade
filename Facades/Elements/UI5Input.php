@@ -44,7 +44,6 @@ class UI5Input extends UI5Value
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         $this->registerOnChangeValidation();
         return $this->buildJsLabelWrapper($this->buildJsConstructorForMainControl($oControllerJs));
     }
@@ -241,7 +240,7 @@ JS;
 (function(bEnabled, oCtrl, bReset){
     if (! oCtrl || bEnabled === oCtrl.getEnabled()) return;
     oCtrl.setEnabled(bEnabled);
-    if (bReset === true) {
+    if (bReset === true && bEnabled === false) {
         {$this->buildJsResetter()}
     }
 })($bEnabledJs, sap.ui.getCore().byId('{$this->getId()}'), $bResetJs)

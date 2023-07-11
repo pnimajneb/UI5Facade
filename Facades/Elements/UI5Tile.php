@@ -25,8 +25,6 @@ class UI5Tile extends UI5Button
         $widget = $this->getWidget();
         
         $this->registerExternalModules($this->getController());
-        // Register conditional reactions
-        $this->registerConditionalProperties();
         
         $header = $this->getCaption() ? 'header: ' . $this->escapeString($widget->getTitle(), true) . ',' : '';
         $handler = $this->buildJsClickViewEventHandlerCall();

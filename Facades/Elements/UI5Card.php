@@ -28,7 +28,6 @@ class UI5Card extends UI5Panel
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         return <<<JS
                     new sap.f.Card({
                         {$this->buildJsPropertyHeight()}

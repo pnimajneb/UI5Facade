@@ -42,7 +42,6 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         return $this->buildJsConstructorForMainControl($oControllerJs);
     }
     
@@ -463,7 +462,9 @@ JS;
     }
     
     /**
-     * @return void
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
      */
     public function registerConditionalProperties() : UI5AbstractElement
     {
@@ -583,7 +584,7 @@ JS;
         {$showHideLabelJs}
     }
     oCtrl.$()?.trigger('visibleChange', [{visible: bVisible}]);
-    if (bReset === true) {
+    if (bReset === true && bVisible === false) {
         {$this->buildJsResetter()}
     }
 })($bVisibleJs, sap.ui.getCore().byId('{$elementId}'), $bResetJs)

@@ -22,7 +22,6 @@ class UI5MenuButton extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         return <<<JS
 
     new sap.m.MenuButton("{$this->getId()}", {

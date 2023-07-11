@@ -14,6 +14,8 @@ use exface\Core\Interfaces\Widgets\iFillEntireContainer;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
+use exface\UI5Facade\Events\OnControllerSetEvent;
 
 /**
  *
@@ -37,6 +39,17 @@ abstract class UI5AbstractElement extends AbstractJqueryElement
     private $controller = null;
     
     private $layoutData = null;
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::init()
+     */
+    protected function init()
+    {
+        parent::init();
+        $this->addOnControllerSet([$this, 'registerConditionalProperties']);
+    }
     
     /**
      * 
@@ -451,29 +464,86 @@ JS;
         return '';
     }
     
+    /**
+     * Executes given PHP code once the element has a controller.
+     * 
+     * If a UI5 controller is already assigned, the code is executed immediately. Otherwise it is
+     * postponed till a controller is assigned to this element or one of its parents.
+     * 
+     * This method is mainly usefull for `Element::init()` logic, that requires a UI5 controller.
+     * The `init()` method is often called before a controller was initialized, so it may not yet
+     * be accessible. 
+     * 
+     * @param callable $function
+     * @return UI5AbstractElement
+     */
+    public function addOnControllerSet(callable $function) : UI5AbstractElement
+    {
+        try {
+            $controller = $this->getController();
+            $function($controller);
+        } catch (FacadeRuntimeError $e) {
+            $this->getWorkbench()->eventManager()->addListener(OnControllerSetEvent::getEventName(), function(OnControllerSetEvent $event) use ($function) {
+                $thisWidget = $this->getWidget();
+                $eventWidget = $event->getWidget();
+                $controller = $event->getController();
+                $parent = $thisWidget;
+                while (null !== $parent) {
+                    if ($parent === $eventWidget) {
+                        $function($controller);
+                        return;
+                    }
+                    $parent = $parent->getParent();
+                }
+            });
+        }
+        return $this;
+    }
+
+    /**
+     * 
+     * @throws FacadeRuntimeError
+     * @return UI5ControllerInterface
+     */
     public function getController() : UI5ControllerInterface
     {
         if ($this->controller === null) {
             if ($this->getWidget()->hasParent()) {
                 return $this->getFacade()->getElement($this->getWidget()->getParent())->getController();
             } else {
-                throw new LogicException('No controller was initialized for page "' . $this->getWidget()->getPage()->getAliasWithNamespace() . '"!');
+                throw new FacadeRuntimeError('No controller was initialized for page "' . $this->getWidget()->getPage()->getAliasWithNamespace() . '"!');
             }
         }
         return $this->controller;
     }
     
+    /**
+     * 
+     * @return UI5ViewInterface
+     */
     public function getView() : UI5ViewInterface
     {
         return $this->getController()->getView();
     }
     
+    /**
+     * Assign a UI5 controller to this element and all its children
+     * 
+     * @param UI5ControllerInterface $controller
+     * 
+     * @triggers \exface\UI5Facade\Events\OnControllerSetEvent
+     * 
+     * @throws LogicException
+     * 
+     * @return UI5AbstractElement
+     */
     public function setController(UI5ControllerInterface $controller) : UI5AbstractElement
     {
         if (! $this->controller === null) {
             throw new LogicException('Cannot change the controller of a UI5 element after it had been set initially!');
         }
         $this->controller = $controller;
+        $this->getWorkbench()->eventManager()->dispatch(new OnControllerSetEvent($controller, $this));
         return $this;
     }
     

@@ -24,7 +24,6 @@ class UI5Container extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         $js = $this->buildJsPanelWrapper($this->buildJsChildrenConstructors());
         
         if ($this->hasPageWrapper() === true) {

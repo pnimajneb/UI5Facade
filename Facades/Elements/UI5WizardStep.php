@@ -17,7 +17,6 @@ class UI5WizardStep extends UI5Form
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
         return $this->buildJsWizardStep();
     }
     

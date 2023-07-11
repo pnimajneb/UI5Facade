@@ -10,8 +10,6 @@ class UI5WidgetGroup extends UI5Container
             return parent::buildJsConstructor($oControllerJs);
         }
         
-        $this->registerConditionalProperties();
-        
         $captionText = $this->getCaption() ? 'text: "' . $this->getCaption() . '",' : '';
         return  <<<JS
                 new sap.ui.core.Title({

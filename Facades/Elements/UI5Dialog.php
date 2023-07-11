@@ -203,10 +203,6 @@ JS
                 );
             }
             
-            // Register conditional reactions BEFORE rendering the layout - otherwise it will
-            // be too late to add them to appropriate event handlers inside the layout.
-            $this->registerConditionalProperties();
-            
             if ($this->isObjectPageLayout()) {
                 return $this->buildJsPage($this->buildJsObjectPageLayout($oControllerJs), $oControllerJs);
             } else {
@@ -1021,34 +1017,6 @@ JS;
     public function hasButtonBack() : bool
     {
         return true;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
-     */
-    public function registerConditionalProperties() : UI5AbstractElement
-    {
-        $result = parent::registerConditionalProperties();
-        foreach ($this->getWidget()->getButtons() as $btn) {
-            $this->getFacade()->getElement($btn)->registerConditionalProperties();
-        }
-        
-        // Register conditional props for tabs here explicitly because Tab widget inside
-        // a UI5Dialog are not really rendered - instead UI5Dialog::buildJsObjectPageSectionFromTab()
-        // is used. So we need to do stuff related to the Tab constructor here.
-        // @see UI5Tab::buildJsConstructor()
-        if ($this->isObjectPageLayout()) {
-            $tabs = $this->getObjectPageTabs();
-            if ($tabs !== null) {
-                foreach ($tabs->getTabs() as $tab) {
-                    $tabElement = $this->getFacade()->getElement($tab);
-                    $tabElement->registerConditionalProperties();
-                }
-            }
-        }
-        return $result;
     }
     
     /**

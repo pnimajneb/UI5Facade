@@ -89,8 +89,6 @@ class UI5Panel extends UI5Container
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
-        
         $panel = <<<JS
 
                 new sap.m.Panel("{$this->getId()}", {
@@ -438,10 +436,7 @@ JS;
                 }
             }
             $title = $containerWidget->getCaption() ? 'text: ' . $this->escapeString($containerWidget->getCaption() . ($required ? ' *' : '')) . ',' : '';
-            $id = "'{$containerEl->getId()}',";    
-            // Since the FormContainer now has an id, register conditional properties for its
-            // widget - e.g. hidden_if, disabled_if, etc.
-            $containerEl->registerConditionalProperties();
+            $id = "'{$containerEl->getId()}',";
         }
         
         // Hide the entire form container if all of its widgets are hidden

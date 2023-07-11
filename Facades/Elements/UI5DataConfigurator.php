@@ -25,7 +25,8 @@ class UI5DataConfigurator extends UI5Tabs
     const EVENT_BUTTON_OK = 'ok';
     const EVENT_BUTTON_CANCEL = 'cancel';
     const EVENT_BUTTON_RESET = 'reset';
-        
+    
+    const MODEL_NAME_FOR_CONFIG = 'configurator';
     
     private $include_filter_tab = true;
     
@@ -642,15 +643,9 @@ JS;
 JS;
     }
         
-    protected function getModelNameForConfig() : string
+    public function getModelNameForConfig() : string
     {
-        return $this->modelNameForConfig;
-    }
-    
-    public function setModelNameForConfig(string $name) : UI5DataConfigurator
-    {
-        $this->modelNameForConfig = $name;
-        return $this;
+        return self::MODEL_NAME_FOR_CONFIG;
     }
     
     public function setIncludeColumnsTab(bool $trueOrFalse) : UI5DataConfigurator

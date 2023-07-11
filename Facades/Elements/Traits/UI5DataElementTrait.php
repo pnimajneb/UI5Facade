@@ -114,13 +114,15 @@ trait UI5DataElementTrait {
      */
     protected function init()
     {
-        parent::init();
         $configuratorElement = $this->getConfiguratorElement();
-        $configuratorElement->setModelNameForConfig($this->getModelNameForConfigurator());
         
         if ($this->isWrappedInDynamicPage()) {
             $configuratorElement->setIncludeFilterTab(false);
         }
+        
+        // Make sure to call the default init() AFTER the configurator is set up because the
+        // init might need the configurator for all sorts of live refs.
+        parent::init();
         
         // Manually create an element for the quick search input, because we need a sap.m.SearchField
         // instead of regular input elements.
@@ -149,7 +151,6 @@ trait UI5DataElementTrait {
         $widget = $this->getWidget();
         $controller = $this->getController();
         
-        $this->registerConditionalProperties();
         $this->registerExternalModules($this->getController());
         
         // Add placeholders for the custom events here. If not done so, at least the select-event will be
@@ -1056,7 +1057,7 @@ JS;
             
     protected function getModelNameForConfigurator() : string
     {
-        return 'configurator';
+        return $this->getConfiguratorElement()->getModelNameForConfig();
     }
     
     /**

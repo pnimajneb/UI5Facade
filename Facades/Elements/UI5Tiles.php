@@ -16,8 +16,6 @@ class UI5Tiles extends UI5Container
     
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
-        $this->registerConditionalProperties();
-        
         $tiles = $this->buildJsChildrenConstructors();        
         if ($this->getWidget()->getCenterContent(false) === true) {
             $tiles = $this->buildJsCenterWrapper($tiles);
