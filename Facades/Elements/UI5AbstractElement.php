@@ -16,6 +16,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface
 use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\UI5Facade\Events\OnControllerSetEvent;
+use exface\Core\Interfaces\Widgets\iTakeInput;
 
 /**
  *
@@ -674,7 +675,7 @@ JS;
         // hidden_if
         if ($this->isVisible()) {
             if ($condProp = $widget->getHiddenIf()) {
-                $resetOnChange = $condProp->hasResetWidgetOnChange() ?? true;
+                $resetOnChange = $condProp->hasResetWidgetOnChange() ?? ($widget instanceof iTakeInput);
                 $this->registerConditionalPropertyUpdaterOnLinkedElements(
                     $condProp,
                     $this->buildJsSetHidden(true, $resetOnChange),
@@ -694,7 +695,7 @@ JS;
         
         // disabled_if
         if ($condProp = $widget->getDisabledIf()) {
-            $resetOnChange = $condProp->hasResetWidgetOnChange() ?? true;
+            $resetOnChange = $condProp->hasResetWidgetOnChange() ?? ($widget instanceof iTakeInput);
             $this->registerConditionalPropertyUpdaterOnLinkedElements(
                 $condProp, 
                 $this->buildJsSetDisabled(true, $resetOnChange), 
