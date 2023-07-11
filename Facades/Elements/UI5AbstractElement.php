@@ -336,7 +336,7 @@ JS;
 (function(bVisible, oCtrl, bReset){
     if (! oCtrl || bVisible === oCtrl.getVisible()) return;
     oCtrl.setVisible(bVisible).$()?.trigger('visibleChange', [{visible: bVisible}]);
-    if (bReset === true) {
+    if (bReset === true && bVisible === false) {
         {$this->buildJsResetter()}
     }
 })($bVisibleJs, sap.ui.getCore().byId('{$elementId}'), $bResetJs)
