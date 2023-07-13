@@ -463,6 +463,6 @@ JS;
      */
     protected function buildJsFullscreenContainerGetter() : string
     {
-        return "$('#{$this->getId()}').parents('.sapMPanel').first().parent().parent()";
+        return $this->isWrappedInDynamicPage() ? "$('#{$this->getId()}').parents('.sapMPanel').first().parent()" : "$('#{$this->getId()}').parents('.sapMPanel').first()";
     }
 }

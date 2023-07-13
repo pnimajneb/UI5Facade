@@ -495,7 +495,7 @@ JS;
      */
     protected function buildJsFullscreenContainerGetter() : string
     {
-        return "$('#{$this->getId()}').parent().parent()";
+        return $this->isWrappedInDynamicPage() ? "$('#{$this->getId()}').parent()" : "$('#{$this->getId()}').parent().parent()";
     }
     
     /**
