@@ -1009,9 +1009,6 @@ JS;
     {
         $rootElement = $this->getView()->getRootElement();
         $widget = $rootElement->getWidget();
-        /*if (! $widget->isPrefillable() || (($widget instanceof iContainOtherWidgets) && $widget->countWidgets() === 1 && ! $widget->getWidgetFirst()->isPrefillable())) {
-            return false;
-        }*/
         if ($widget->getParent() instanceof iTriggerAction) {
             $action = $widget->getParent()->getAction();
             if (($action instanceof iShowWidget) && ($action->getPrefillWithInputData() || $action->getPrefillWithPrefillData())) {
