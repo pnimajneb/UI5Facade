@@ -24,6 +24,7 @@ use exface\UI5Facade\Facades\Elements\ServerAdapters\UI5FacadeServerAdapter;
 use exface\Core\CommonLogic\UxonObject;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
+use exface\Core\Widgets\DataButton;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -2199,14 +2200,29 @@ JS;
      */
     public function buildJsDataGetter(ActionInterface $action = null)
     {
-        if ($action === null) {
-            $getRows = "var rows = {$this->buildJsGetRowsAll('oControl')};";
-        } elseif ($action instanceof iReadData) {
+        if ($action !== null && $action->isDefinedInWidget() && $action->getWidgetDefinedIn() instanceof DataButton) {
+            $customMode = $action->getWidgetDefinedIn()->getInputRows();
+        } else {
+            $customMode = null;
+        }
+        
+        switch (true) {
+            case $customMode === DataButton::INPUT_ROWS_ALL:
+            case $action === null:
+                $getRows = "var rows = {$this->buildJsGetRowsAll('oControl')};";
+                break;
+            
+            // If the button requires none of the rows explicitly
+            case $customMode === DataButton::INPUT_ROWS_NONE:
+                return '{}';
+            
             // If we are reading, than we need the special data from the configurator
             // widget: filters, sorters, etc.
-            return $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->buildJsDataGetter($action);
-        } else {
-            $getRows = "var rows = {$this->buildJsGetRowsSelected('oControl')};";
+            case $action instanceof iReadData:
+                return $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->buildJsDataGetter($action);
+            
+            default:
+                $getRows = "var rows = {$this->buildJsGetRowsSelected('oControl')};";
         }
         
         // Determine the columns we need in the actions data

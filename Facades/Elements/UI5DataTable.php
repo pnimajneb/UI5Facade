@@ -590,12 +590,22 @@ JS;
             rows: aRows
         }
 JS;
+        if ($action !== null && $action->isDefinedInWidget() && $action->getWidgetDefinedIn() instanceof DataButton) {
+            $customMode = $action->getWidgetDefinedIn()->getInputRows();
+        } else {
+            $customMode = null;
+        }
         
         switch (true) {
             // If no action is specified, return the entire row model
+            case $customMode === DataButton::INPUT_ROWS_ALL:
             case $action === null:
                 $aRowsJs = "{$this->buildJsGetRowsAll('oTable')} || []";
                 break;
+            
+            // If the button requires none of the rows explicitly
+            case $customMode === DataButton::INPUT_ROWS_NONE:
+                return '{}';
                 
             // If we are reading, than we need the special data from the configurator
             // widget: filters, sorters, etc.
@@ -603,12 +613,13 @@ JS;
                 return $this->getConfiguratorElement()->buildJsDataGetter($action);
                 
             // Editable tables with modifying actions return all rows either directly or as subsheet
+            case $customMode === DataButton::INPUT_ROWS_ALL_AS_SUBSHEET:
             case $this->isEditable() && ($action instanceof iModifyData):
             case $this->isEditable() && ($action instanceof iCallOtherActions) && $action->containsActionClass(iModifyData::class):
                 $aRowsJs = "{$this->buildJsGetRowsAll('oTable')} || []";
                 switch (true) {
-                    case $dataObj->is($widget->getMetaObject()):
-                    case $action->getInputMapper($widget->getMetaObject()) !== null:
+                    case $dataObj->is($widget->getMetaObject()) && $customMode !== DataButton::INPUT_ROWS_ALL_AS_SUBSHEET:
+                    case $action->getInputMapper($widget->getMetaObject()) !== null && $customMode !== DataButton::INPUT_ROWS_ALL_AS_SUBSHEET:
                         break;
                     default:
                         // If the data is intended for another object, make it a nested data sheet

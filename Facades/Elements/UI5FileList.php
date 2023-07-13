@@ -13,6 +13,7 @@ use exface\Core\Interfaces\Actions\iModifyData;
 use exface\Core\Exceptions\Widgets\WidgetLogicError;
 use exface\Core\Interfaces\Actions\iCallOtherActions;
 use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
+use exface\Core\Widgets\DataButton;
 
 /**
  * Generates sap.m.upload.UploadSet for a FileList widget.
@@ -591,14 +592,21 @@ JS;
         // Determine the columns we need in the actions data
         $colNamesList = implode(',', $widget->getActionDataColumnNames());
         
+        if ($action !== null && $action->isDefinedInWidget() && $action->getWidgetDefinedIn() instanceof DataButton) {
+            $customMode = $action->getWidgetDefinedIn()->getInputRows();
+        } else {
+            $customMode = null;
+        }
+        
         switch (true) {
             // Editable tables with modifying actions return all rows either directly or as subsheet
+            case $customMode === DataButton::INPUT_ROWS_ALL_AS_SUBSHEET:
             case $widget->isUploadEnabled() && ($action instanceof iModifyData):
             case $widget->isUploadEnabled() && ($action instanceof iCallOtherActions) && $action->containsActionClass(iModifyData::class):
                 $aRowsJs = "oTable.getModel().getData().rows || []";
                 switch (true) {
-                    case $dataObj->is($widget->getMetaObject()):
-                    case $action->getInputMapper($widget->getMetaObject()) !== null:
+                    case $dataObj->is($widget->getMetaObject()) && $customMode !== DataButton::INPUT_ROWS_ALL_AS_SUBSHEET:
+                    case $action->getInputMapper($widget->getMetaObject()) !== null && $customMode !== DataButton::INPUT_ROWS_ALL_AS_SUBSHEET:
                         return <<<JS
     function() {
         var aRows = {$this->buildJsGetRowsAll("sap.ui.getCore().byId('{$this->getId()}')")};
