@@ -470,6 +470,10 @@ JS;
     {
         parent::registerConditionalProperties();
         
+        if ($this->isUnrendered()) {
+            return $this;
+        }
+        
         // Update this element if its value is a live reference
         // Make sure, this is only done for value widgets - e.g. not for InlineGroup, which
         // also inherits from UI5Value

@@ -6,6 +6,8 @@ use exface\Core\Interfaces\Widgets\iHaveValue;
 use exface\Core\DataTypes\BooleanDataType;
 use exface\Core\Widgets\Filter;
 use exface\Core\Widgets\Input;
+use exface\Core\Widgets\InputComboTable;
+use exface\Core\Widgets\DataLookupDialog;
 
 /**
  * Generates sap.m.Input fow `Input` widgets.
@@ -280,6 +282,11 @@ JS;
     public function registerConditionalProperties() : UI5AbstractElement
     {
         parent::registerConditionalProperties();
+        
+        if ($this->isUnrendered()) {
+            return $this;
+        }
+        
         $widget = $this->getWidget();
         
         // required_if
@@ -483,5 +490,18 @@ JS;
                 return "setTimeout(function(){ {$this->buildJsResetter()} }, 0);";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::isUnrendered()
+     */
+    protected function isUnrendered() : bool
+    {
+        if ($this->getWidget()->getParentByClass(InputComboTable::class) !== null && $this->getWidget()->getParentByClass(DataLookupDialog::class) === null) {
+            return true;
+        }
+        return parent::isUnrendered();
     }
 }

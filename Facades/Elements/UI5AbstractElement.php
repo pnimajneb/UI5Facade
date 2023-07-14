@@ -670,6 +670,10 @@ JS;
      */
     public function registerConditionalProperties() : UI5AbstractElement
     {
+        if ($this->isUnrendered()) {
+            return $this;
+        }
+        
         $widget = $this->getWidget();
         
         // hidden_if
@@ -766,6 +770,18 @@ JS;
      * @return bool
      */
     public function hasButtonBack() : bool
+    {
+        return false;
+    }
+    
+    /**
+     * Returns TRUE if this element is not rendered in HTML and thus cannot be interacted with.
+     * 
+     * Unrendered controls cannot react to events or have live references!
+     * 
+     * @return bool
+     */
+    protected function isUnrendered() : bool
     {
         return false;
     }
