@@ -36,6 +36,10 @@ class UI5DataLookupDialog extends UI5Dialog
     protected function init()
     {
         parent::init();
+        $dialog = $this->getWidget();
+        if ($dialog->getHideHeader() === null) {
+            $dialog->setHideHeader(true);
+        }
         $table = $this->getWidget()->getDataWidget();
         $table->setHideCaption(true);
         
@@ -151,7 +155,12 @@ JS;
                 $this->getController()->addOnEventScript($this, self::EVENT_NAME_TOKEN_UPDATE, $this->buildJsTokenChangeHandler('oEvent'));
             }
             $tableElement = $this->getFacade()->getElement($widget);
-            $tableElement->setDynamicPageHeaderCollapsed(true);
+            $dialog = $this->getWidget();
+            $hideHeader = true;
+            if ($dialog->getHideHeader() === false) {
+                $hideHeader =  false;
+            }
+            $tableElement->setDynamicPageHeaderCollapsed($hideHeader);
             $tableElement->setDynamicPageShowToolbar(true);
         }
         return $this;
@@ -312,7 +321,12 @@ JS;
                 $this->getController()->addOnEventScript($this, self::EVENT_NAME_TOKEN_UPDATE, $this->buildJsTokenChangeHandler('oEvent'));
             }
             $tableElement = $this->getFacade()->getElement($widget);
-            $tableElement->setDynamicPageHeaderCollapsed(true);
+            $dialog = $this->getWidget();
+            $hideHeader = true;
+            if ($dialog->getHideHeader() === false) {
+                $hideHeader =  false;
+            }
+            $tableElement->setDynamicPageHeaderCollapsed($hideHeader);
             $tableElement->setDynamicPageShowToolbar(true);
             $js .= ($js ? ",\n" : '') . $tableElement->buildJsConstructor();
         }        
