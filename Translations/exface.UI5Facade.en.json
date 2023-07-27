@@ -99,7 +99,7 @@
 	
 	"WIDGET.DATATABLE.FILTERED_BY": "Filtered by",
 	"WIDGET.DATATABLE.FILTERED_BY_NONE": "None",
-	"WIDGET.DATATABLE.GO_BUTTON_TEXT": "Go",
+	"WIDGET.DATATABLE.GO_BUTTON_TEXT": "Search",
 	"WIDGET.DATATABLE.OFFLINE_HINT": "The requested data is only available online!",
 	"WIDGET.DATATABLE.OFFLINE_ERROR": "The requested data is only available online.",
 	"WIDGET.DATATABLE.OFFLINE_ERROR_TITLE": "Your are offline...",
