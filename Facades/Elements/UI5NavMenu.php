@@ -22,8 +22,15 @@ class UI5NavMenu extends UI5AbstractElement
         $menu = $this->getWidget()->getMenu();
         $output = <<<JS
 
-new sap.tnt.NavigationList("{$this->getId()}", {
-    items: [{$this->buildNavigationListItems($menu)}]
+new sap.m.ScrollContainer("{$this->getId()}_scrollContainer", {
+    horizontal: false,
+    vertical: true,
+    height: '100%',
+    content: [
+        new sap.tnt.NavigationList("{$this->getId()}", {
+            items: [{$this->buildNavigationListItems($menu)}]
+        })
+    ]
 });
 
 JS;
