@@ -90,6 +90,9 @@ JS;
         }
         
         // reset the input when a widget, that a filter is linked to, changes
+        // TODO what about prefills of the widget the InputCombo is linked to
+        // in an edit dialog, they also cause change events and therefore empty the InputCombo
+        // Idea: disable the behaviour till prefill is finished
         if ($widget->getTable()->hasFilters()) {
             foreach ($widget->getTable()->getFilters() as $fltr) {                
                 if ($link = $fltr->getValueWidgetLink()) {
