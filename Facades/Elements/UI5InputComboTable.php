@@ -90,9 +90,6 @@ JS;
         }
         
         // reset the input when a widget, that a filter is linked to, changes
-        // TODO what about prefills of the widget the InputCombo ist linked to
-        // in an edit dialog, they also cause change events and therefore empty the InputCombo
-        // Idea: disable the behaviour till prefill is finished
         if ($widget->getTable()->hasFilters()) {
             foreach ($widget->getTable()->getFilters() as $fltr) {                
                 if ($link = $fltr->getValueWidgetLink()) {
@@ -677,10 +674,8 @@ JS;
     {
         $allowNewValuesJs = $this->getWidget()->getAllowNewValues() ? 'true' : 'false';
         $valueColName = $this->getWidget()->getValueColumn()->getDataColumnName();
-        $delim = $this->getWidget()->getMultiSelectTextDelimiter();
         return <<<JS
 function(sColName){
-    console.log('get Value');
     var oInput = sap.ui.getCore().byId('{$this->getId()}');
     if (oInput === undefined) {
         return null;
@@ -701,19 +696,11 @@ function(sColName){
     }
     
     oModel = oInput.getModel('{$this->getModelNameForAutosuggest()}');
-    //oItem = (oModel.getData().rows || []).find(function(element, index, array){
-    //    return element['{$this->getWidget()->getValueAttributeAlias()}'] == sSelectedKey;
-    //});
-    var aRows = oModel.getData().rows || [];
-    var oItems = [];
-    aRows.forEach(function(oRow) {
-        if (sSelectedKey.includes(oRow['{$this->getWidget()->getValueAttributeAlias()}'])) {
-            oItems.push(oRow);
-        }
-    })
+    oItem = (oModel.getData().rows || []).find(function(element, index, array){
+        return element['{$this->getWidget()->getValueAttributeAlias()}'] == sSelectedKey;
+    });
 
-    //return oItem === undefined ? undefined : oItem[sColName];
-    return oItems.length === 0 ? undefined : oItems.reduce(function(sList, oItem){ return sList + (sList !== '' ? '$delim' : '') + oItem[sColName] }, '');
+    return oItem === undefined ? undefined : oItem[sColName];
 }('$column')
 
 JS;
