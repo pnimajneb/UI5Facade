@@ -40,6 +40,9 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 .sapUiFormEdit .sapMListTblCell .sapMText {min-height: inherit; padding-bottom: inherit; line-height: inherit; padding-top: inherit; } 
 /* Fix to stretch InputSelect buttons to full width in mobile sap.m.Table */
 .sapMListTblSubCntRow > .sapMListTblSubCntVal {width: 100%}
+/* Move all values in mobile sap.m.Table to the left for better readability */
+.sapMListTblSubCntRow > .sapMListTblSubCntVal span {text-align: start !important}
+
 
 /* Panels */
 .exf-panel-no-border > .sapMPanelContent {border-bottom: none;}
