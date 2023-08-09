@@ -662,11 +662,15 @@ JS;
     public function buildJsValueGetterMethod(bool $useTokensIfMultiSelect = true)
     {
         if ($this->getWidget()->getMultiSelect() === false || $useTokensIfMultiSelect === false) {
-            if ($this->getWidget()->getValueAttribute() === $this->getWidget()->getTextAttribute()) {
+            // TODO alway using `getSelectedKey()` for now as
+            // using `getValue()` can lead to not valid values not causing validator to fail when
+            // value attribute is the same as text attribute
+            /*if ($this->getWidget()->getValueAttribute() === $this->getWidget()->getTextAttribute()) {
                 return "getValue()";
             } else {            
                 return "getSelectedKey()";
-            }
+            }*/
+            return "getSelectedKey()";
         } else {
             $delim = $this->getWidget()->getMultiSelectTextDelimiter();
             return "getTokens().reduce(function(sList, oToken, iIdx, aTokens){ return sList + (sList !== '' ? '$delim' : '') + oToken.getKey() }, '')";
