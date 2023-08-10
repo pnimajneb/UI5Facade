@@ -89,15 +89,14 @@ JS;
             $this->addPseudoEventHandler('onsapenter', $onEnter);
         }
         
-        // reset the input when a widget, that a filter is linked to, changes
-        // TODO what about prefills of the widget the InputCombo is linked to
-        // in an edit dialog, they also cause change events and therefore empty the InputCombo
-        // Idea: disable the behaviour till prefill is finished
+        // empty the input when a widget, that a filter is linked to, changes
+        // wrapped in a timeout function to prevent empty during prefill
+        // TODO: maybe actually check if prefill is still pending and dont just use a timeout function
         if ($widget->getTable()->hasFilters()) {
-            foreach ($widget->getTable()->getFilters() as $fltr) {                
+            foreach ($widget->getTable()->getFilters() as $fltr) {
                 if ($link = $fltr->getValueWidgetLink()) {
                     $linked_element = $this->getFacade()->getElement($link->getTargetWidget());
-                    $linked_element->addOnChangeScript($this->buildJsResetter());
+                    $linked_element->addOnChangeScript("setTimeout(function(){{$this->buildJsValueSetter('')}},0);");
                 }
             }
         }
