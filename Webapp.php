@@ -30,6 +30,7 @@ use exface\Core\DataTypes\OfflineStrategyDataType;
 use exface\Core\CommonLogic\Tasks\GenericTask;
 use exface\Core\Actions\ShowWidget;
 use exface\Core\Interfaces\Tasks\TaskInterface;
+use exface\Core\DataTypes\MessageTypeDataType;
 
 class Webapp implements WorkbenchDependantInterface
 {
@@ -829,7 +830,7 @@ class Webapp implements WorkbenchDependantInterface
                 $description = '';
             }
             if ($alias) {
-                $text = "{i18n>MESSAGE.TYPE.{$exception->getMessageModel($this->getWorkbench())->getType()}} $alias: $text";
+                $text = "{i18n>MESSAGE.TYPE.{$exception->getMessageModel($this->getWorkbench())->getType(MessageTypeDataType::ERROR)}} $alias: $text";
             } else {
                 $text = "{i18n>MESSAGE.TYPE.ERROR}";
             }
