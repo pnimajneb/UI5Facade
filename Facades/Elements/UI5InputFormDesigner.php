@@ -25,7 +25,7 @@ class UI5InputFormDesigner extends UI5InputForm
         
         $creatorPath = FilePathDataType::normalize($this->getFacade()->getConfig()->getOption('LIBS.SURVEY.CREATOR_JS'), DIRECTORY_SEPARATOR);
         if (! file_exists($this->getWorkbench()->filemanager()->getPathToVendorFolder() . DIRECTORY_SEPARATOR . $creatorPath)) {
-            throw new FacadeLogicError('Cannot initialize InputFormDesigner widget: Survey JS Creator is not installed!');
+            throw new FacadeLogicError('Cannot initialize InputFormDesigner widget: Survey JS Creator is not installed!', '7S55K77');
         }
     }
     
