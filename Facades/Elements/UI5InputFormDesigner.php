@@ -1,8 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
-use exface\Core\DataTypes\StringDataType;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\SurveyJsTrait;
 use exface\Core\Exceptions\Facades\FacadeLogicError;
 use exface\Core\DataTypes\FilePathDataType;
