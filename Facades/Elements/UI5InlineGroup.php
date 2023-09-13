@@ -152,12 +152,12 @@ JS;
      * {@inheritdoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsSetDisabled()
      */
-    public function buildJsSetDisabled(bool $trueOrFalse, bool $resetWidgetOnChange = false) : string
+    public function buildJsSetDisabled(bool $trueOrFalse) : string
     {
         $js = '';
         foreach ($this->getWidget()->getWidgets() as $child) {
             $el = $this->getFacade()->getElement($child);
-            $js .= $el->buildJsSetDisabled($trueOrFalse, $resetWidgetOnChange) . ';';
+            $js .= $el->buildJsSetDisabled($trueOrFalse) . ';';
         }
         return "(function(){ $js })()";
     }

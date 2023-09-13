@@ -16,7 +16,6 @@ use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface
 use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\UI5Facade\Events\OnControllerSetEvent;
-use exface\Core\Interfaces\Widgets\iTakeInput;
 
 /**
  *
@@ -328,19 +327,15 @@ JS;
      * @param string $elementId
      * @return string
      */
-    protected function buildJsSetHidden(bool $hidden, bool $resetWidget = false, string $elementId = null) : string
+    protected function buildJsSetHidden(bool $hidden, string $elementId = null) : string
     {
         $bVisibleJs = ($hidden ? 'false' : 'true');
-        $bResetJs = ($resetWidget ? 'true' : 'false');
         $elementId = $elementId ?? $this->getId();
         return <<<JS
 (function(bVisible, oCtrl, bReset){
     if (! oCtrl || bVisible === oCtrl.getVisible()) return;
     oCtrl.setVisible(bVisible).$()?.trigger('visibleChange', [{visible: bVisible}]);
-    if (bReset === true && bVisible === false) {
-        {$this->buildJsResetter()}
-    }
-})($bVisibleJs, sap.ui.getCore().byId('{$elementId}'), $bResetJs)
+})($bVisibleJs, sap.ui.getCore().byId('{$elementId}'))
 JS;
     }
     
@@ -679,11 +674,12 @@ JS;
         // hidden_if
         if ($this->isVisible()) {
             if ($condProp = $widget->getHiddenIf()) {
-                $resetOnChange = $condProp->hasResetWidgetOnChange() ?? ($widget instanceof iTakeInput);
+                $funcOnTrue = $condProp->getFunctionOnTrue();
+                $funcOnFalse = $condProp->getFunctionOnFalse();
                 $this->registerConditionalPropertyUpdaterOnLinkedElements(
                     $condProp,
-                    $this->buildJsSetHidden(true, $resetOnChange),
-                    $this->buildJsSetHidden(false, $resetOnChange)
+                    $this->buildJsSetHidden(true) . ';' . ($funcOnTrue !== null ? $this->buildJsCallFunction($funcOnTrue) : ''),
+                    $this->buildJsSetHidden(false) . ';' . ($funcOnFalse !== null ? $this->buildJsCallFunction($funcOnFalse) : '')
                 );
                 $js = $this->buildJsConditionalProperty(
                     $condProp,
@@ -699,11 +695,12 @@ JS;
         
         // disabled_if
         if ($condProp = $widget->getDisabledIf()) {
-            $resetOnChange = $condProp->hasResetWidgetOnChange() ?? ($widget instanceof iTakeInput);
+            $funcOnTrue = $condProp->getFunctionOnTrue();
+            $funcOnFalse = $condProp->getFunctionOnFalse();
             $this->registerConditionalPropertyUpdaterOnLinkedElements(
                 $condProp, 
-                $this->buildJsSetDisabled(true, $resetOnChange), 
-                $this->buildJsSetDisabled(false, $resetOnChange)
+                $this->buildJsSetDisabled(true) . ';' . ($funcOnTrue !== null ? $this->buildJsCallFunction($funcOnTrue) : ''), 
+                $this->buildJsSetDisabled(false) . ';' . ($funcOnFalse !== null ? $this->buildJsCallFunction($funcOnFalse) : '')
             );
             $js = $this->buildJsConditionalProperty(
                 $condProp, 

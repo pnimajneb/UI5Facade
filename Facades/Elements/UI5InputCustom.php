@@ -115,7 +115,7 @@ JS;
      */
     public function buildJsValidator(?string $valJs = null)
     {
-        return $this->getWidget()->getScriptToValidateInput() ?? parent::buildJsValidator();
+        return $this->getWidget()->getScriptToValidateInput() ?? parent::buildJsValidator($valJs);
     }
     
     /**
@@ -123,8 +123,9 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsSetDisabled()
      */
-    public function buildJsSetDisabled(bool $trueOrFalse, bool $resetWidgetOnChange = false) : string
+    public function buildJsSetDisabled(bool $trueOrFalse) : string
     {
+        // TODO call on-true/false widget functions here. But currently they cannot be defined for InputCustom...
         if ($trueOrFalse === true) {
             return $this->getWidget()->getScriptToDisable() ?? parent::buildJsSetDisabled($trueOrFalse);
         } else {

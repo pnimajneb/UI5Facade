@@ -1340,6 +1340,7 @@ JS;
     {
         foreach ($this->getWidget()->getColumns() as $col) {
             if ($conditionalProperty = $col->getCellWidget()->getDisabledIf()) {
+                // TODO how to implement on-true/false widget functions here?
                 foreach ($conditionalProperty->getConditions() as $condition) {
                     $leftExpressionIsRef = $condition->getValueLeftExpression()->isReference();
                     $rightExpressionIsRef = $condition->getValueRightExpression()->isReference();

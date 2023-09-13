@@ -561,7 +561,7 @@ JS;
         return $this->getUseWidgetId() ? $this->getId() . '__label' : '';
     }
     
-    protected function buildJsSetHidden(bool $hidden, bool $resetWidget = false, string $elementId = null) : string
+    protected function buildJsSetHidden(bool $hidden, string $elementId = null) : string
     {
         $showHideLabelJs = '';
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
@@ -571,7 +571,6 @@ JS;
         }
         
         $bVisibleJs = ($hidden ? 'false' : 'true');
-        $bResetJs = ($resetWidget ? 'true' : 'false');
         $elementId = $elementId ?? $this->getId();
         return <<<JS
 (function(bVisible, oCtrl, bReset){
@@ -588,10 +587,7 @@ JS;
         {$showHideLabelJs}
     }
     oCtrl.$()?.trigger('visibleChange', [{visible: bVisible}]);
-    if (bReset === true && bVisible === false) {
-        {$this->buildJsResetter()}
-    }
-})($bVisibleJs, sap.ui.getCore().byId('{$elementId}'), $bResetJs)
+})($bVisibleJs, sap.ui.getCore().byId('{$elementId}'))
 JS;
     }
     

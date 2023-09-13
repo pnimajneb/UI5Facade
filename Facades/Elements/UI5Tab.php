@@ -46,7 +46,13 @@ JS;
         
         // required_if
         if ($activeIf = $this->getWidget()->getActiveIf()) {
-            $this->registerConditionalPropertyUpdaterOnLinkedElements($activeIf, $this->buildJsSetActive(true), $this->buildJsSetActive(false));
+            $funcOnTrue = $activeIf->getFunctionOnTrue();
+            $funcOnFalse = $activeIf->getFunctionOnFalse();
+            $this->registerConditionalPropertyUpdaterOnLinkedElements(
+                $activeIf, 
+                $this->buildJsSetActive(true) . ';' . ($funcOnTrue !== null ? $this->buildJsCallFunction($funcOnTrue) : ''), 
+                $this->buildJsSetActive(false) . ';' . ($funcOnFalse !== null ? $this->buildJsCallFunction($funcOnFalse) : '')
+            );
             $js = $this->buildJsConditionalProperty(
                 $activeIf,
                 $this->buildJsSetActive(true),

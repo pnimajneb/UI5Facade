@@ -234,18 +234,14 @@ JS;
      * {@inheritdoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildJsSetDisabled()
      */
-    public function buildJsSetDisabled(bool $trueOrFalse, bool $resetWidgetOnChange = false) : string
+    public function buildJsSetDisabled(bool $trueOrFalse) : string
     {
         $bEnabledJs = ($trueOrFalse ? 'false' : 'true');
-        $bResetJs = ($resetWidgetOnChange ? 'true' : 'false');
         return <<<JS
 (function(bEnabled, oCtrl, bReset){
     if (! oCtrl || bEnabled === oCtrl.getEnabled()) return;
     oCtrl.setEnabled(bEnabled);
-    if (bReset === true && bEnabled === false) {
-        {$this->buildJsResetter()}
-    }
-})($bEnabledJs, sap.ui.getCore().byId('{$this->getId()}'), $bResetJs)
+})($bEnabledJs, sap.ui.getCore().byId('{$this->getId()}'))
 JS;
     }
     
@@ -291,8 +287,19 @@ JS;
         
         // required_if
         if ($propertyIf = $widget->getRequiredIf()) {
-            $this->registerConditionalPropertyUpdaterOnLinkedElements($propertyIf, $this->buildJsSetRequired(true), $this->buildJsSetRequired(false));
-            $js = $this->buildJsConditionalProperty($propertyIf, $this->buildJsSetRequired(true), $this->buildJsSetRequired(false), true);
+            $funcOnTrue = $propertyIf->getFunctionOnTrue();
+            $funcOnFalse = $propertyIf->getFunctionOnFalse();
+            $this->registerConditionalPropertyUpdaterOnLinkedElements(
+                $propertyIf, 
+                $this->buildJsSetRequired(true) . ';' . ($funcOnTrue !== null ? $this->buildJsCallFunction($funcOnTrue) : ''), 
+                $this->buildJsSetRequired(false) . ';' . ($funcOnFalse !== null ? $this->buildJsCallFunction($funcOnFalse) : '')
+            );
+            $js = $this->buildJsConditionalProperty(
+                $propertyIf, 
+                $this->buildJsSetRequired(true), 
+                $this->buildJsSetRequired(false), 
+                true
+            );
             $this->getController()
             ->addOnInitScript($js)
             ->addOnPrefillDataChangedScript($js);
