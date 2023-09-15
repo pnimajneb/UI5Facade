@@ -8,6 +8,7 @@ use exface\Core\Widgets\Filter;
 use exface\Core\Widgets\Input;
 use exface\Core\Widgets\InputComboTable;
 use exface\Core\Widgets\DataLookupDialog;
+use exface\Core\Interfaces\DataTypes\DataTypeInterface;
 
 /**
  * Generates sap.m.Input fow `Input` widgets.
@@ -37,7 +38,9 @@ use exface\Core\Widgets\DataLookupDialog;
  */
 class UI5Input extends UI5Value
 {
-    use JqueryInputValidationTrait;
+    use JqueryInputValidationTrait {
+        buildJsValidatorConstraints as buildJsValidatorConstraintsViaTrait;
+    }
     
     /**
      * 
@@ -321,6 +324,22 @@ JS;
         } else {
             return "sap.ui.getCore().byId('{$this->getId()}').setValueState('Error')";
         }
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsValidatorConstraints()
+     */
+    protected function buildJsValidatorConstraints(string $valueJs, string $onFailJs, DataTypeInterface $type) : string
+    {
+        $constraintsJs = $this->buildJsValidatorConstraintsViaTrait($valueJs, $onFailJs, $type);
+        $constraintsJs .=<<<JS
+if(sap.ui.getCore().byId('{$this->getId()}').getValueState() == sap.ui.core.ValueState.Error) {
+    {$onFailJs}
+};
+JS;
+        return $constraintsJs;
     }
     
     protected function registerOnChangeValidation()
