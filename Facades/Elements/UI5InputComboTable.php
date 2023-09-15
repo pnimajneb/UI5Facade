@@ -853,8 +853,15 @@ JS;
     protected function buildJsValidatorConstraints(string $valueJs, string $onFailJs, DataTypeInterface $type) : string
     {
         $widget = $this->getWidget();
+        $validJs .=<<<JS
+var oInput = sap.ui.getCore().byId('{$this->getId()}');
+if(oInput.getValueState() == sap.ui.core.ValueState.Error) {
+    {$onFailJs}
+}
+JS;
         if ($widget->getMultiSelect() === false) {
-            return parent::buildJsValidatorConstraints($valueJs, $onFailJs, $type);
+            $constraintJS = parent::buildJsValidatorConstraints($valueJs, $onFailJs, $type);
+            return $constraintJS . $validJs;
         } else {
             $partValidator = parent::buildJsValidatorConstraints('part', $onFailJs, $type);
             return <<<JS
@@ -863,6 +870,7 @@ if ($valueJs !== undefined && $valueJs !== null) {
         $partValidator
     });
 }
+{$validJs}
 
 JS;
         }
