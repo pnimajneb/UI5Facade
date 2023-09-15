@@ -327,17 +327,23 @@ JS;
     }
     
     /**
-     *
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsValidatorConstraints()
+     * 
+     * @param string $valueJs
+     * @param string $onFailJs
+     * @param DataTypeInterface $type
+     * @return string
      */
     protected function buildJsValidatorConstraints(string $valueJs, string $onFailJs, DataTypeInterface $type) : string
     {
         $constraintsJs = $this->buildJsValidatorConstraintsViaTrait($valueJs, $onFailJs, $type);
         $constraintsJs .=<<<JS
-if(sap.ui.getCore().byId('{$this->getId()}').getValueState() == sap.ui.core.ValueState.Error) {
-    {$onFailJs}
-};
+var oInput = sap.ui.getCore().byId('{$this->getId()}');
+if (oInput.getValueState === "function") {
+    if(oInput.getValueState() == sap.ui.core.ValueState.Error) {
+        {$onFailJs}
+    }
+}
+
 JS;
         return $constraintsJs;
     }
