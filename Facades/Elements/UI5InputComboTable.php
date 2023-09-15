@@ -89,14 +89,28 @@ JS;
             $this->addPseudoEventHandler('onsapenter', $onEnter);
         }
         
-        // empty the input when a widget, that a filter is linked to, changes
-        // wrapped in a timeout function to prevent empty during prefill
-        // TODO: maybe actually check if prefill is still pending and dont just use a timeout function
+        // If the combo has filters bound to the value of another widget, check if the current
+        // value still fits the filter every time the value of the other widget changes. Do so
+        // by calling the silen key lookup. If the current value can still be found with the
+        // new filter, nothing changes. If the new filter excludes the current value, the suggest
+        // will return an empty result, which will invalidate the field, and the user will need
+        // to select another value.
+        // The setTimeout() had something to do with async prefills. No sure, if it is still needed
+        // as the logic had change a couple of times.
         if ($widget->getTable()->hasFilters()) {
             foreach ($widget->getTable()->getFilters() as $fltr) {
                 if ($link = $fltr->getValueWidgetLink()) {
                     $linked_element = $this->getFacade()->getElement($link->getTargetWidget());
-                    $linked_element->addOnChangeScript("setTimeout(function(){{$this->buildJsValueSetter('')}},0);");
+                    $linked_element->addOnChangeScript(<<<JS
+
+                setTimeout(function(){
+                    var oInput = sap.ui.getCore().byId('{$this->getId()}');
+                    var mKey = oInput.getSelectedKey();
+                    if (mKey !== undefined && mKey !== null && mKey !== '') {
+                        oInput.fireSuggest({$this->buildJsFireSuggestParamForSilentKeyLookup('mKey')});
+                    }
+                },0);
+JS);
                 }
             }
         }
@@ -509,7 +523,7 @@ JS;
                                 break;
                             default:
                                 oInput
-                                    .setValueStateText("'" + (curKey || curText) + "' {$this->translate('WIDGET.INPUTCOMPBOTABLE.ERROR_INVALID_KEY')}")
+                                    .setValueStateText("'" + (curKey + " " + curText).trim() + "' {$this->translate('WIDGET.INPUTCOMPBOTABLE.ERROR_INVALID_KEY')}")
                                     .setValueState(sap.ui.core.ValueState.Error);
                                 break;
                         }
