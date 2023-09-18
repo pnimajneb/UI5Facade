@@ -736,6 +736,9 @@ JS;
     protected function buildJsFireSuggestParamForSilentKeyLookup(string $keyJs) : string
     {
         $filterParam = UrlDataType::urlEncode($this->getFacade()->getUrlFilterPrefix() . $this->getWidget()->getValueColumn()->getAttributeAlias());
+        if ($this->getWidget()->getMultipleValuesAllowed()) {
+            $keyJs = "'[' + {$keyJs}";
+        }
         return <<<JS
 {
                     suggestValue: {
