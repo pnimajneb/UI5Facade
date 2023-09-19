@@ -757,8 +757,13 @@ JS;
         // above will recognize this and use merge this object with the request parameters, so
         // we can directly tell it to use our input as a value column filter instead of a regular
         // suggest string.
+        $bUnrenderedJs = $this->isUnrendered() ? 'true' : 'false';
         return "(function(val){
             var oInput = sap.ui.getCore().byId('{$this->getId()}');
+            var bUnrendered = $bUnrenderedJs;
+            if (bUnrendered === true && ! oInput) {
+                return;
+            }
             if (val === undefined || val === null || val === '') {
                 oInput.{$this->buildJsEmptyMethod('val', '""')};
             } else {
