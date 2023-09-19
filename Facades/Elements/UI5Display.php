@@ -63,7 +63,8 @@ class UI5Display extends UI5Value
         // is not called
         $this->registerExternalModules($this->getController());
         
-        $widget = $this->getWidget();
+        $widget = $this->getWidget();        
+        $visible = '';
         if ($this->isIcon()) {
             if ($this->getWidget()->isInTable() === true) {
                 $icon_yes = self::ICON_YES_TABLE;
@@ -73,12 +74,16 @@ class UI5Display extends UI5Value
                 $icon_yes = self::ICON_YES_FORM;
                 $icon_no = self::ICON_NO_FORM;
                 $icon_width = "'16px'";
+                if ($widget->isHidden() === true) {
+                    $visible = 'visible: false,';
+                }
             }
             $js = <<<JS
 
         new sap.ui.core.Icon("{$this->getId()}", {
             width: {$icon_width},
             {$this->buildJsPropertyTooltip()}
+            {$visible}
             src: {$this->buildJsValueBinding("formatter: function(value) {
                     if (value === '1' || value === 'true' || value === 1 || value === true) return $icon_yes;
                     else return $icon_no;
