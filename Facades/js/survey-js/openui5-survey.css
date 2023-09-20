@@ -11,6 +11,9 @@
 .sv_main.sv_default_css .sv_custom_header {background-color: transparent;}
 .sv_main .sv_container .sv_body .sv_p_root .sv_q {padding: 0 !important; overflow: hidden;}
 
+/* Empty text */
+.sv_main.sv_default_css .sv_body.sv_body_empty {padding: 1.5rem}
+
 /* Regular questions */
 /* Left titles */
 .sv_main .sv_container .sv_body .sv_p_root .sv_q:not(.sv_qstn_left) {padding-top: 0.625rem !important;}
