@@ -424,16 +424,23 @@ JS;
         
         if ($containerWidget instanceof WidgetGroup) {
             $containerEl = $this->getFacade()->getElement($containerWidget);
-            // Mark the entire group as required if it only contains required widgets
+            // Mark the entire group as required if it contains input widgets that are all required.
             // This is particularly important if the inner widget do not have their own
             // label controls - in this case it will not be visible to the user, that
             // they are required until a submit is attempted
             $required = true;
+            $containsInput = false;
             foreach ($widgets as $widget) {
-                if (! ($widget instanceof iTakeInput) || ($widget->isRequired() === false && $widget->isHidden() === false)) {
-                    $required = false;
-                    break;
+                if ($widget instanceof iTakeInput) {
+                    $containsInput = true;
+                    if ($widget->isRequired() === false && $widget->isHidden() === false) {
+                        $required = false;
+                        break;
+                    }
                 }
+            }
+            if (! $containsInput) {
+                $required = false;
             }
             $title = $containerWidget->getCaption() ? 'text: ' . $this->escapeString($containerWidget->getCaption() . ($required ? ' *' : '')) . ',' : '';
             $id = "'{$containerEl->getId()}',";
