@@ -609,7 +609,14 @@ JS;
                     case $action->getInputMapper($widget->getMetaObject()) !== null && $customMode !== DataButton::INPUT_ROWS_ALL_AS_SUBSHEET:
                         return <<<JS
     function() {
-        var aRows = {$this->buildJsGetRowsAll("sap.ui.getCore().byId('{$this->getId()}')")};
+        var bDataPending = {$this->buildJsIsDataPending()};
+        var aRows;
+        
+        if (bDataPending) {
+            return {};
+        }
+
+        aRows = {$this->buildJsGetRowsAll("sap.ui.getCore().byId('{$this->getId()}')")};
         // Remove any keys, that are not in the columns of the widget
         aRows = aRows.map(({ $colNamesList }) => ({ $colNamesList }));
         return {

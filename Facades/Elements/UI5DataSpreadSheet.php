@@ -5,6 +5,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JExcelTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
+use exface\Core\Interfaces\Actions\ActionInterface;
 
 class UI5DataSpreadSheet extends UI5AbstractElement implements UI5DataElementInterface
 {    
@@ -13,7 +14,7 @@ class UI5DataSpreadSheet extends UI5AbstractElement implements UI5DataElementInt
         UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
         UI5DataElementTrait::buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
         JExcelTrait::buildJsDataResetter as buildJsJExcelResetter;
-        JExcelTrait::buildJsDataGetter insteadof UI5DataElementTrait;
+        JExcelTrait::buildJsDataGetter as buildJsJExcelDataGetter;
         JExcelTrait::buildJsValueGetter insteadof UI5DataElementTrait;
     }
     
@@ -280,5 +281,25 @@ JS;
     protected function buildJsCheckHidden(string $jqElement) : string
     {
         return "($jqElement.parents().filter('.sapUiHidden').length > 0)";
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see JExcelTrait::buildJsDataGetter()
+     */
+    public function buildJsDataGetter(ActionInterface $action = null)
+    {
+        return <<<JS
+        
+        (function(){
+            var bDataPending = {$this->buildJsIsDataPending()};
+            if (bDataPending) {
+                return {};
+            }
+            
+            return ({$this->buildJsJExcelDataGetter($action)});
+        }())
+JS;
     }
 }

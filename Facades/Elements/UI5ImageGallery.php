@@ -11,6 +11,7 @@ use exface\Core\DataTypes\DateTimeDataType;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsUploaderTrait;
 use exface\Core\CommonLogic\DataSheets\DataColumn;
 use exface\Core\Widgets\Parts\Uploader;
+use exface\Core\Interfaces\Actions\ActionInterface;
 
 /**
  * 
@@ -24,7 +25,7 @@ class UI5ImageGallery extends UI5AbstractElement
 {
     use SlickGalleryTrait, UI5DataElementTrait {
         SlickGalleryTrait::buildJsValueGetter insteadof UI5DataElementTrait;
-        SlickGalleryTrait::buildJsDataGetter insteadof UI5DataElementTrait;
+        SlickGalleryTrait::buildJsDataGetter as buildJsSlickDataGetter;
         SlickGalleryTrait::buildJsDataResetter insteadof UI5DataElementTrait;
         SlickGalleryTrait::buildJsUploadStore as buildJsUploadStoreViaTrait;
         UI5DataElementTrait::buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
@@ -273,5 +274,25 @@ HTML;
     protected function isWrappedInPanel() : bool
     {
         return true;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see SlickGalleryTrait::buildJsDataGetter()
+     */
+    public function buildJsDataGetter(ActionInterface $action = null)
+    {
+        return <<<JS
+
+        (function(){
+            var bDataPending = {$this->buildJsIsDataPending()};
+            if (bDataPending) {
+                return {};
+            }
+
+            return ({$this->buildJsSlickDataGetter($action)});
+        }())
+JS;
     }
 }
