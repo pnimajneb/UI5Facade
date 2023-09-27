@@ -636,7 +636,7 @@ JS;
                             throw new WidgetLogicError($widget, 'Cannot use editable table with object "' . $widget->getMetaObject()->getName() . '" (alias ' . $widget->getMetaObject()->getAliasWithNamespace() . ') as input widget for action "' . $action->getName() . '" with object "' . $dataObj->getName() . '" (alias ' . $dataObj->getAliasWithNamespace() . '): no forward relation could be found from action object to widget object!', '7B7KU9Q');
                         }
                         $data = <<<JS
-{
+({$this->buildJsIsDataPending()} ? {} : {
             oId: '{$dataObj->getId()}',
             rows: [
                 {
@@ -646,7 +646,7 @@ JS;
                     }
                 }
             ]
-        }
+        })
             
 JS;
                 }
