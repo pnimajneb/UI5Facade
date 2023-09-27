@@ -345,6 +345,14 @@ JS;
     
     /**
      * 
+     * @return string
+     */
+    public function buildJsEmpty() : string
+    {
+        return "{$this->buildJsValueSetter('')};";
+    }
+    /**
+     * 
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Value::buildJsResetter()
      */
@@ -494,7 +502,7 @@ JS;
             case $functionName === Input::FUNCTION_FOCUS:
                 return "setTimeout(function(){sap.ui.getCore().byId('{$this->getId()}').focus();}, 0);";
             case $functionName === Input::FUNCTION_EMPTY:
-                return "setTimeout(function(){ {$this->buildJsResetter()} }, 0);";
+                return "setTimeout(function(){ {$this->buildJsEmpty()} }, 0);";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
     }
