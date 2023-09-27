@@ -457,7 +457,9 @@ JS;
         // Also refresh the live reference each time the view is prefilled!
         // But use setTimeout() to make sure all widgets binding-events affected
         // by the prefill really are done!
-        $this->getController()->addOnPrefillDataChangedScript('setTimeout(function(){ ' . $this->buildJsLiveReference() . '}, 0);');
+        if ($this->hasLiveReference()) {
+            $this->getController()->addOnPrefillDataChangedScript("setTimeout(function(){{$this->buildJsLiveReference()}}, 0);");
+        }
         return $this;
     }
     
