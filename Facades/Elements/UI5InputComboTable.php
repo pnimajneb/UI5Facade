@@ -167,7 +167,7 @@ JS;
                 var sVal = oInput.getValue();
                 var bNeedAllCols = {$allColumnsRequiredJs};
                 if (sKey !== '' && (sVal === '' || bNeedAllCols)) {
-                    {$this->buildJsValueSetter('sKey')};
+                    oInput.fireSuggest({$this->buildJsFireSuggestParamForSilentKeyLookup('sKey')});
                 } else {
                     oInput.setValueState(sap.ui.core.ValueState.None);
                 }
@@ -308,9 +308,7 @@ JS;
             setTimeout(function(){
                 var oInput = sap.ui.getCore().byId('{$this->getId()}'); 
                 var sVal = {$this->buildJsValueGetter()};
-                oInput.fireChange({
-                    value: sVal
-                });
+                oInput.fireChange({value: sVal});
             },0);
         })
 
@@ -504,6 +502,7 @@ JS;
                                 .setValueState(sap.ui.core.ValueState.Error);
                             }
                         }
+                        oInput.fireChange({value: curKey});
                     } else {
                         switch (true) {
                             case bNewKeysAllowed === true:
@@ -560,7 +559,7 @@ JS;
                     oInput.setValueState(sap.ui.core.ValueState.None);
                     setTimeout(function(){
                         oInput.closeSuggestions();
-                        oInput.fireChange();
+                        oInput.fireChange({value: curKey});
                     }, 1);
                 }
 
@@ -694,33 +693,50 @@ JS;
     {
         $allowNewValuesJs = $this->getWidget()->getAllowNewValues() ? 'true' : 'false';
         $valueColName = $this->getWidget()->getValueColumn()->getDataColumnName();
+        $delim = $this->getWidget()->getMultiSelectTextDelimiter();
         return <<<JS
 function(sColName){
     var oInput = sap.ui.getCore().byId('{$this->getId()}');
+    var sSelectedKey = oInput.{$this->buildJsValueGetterMethod()};
+    var bAllowNewValues = $allowNewValuesJs;
+    var oModel, oItem, aRows, oItems, aSelectedKeys;
     if (oInput === undefined) {
         return null;
     }
-    var sSelectedKey = oInput.{$this->buildJsValueGetterMethod()};
-    var bAllowNewValues = $allowNewValuesJs;
-    var oModel, oItem;
-
+    
+    
     if (sSelectedKey === undefined || sSelectedKey === '' || sSelectedKey === null) {
         if (bAllowNewValues && oInput.getValue()) {
             return oInput.getValue();
         }
         return null;
     }
-
+    
+    
     if (sColName === '' || sColName === '$valueColName') {
         return sSelectedKey;
     }
     
     oModel = oInput.getModel('{$this->getModelNameForAutosuggest()}');
-    oItem = (oModel.getData().rows || []).find(function(element, index, array){
-        return element['{$this->getWidget()->getValueAttributeAlias()}'] == sSelectedKey;
-    });
-
-    return oItem === undefined ? undefined : oItem[sColName];
+    aRows = oModel.getData().rows || [];
+    oItems = [];
+    aSelectedKeys = sSelectedKey.split('{$delim}');
+    
+    aSelectedKeys.forEach(function(sKey) {
+        aRows.forEach(function(oRow) {
+            if (oRow['{$this->getWidget()->getValueAttributeAlias()}'] === sKey) {
+                oItems.push(oRow);
+            }
+        })
+    })
+    
+    return oItems.length === 0 ? undefined : oItems.reduce(function(sList, oItem){
+        var val = oItem[sColName];
+        if (val === null || val === undefined) {
+            return sList;
+        }
+        return sList + (sList !== '' ? '$delim' : '') + oItem[sColName];
+    }, '');
 }('$column')
 
 JS;
@@ -769,6 +785,7 @@ JS;
             }
             if (val === undefined || val === null || val === '') {
                 oInput.{$this->buildJsEmptyMethod('val', '""')};
+                oInput.fireChange({value: val});
             } else {
                 if (oInput.destroyTokens !== undefined) {
                     oInput.destroyTokens();
@@ -777,9 +794,7 @@ JS;
                 .setSelectedKey(val)
                 .fireSuggest({$this->buildJsFireSuggestParamForSilentKeyLookup('val')});
             }
-            oInput.fireChange({
-                value: val
-            });
+            
             return oInput;
         })($valueJs)";
     }
@@ -863,7 +878,7 @@ JS;
         $widget = $this->getWidget();
         $validJs .=<<<JS
 var oInput = sap.ui.getCore().byId('{$this->getId()}');
-if(oInput.getValueState() == sap.ui.core.ValueState.Error) {
+if(oInput !== undefined && oInput.getValueState() == sap.ui.core.ValueState.Error) {
     {$onFailJs}
 }
 JS;
@@ -922,9 +937,7 @@ JS;
                     aVals.push(oRow['{$colName}']);
                 });
                 mVal = aVals.join('{$delim}');                
-                oInput.fireChange({
-                    mValue: mVal
-                });              
+                oInput.fireChange({mValue: mVal});              
             } else {
                 if (oData.rows.length === 1) {
                    mVal = oData.rows[0]['{$colName}'];
