@@ -349,7 +349,7 @@ JS;
      */
     public function buildJsEmpty() : string
     {
-        return "{$this->buildJsValueSetter('')};";
+        return "{$this->buildJsValueSetter('""')};";
     }
     /**
      * 

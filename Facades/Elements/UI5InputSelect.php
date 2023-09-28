@@ -140,7 +140,7 @@ JS;
     {
         if ($this->getWidget()->getMultiSelect()) {
             return "setSelectedKeys(function(){
-    var val = $value;
+    var val = ({$value} || '');
     if (Array.isArray(val)) {
         return val;
     } else if (val === undefined || val === null || val === '') {
@@ -152,7 +152,7 @@ JS;
     }
 }()).fireSelectionChange()";
         } else {
-            return "setSelectedKey({$value}).fireChange({value: {$value}})";
+            return "setSelectedKey(({$value} || '')).fireChange({value: ({$value} || ''))";
         }
     }
     
