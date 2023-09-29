@@ -152,7 +152,7 @@ JS;
     }
 }()).fireSelectionChange()";
         } else {
-            return "setSelectedKey(({$value} || '')).fireChange({value: ({$value} || ''))";
+            return "setSelectedKey(({$value} || '')).fireChange({value: ({$value} || '')})";
         }
     }
     
