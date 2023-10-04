@@ -724,7 +724,9 @@ function(sColName){
     
     aSelectedKeys.forEach(function(sKey) {
         aRows.forEach(function(oRow) {
-            if (oRow['{$this->getWidget()->getValueAttributeAlias()}'] === sKey) {
+            // don't compare type strict as the selected key is a string and the
+            // value attribute in the rows might be an integer
+            if (oRow['{$this->getWidget()->getValueAttributeAlias()}'] == sKey) {
                 oItems.push(oRow);
             }
         })
