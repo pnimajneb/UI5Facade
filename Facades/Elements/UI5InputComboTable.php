@@ -70,6 +70,7 @@ class UI5InputComboTable extends UI5Input
                         }
                         if (sText === '' && $missingKeyCheckJs){
                             oInput.setValueState(sap.ui.core.ValueState.None);
+                            oInput._invalidKey = false;
                         }
 JS;
             $this->addOnChangeScript($onChange);
@@ -170,6 +171,7 @@ JS;
                     oInput.fireSuggest({$this->buildJsFireSuggestParamForSilentKeyLookup('sKey')});
                 } else {
                     oInput.setValueState(sap.ui.core.ValueState.None);
+                    oInput._invalidKey = false;
                 }
 JS;
             // Do the missing-text-check every time the model of the sap.m.Input changes
@@ -386,6 +388,7 @@ JS;
                 }
                 oInput.{$this->buildJsSetSelectedKeyMethod("aCells[ {$valueColIdx} ].getText()", "aCells[ {$textColIdx} ].getText()")};
                 oInput.setValueState(sap.ui.core.ValueState.None);
+                oInput._invalidKey = false;
                 oInput.fireChange({value: aCells[ {$valueColIdx} ].getText()});
 			},
 JS;
@@ -475,6 +478,7 @@ JS;
                         oInput.{$this->buildJsSetSelectedKeyMethod("data[0]['{$widget->getValueColumn()->getDataColumnName()}']", "data[0]['{$widget->getTextColumn()->getDataColumnName()}']")}
                         oInput.closeSuggestions();
                         oInput.setValueState(sap.ui.core.ValueState.None);
+                        oInput._invalidKey = false;
                     } else if (iRowsCnt > 0 && iRowsCnt === curKeys.length && oInput.addToken !== undefined) {
                         oInput.destroyTokens();
                         curKeys.forEach(function(sKey) {
@@ -489,6 +493,7 @@ JS;
                         oInput.closeSuggestions();
                         if (aFoundKeys.length === curKeys.length) {
                             oInput.setValueState(sap.ui.core.ValueState.None);
+                            oInput._invalidKey = false;
                         } else {
                             aNewKeys = curKeys.filter(function(x) {return !aFoundKeys.includes(x)});
                             if (bNewKeysAllowed && aNewKeys.length > 0) {
@@ -496,10 +501,12 @@ JS;
                                     oInput.{$this->buildJsSetSelectedKeyMethod('sVal', 'sVal', false)};
                                 });
                                 oInput.setValueState(sap.ui.core.ValueState.None);
+                                oInput._invalidKey = false;
                             } else {
                                 oInput
                                 .setValueStateText("'" + curKey + "' {$this->translate('WIDGET.INPUTCOMPBOTABLE.ERROR_KEYS_VALUES_MISMATCH')}")
                                 .setValueState(sap.ui.core.ValueState.Error);
+                                oInput._invalidKey = true;
                             }
                         }
                         oInput.fireChange({value: curKey});
@@ -507,23 +514,27 @@ JS;
                         switch (true) {
                             case bNewKeysAllowed === true:
                                 oInput.setValueState(sap.ui.core.ValueState.None);
+                                oInput._invalidKey = false;
                                 oInput.{$this->buildJsSetSelectedKeyMethod('curKey', 'curKey', false)};
                                 break;
                             case curKey === '' && (! curText || curText.trim() === ''):
                                 oInput
                                     .{$this->buildJsEmptyMethod()}
                                     .setValueState(sap.ui.core.ValueState.None);
+                                oInput._invalidKey = false;
                                 break;
                             // If it is not a MultiInput, but the value is a delimited list, do not use it!
                             case oInput.getTokens === undefined && curKey != null && (curKey + '').includes(sMultiValDelim):
                                 oInput
                                     .{$this->buildJsEmptyMethod()}
                                     .setValueState(sap.ui.core.ValueState.None);
+                                oInput._invalidKey = false;
                                 break;
                             default:
                                 oInput
                                     .setValueStateText("'" + (curKey + " " + curText).trim() + "' {$this->translate('WIDGET.INPUTCOMPBOTABLE.ERROR_INVALID_KEY')}")
                                     .setValueState(sap.ui.core.ValueState.Error);
+                                oInput._invalidKey = true;
                                 break;
                         }
                     }
@@ -556,7 +567,8 @@ JS;
                         oInput.setValue();
                     }
 
-                    oInput.setValueState(sap.ui.core.ValueState.None);
+                    oInput.setValueState(sap.ui.core.ValueState.None)
+                    oInput._invalidKey = false;
                     setTimeout(function(){
                         oInput.closeSuggestions();
                         oInput.fireChange({value: curKey});
@@ -878,12 +890,17 @@ JS;
     protected function buildJsValidatorConstraints(string $valueJs, string $onFailJs, DataTypeInterface $type) : string
     {
         $widget = $this->getWidget();
-        $validJs .=<<<JS
+        $validJs = '';
+        if ($widget->getAllowNewValues() === false) {
+            // check if the vale state is `ERROR` and an actual invalid key is selected, else it could be possible to
+            // safe values that are not actually valid
+            $validJs .=<<<JS
 var oInput = sap.ui.getCore().byId('{$this->getId()}');
-if(oInput !== undefined && oInput.getValueState() == sap.ui.core.ValueState.Error) {
+if(oInput !== undefined && oInput.getValueState() == sap.ui.core.ValueState.Error && oInput._invalidKey === true) {
     {$onFailJs}
 }
 JS;
+        }
         if ($widget->getMultiSelect() === false) {
             $constraintJS = parent::buildJsValidatorConstraints($valueJs, $onFailJs, $type);
             return $constraintJS . $validJs;
