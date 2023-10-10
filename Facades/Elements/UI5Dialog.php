@@ -103,11 +103,12 @@ class UI5Dialog extends UI5Form
             (function(oController){
                 var bHasChanges = false;
                 var oCtrl = sap.ui.getCore().byId('{$this->getId()}');
-                var jqCtrl = oCtrl.$();
+                var jqCtrl;
                 // Avoid errors if the view/dialog is closed
                 if (oCtrl === undefined || oCtrl.getModel('view').getProperty('/_closed') === true) {
                     return;
                 }
+                jqCtrl = oCtrl.$();
                 // If the dialog is not visible, wait till it is - just mark the prefill to be refreshed
                 if (jqCtrl.length === 0 || jqCtrl.is(':visible') === false) {
                     oCtrl.getModel('view').setProperty('/_prefill/refresh_needed', true);
@@ -703,11 +704,18 @@ JS;
         
         return <<<JS
 
-            {$this->buildJsBusyIconShow()}
+            //FIXME for some reason the prefill is called multiple times for a EditDialog with a spreadsheet
+			//and the params are empty for the first calls. Right now it's unclear why that happens, so a quick fix was added
+			{$this->buildJsBusyIconShow()}
             var oViewModel = {$oViewJs}.getModel('view');
             var oResultModel = {$oViewJs}.getModel();
-            
+
             var oRouteParams = oViewModel.getProperty('/_route');
+            //Skip if no params are found, sometimes happens if EditDialog with spreadsheet is opened for the second time
+			if (oRouteParams == undefined) {
+                console.warn('Prefill skipped because params are undefined');
+                return;
+            }
             var data = $.extend({}, {
                 action: "exface.Core.ReadPrefill",
 				resource: "{$widget->getPage()->getAliasWithNamespace()}",
