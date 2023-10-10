@@ -118,7 +118,8 @@ JS;
         // If we are inside a dialog, make sure the dialog is still in the DOM before performing the
         // action effects!
         if ($dialog = $this->getWidget()->getParentByClass(Dialog::class)) {
-            $onActionEffectJs = "if ({$this->getFacade()->getElement($dialog)->buildJsCheckDialogClosed()} !== true) { {$onActionEffectJs} }";
+            $dialogElem = $this->getFacade()->getElement($dialog);
+            $onActionEffectJs = "if ({$dialogElem->getController()->getView()->buildJsViewGetter($dialogElem)} !== undefined && {$dialogElem->buildJsCheckDialogClosed()} !== true) { {$onActionEffectJs} }";
         }
         $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed($onActionEffectJs, false));
         
