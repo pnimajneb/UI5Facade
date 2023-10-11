@@ -138,5 +138,20 @@ JS;
     {
         return 'true';
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsValueGetter()
+     */
+    public function buildJsValueGetter()
+    {
+        $rawValueGetter = parent::buildJsValueGetter();
+        return <<<JS
+function() {
+    return {$this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatParser($rawValueGetter)};
+}()
+JS;
+    }
 }
 ?>
