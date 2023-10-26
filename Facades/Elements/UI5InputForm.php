@@ -96,7 +96,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryInputValidationTrait::buildJsValidator()
      */
-    public function buildJsValidator(?string $valJs = null)
+    public function buildJsValidator(?string $valJs = null) : string
     {
         // TODO
         return "true";

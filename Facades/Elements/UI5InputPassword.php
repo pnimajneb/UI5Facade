@@ -103,7 +103,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryInputValidationTrait::buildJsValidator()
      */
-    public function buildJsValidator(?string $valJs = null)
+    public function buildJsValidator(?string $valJs = null) : string
     {
         if ($this->getWidget()->getShowSecondInputForConfirmation() === true) {
             $confirmInputElement = $this->getFacade()->getElement($this->getConfirmationInput());

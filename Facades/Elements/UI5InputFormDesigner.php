@@ -93,7 +93,7 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5InputForm::buildJsValidator()
      */
-    public function buildJsValidator(?string $valJs = null)
+    public function buildJsValidator(?string $valJs = null) : string
     {
         // TODO
         return "true";
