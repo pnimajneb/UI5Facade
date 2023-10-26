@@ -105,6 +105,9 @@ JS;
      */
     public function buildJsValueSetterMethod($value)
     {
+        if ($value === '' || $value === null) {
+            $value = 'false';
+        }
         return "setSelected({$value} ? true : false).fireSelect({selected: ({$value} ? true : false)})";
     }
     
