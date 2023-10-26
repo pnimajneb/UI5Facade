@@ -37,13 +37,13 @@
     "rows": [
         {
             "CREATED_ON": "2018-04-04 09:13:46",
-            "MODIFIED_ON": "2023-09-05 15:05:32",
+            "MODIFIED_ON": "2023-10-26 09:43:06",
             "CREATED_BY_USER": "0x31000000000000000000000000000000",
-            "MODIFIED_BY_USER": "0x11e8fe1c902c8ebea23ee4b318306b9a",
+            "MODIFIED_BY_USER": "0x31000000000000000000000000000000",
             "UID": "0x11e837e87a640bfd91380205857feb80",
             "DEFAULT_LANGUAGE_CODE": "en",
             "ALIAS": "exface.UI5Facade",
-            "NAME": "Web UI Facade based on SAP UI5 \/ OpenUI5"
+            "NAME": "Web UI facade with SAP UI5 \/ OpenUI5"
         }
     ],
     "totals_rows": [],
