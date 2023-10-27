@@ -16,6 +16,7 @@ use exface\Core\DataTypes\StringDataType;
 use exface\Core\Interfaces\Actions\iModifyData;
 use exface\Core\Interfaces\Actions\iCallOtherActions;
 use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
+use exface\Core\Widgets\Parts\DataRowGrouper;
 
 /**
  *
@@ -468,6 +469,10 @@ JS;
                   
         if ($this->isUiTable() === true) {            
             $tableParams = <<<JS
+
+            if (oTable.getEnableGrouping() === true) {
+                
+            }
         
             // Add filters and sorters from column menus
             oTable.getColumns().forEach(oColumn => {
@@ -926,8 +931,10 @@ JS;
         $uiTablePostprocessing = '';
         $uiTableSetFooterRows = '';
         if ($this->isUiTable() === true) {
-            $uiTablePostprocessing .= <<<JS
+            $this->getController()->addMethod('resizeColumns', $this, 'oTable, oModel', $this->buildJsUiTableColumnResize('oTable', 'oModel'));
             
+            $uiTablePostprocessing .= <<<JS
+
             oTable.getColumns().forEach(function(oColumn){
                 if (oColumn.getSorted() === true) {
                     var order = oColumn.getSortOrder()
@@ -956,8 +963,28 @@ JS;
             // 3. pass the column or its id to the table via `setGroupBy` which is done here
             // Strangely Table.setGroupBy() fails if the column has no model data, so we
             // must do it here after the model was loaded.
+            // FIXME the group names do not use data type formatters. This is a problem in 
+            // sap.ui.table.utils._GroupingUtils somewhere in setupExperimentalGrouping() around
+            // line 508. Probably need to parse each header here and format the value before the dash.
             if ($this->getWidget()->hasRowGroups()) {
-                $uiTablePostprocessing .= "oTable.setGroupBy('{$this->getFacade()->getElement($this->getWidget()->getRowGrouper()->getGroupByColumn())->getId()}');";
+                $uiTablePostprocessing .= <<<JS
+
+            sap.ui.table.utils._GroupingUtils.resetExperimentalGrouping(oTable); 
+            oTable.setGroupBy('{$this->getFacade()->getElement($this->getWidget()->getRowGrouper()->getGroupByColumn())->getId()}');
+JS;
+                if ($this->getWidget()->getRowGrouper()->getExpandAllGroups() === false) {
+                    $uiTablePostprocessing .= <<<JS
+
+            var oBinding = oTable.getBinding('rows');
+            var iRowCnt = oTable._getTotalRowCount();
+            for (var i = 0; i < iRowCnt; i++) {
+                if (oBinding.isGroupHeader(i)) {
+                    oBinding.collapse(i);
+                }
+            }
+JS;
+                    
+                }
             }
             
             // Optimize column width. This is not easy with sap.ui.table.Table :(
@@ -979,6 +1006,50 @@ JS;
             $uiTablePostprocessing .= <<<JS
 
             setTimeout(function(){
+                {$this->getController()->buildJsMethodCallFromController('resizeColumns', $this, 'oTable, ' . $oModelJs)}
+            }, 100);
+JS;
+            
+            // TODO #ui5-update move stylers to rowsUpdated event of sap.ui.table.Table (available since 1.86)
+            if ($stylersJs = $this->buildJsColumnStylers()) {
+                $this->getController()->addOnEventScript($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, "setTimeout(function(){ $stylersJs }, 0);");
+                $uiTablePostprocessing .= <<<JS
+
+            setTimeout(function(){
+                $stylersJs
+            }, 500);
+JS;
+            }
+        }
+        
+        $updatePaginator = '';
+        if ($this->hasPaginator()) {
+            $updatePaginator = <<<JS
+            
+            {$paginator->buildJsSetTotal($oModelJs . '.getProperty("/recordsFiltered")', 'oController')};
+            {$paginator->buildJsRefresh('oController')};
+JS;
+        }
+        return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
+            /*if (typeof oTable === 'undefined') {
+                var oTable = sap.ui.getCore().byId('{$this->getId()}');
+            }*/
+
+			var footerRows = {$oModelJs}.getProperty("/footerRows");
+            {$uiTableSetFooterRows}
+            {$updatePaginator}
+            {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, false)};
+            {$singleResultJs};
+            {$uiTablePostprocessing};
+            {$this->buildJsCellConditionalDisablers()};
+            
+JS;
+    }
+    
+    protected function buildJsUiTableColumnResize(string $oTableJs, string $oModelJs) : string
+    {
+        return <<<JS
+
                 var bResized = false;
                 var oInitWidths = {};
                 /*
@@ -1043,42 +1114,7 @@ JS;
                         });
                     }, 0);
                 }
-            }, 100);
-JS;
-            
-            // TODO #ui5-update move stylers to rowsUpdated event of sap.ui.table.Table (available since 1.86)
-            if ($stylersJs = $this->buildJsColumnStylers()) {
-                $this->getController()->addOnEventScript($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, "setTimeout(function(){ $stylersJs }, 0);");
-                $uiTablePostprocessing .= <<<JS
 
-            setTimeout(function(){
-                $stylersJs
-            }, 500);
-JS;
-            }
-        }
-        
-        $updatePaginator = '';
-        if ($this->hasPaginator()) {
-            $updatePaginator = <<<JS
-            
-            {$paginator->buildJsSetTotal($oModelJs . '.getProperty("/recordsFiltered")', 'oController')};
-            {$paginator->buildJsRefresh('oController')};
-JS;
-        }
-        return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
-            /*if (typeof oTable === 'undefined') {
-                var oTable = sap.ui.getCore().byId('{$this->getId()}');
-            }*/
-
-			var footerRows = {$oModelJs}.getProperty("/footerRows");
-            {$uiTableSetFooterRows}
-            {$updatePaginator}
-            {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, false)};
-            {$singleResultJs};
-            {$uiTablePostprocessing};
-            {$this->buildJsCellConditionalDisablers()};
-            
 JS;
     }
     
