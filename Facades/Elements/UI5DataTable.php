@@ -39,6 +39,8 @@ class UI5DataTable extends UI5AbstractElement implements UI5DataElementInterface
     
     const EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED = 'firstVisibleRowChanged';
     
+    const CONTROLLER_METHOD_RESIZE_COLUMNS = 'resizeColumns';
+    
     protected function init()
     {
         $this->initViaTrait();
@@ -725,7 +727,7 @@ JS;
     {
         if ($this->isUiTable()) {
             if($this->getWidget()->getMultiSelect() === false) {
-                $rows = "($oTableJs && $oTableJs.getSelectedIndex() !== -1 && $oTableJs.getModel().getData().rows !== undefined ? [$oTableJs.getModel().getData().rows[$oTableJs.getSelectedIndex()]] : [])";
+                $rows = "($oTableJs && $oTableJs.getSelectedIndex() !== -1 && $oTableJs.getContextByIndex($oTableJs.getSelectedIndex()) !== undefined ? [$oTableJs.getContextByIndex($oTableJs.getSelectedIndex()).getObject()] : [])";
             } else {
                 $rows = "function(){var selectedIdx = $oTableJs.getSelectedIndices(); var aRows = []; selectedIdx.forEach(index => aRows.push($oTableJs.getModel().getData().rows[index])); return aRows;}()";
             }
@@ -931,7 +933,7 @@ JS;
         $uiTablePostprocessing = '';
         $uiTableSetFooterRows = '';
         if ($this->isUiTable() === true) {
-            $this->getController()->addMethod('resizeColumns', $this, 'oTable, oModel', $this->buildJsUiTableColumnResize('oTable', 'oModel'));
+            $this->getController()->addMethod(self::CONTROLLER_METHOD_RESIZE_COLUMNS, $this, 'oTable, oModel', $this->buildJsUiTableColumnResize('oTable', 'oModel'));
             
             $uiTablePostprocessing .= <<<JS
 
@@ -943,70 +945,27 @@ JS;
                     }, 0);
                 }
             });
-
 JS;
             $uiTableSetFooterRows = <<<JS
 
             if (footerRows){
 				oTable.setFixedBottomRowCount(parseInt(footerRows));
 			}
-
 JS;
             
             // Weird code to make the table fill it's container. If not done, tables within
             // sap.f.Card will not be high enough. 
             $uiTablePostprocessing .= 'oTable.setVisibleRowCountMode("Fixed").setVisibleRowCountMode("Auto");';
             
-            // To get the experimental row grouping of the ui.table working, we need to
-            // 1. set `enableGrouping` of the table (see `buildJsConstructorForUiTable()`)
-            // 2. set the `grouped` flag on the column (see `UI5DataColumn::buildJsConstructorForUiColumn()`)
-            // 3. pass the column or its id to the table via `setGroupBy` which is done here
-            // Strangely Table.setGroupBy() fails if the column has no model data, so we
-            // must do it here after the model was loaded.
-            // FIXME the group names do not use data type formatters. This is a problem in 
-            // sap.ui.table.utils._GroupingUtils somewhere in setupExperimentalGrouping() around
-            // line 508. Probably need to parse each header here and format the value before the dash.
-            if ($this->getWidget()->hasRowGroups()) {
-                $uiTablePostprocessing .= <<<JS
-
-            sap.ui.table.utils._GroupingUtils.resetExperimentalGrouping(oTable); 
-            oTable.setGroupBy('{$this->getFacade()->getElement($this->getWidget()->getRowGrouper()->getGroupByColumn())->getId()}');
-JS;
-                if ($this->getWidget()->getRowGrouper()->getExpandAllGroups() === false) {
-                    $uiTablePostprocessing .= <<<JS
-
-            var oBinding = oTable.getBinding('rows');
-            var iRowCnt = oTable._getTotalRowCount();
-            for (var i = 0; i < iRowCnt; i++) {
-                if (oBinding.isGroupHeader(i)) {
-                    oBinding.collapse(i);
-                }
-            }
-JS;
-                    
-                }
-            }
+            // Make sure, row grouping works
+            $uiTablePostprocessing .= $this->buildJsUiTableInitRowGrouping('oTable', 'oModel');
             
-            // Optimize column width. This is not easy with sap.ui.table.Table :(
-            // 1) oTable.autoResizeColumn() sets the focus to the column, so it is scrolled into
-            // view. After a number of workaround attempts, a hack of UI5 solves the problem now. 
-            // See Docs/UI5_modifications.md for details.
-            // 2) The optimizer only works AFTER all column were populated, so we need a setTimeout().
-            // TODO would be better to have an event, but none seemed suitable... Perhaps rowsUpdated? #ui5-update
-            // 3) Since the optimizer works asynchronously, it will break if while it is running the
-            // underlying data changes. In an attempt to avoid this, we do not optimize empty data.
-            // 4) It seems, that the empty space on the right side of the table (if it is not occupied
-            // with columns completely) is a column too. Optimizing that column will stretch some of
-            // the others again as it does not have any data. So we check if each column has a DOM
-            // element (that special column does not) and only optimize it then.
-            // 4) The optimizer does not take the column header into account, so on narrow columns
-            // the header gets truncated. We need to double-check this after all columns are resized
-            // 5) Also need to make sure, the maximum width of the column is not exceeded
-            // 6) TODO might need to check for minimum width too!
+            // Optimize column width AFTER all columns are rendered
+            // TODO #ui5-update mode column width optimization to rowsUpdated event of sap.ui.table.Table (available since 1.86)
             $uiTablePostprocessing .= <<<JS
 
             setTimeout(function(){
-                {$this->getController()->buildJsMethodCallFromController('resizeColumns', $this, 'oTable, ' . $oModelJs)}
+                {$this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_RESIZE_COLUMNS, $this, 'oTable, ' . $oModelJs)}
             }, 100);
 JS;
             
@@ -1031,9 +990,6 @@ JS;
 JS;
         }
         return $this->buildJsDataLoaderOnLoadedViaTrait($oModelJs) . <<<JS
-            /*if (typeof oTable === 'undefined') {
-                var oTable = sap.ui.getCore().byId('{$this->getId()}');
-            }*/
 
 			var footerRows = {$oModelJs}.getProperty("/footerRows");
             {$uiTableSetFooterRows}
@@ -1041,37 +997,137 @@ JS;
             {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, false)};
             {$singleResultJs};
             {$uiTablePostprocessing};
-            {$this->buildJsCellConditionalDisablers()};
-            
+            {$this->buildJsCellConditionalDisablers()};           
 JS;
     }
     
+    /**
+     * To get the experimental row grouping of the ui.table working, we need to
+     * 
+     * 1. set `enableGrouping` of the table (see `buildJsConstructorForUiTable()`)
+     * 2. set the `grouped` flag on the column (see `UI5DataColumn::buildJsConstructorForUiColumn()`)
+     * 3. pass the column or its id to the table via `setGroupBy` which is done here
+     * 
+     * Strangely `.setGroupBy()` fails if the column has no model data, so we
+     * must do it here after the model was loaded.
+     * 
+     * Also note, that group names are cached in the context of each row binding context,
+     * so we must call resetExperimentalGrouping() every time data is replaced.
+     * See `sap.ui.table.utils._GroupingUtils` in UI5 for more details.
+     * 
+     * In contrast to the sap.m.Table, there is no official way to influence the group names,
+     * so we use a hack here to explicitly set them in the group info of the contexts, which
+     * is used by UI5 internally.
+     * 
+     * @param string $oTableJs
+     * @param string $oModelJs
+     * @return string
+     */
+    protected function buildJsUiTableInitRowGrouping(string $oTableJs, string $oModelJs) : string
+    {
+        if (! $this->getWidget()->hasRowGroups()) {
+            return '';
+        }
+        $grouper = $this->getWidget()->getRowGrouper();
+        $groupFormatterJs = $this->getFacade()->getDataTypeFormatter($grouper->getGroupByColumn()->getDataType())->buildJsFormatter('mVal');
+        $groupCaption = $grouper->getHideCaption() ? '' : $this->escapeJsTextValue($grouper->getCaption());
+        $groupCaption .= $groupCaption ? ': ' : '';
+        switch ($grouper->getExpandGroups()) {
+            case DataRowGrouper::EXPAND_NO_GROUPS: $expandGroupJs = 'false'; break;
+            case DataRowGrouper::EXPAND_FIRST_GROUP: $expandGroupJs = '1'; break;
+            default: $expandGroupJs = 'true';
+            
+        }
+        return  <<<JS
+            
+            sap.ui.table.utils._GroupingUtils.resetExperimentalGrouping($oTableJs);
+            $oTableJs.setGroupBy('{$this->getFacade()->getElement($grouper->getGroupByColumn())->getId()}');
+            (function(oTable) {
+                var oBinding = oTable.getBinding('rows');
+                var iRowCnt = oTable._getTotalRowCount();
+                var iHeaderIdx = -1;
+                var mExpand = $expandGroupJs;
+                var aCtxts = oBinding.getContexts(0, iRowCnt);
+                var iExpanded = 0;
+                for (var i = 0; i < iRowCnt; i++) {
+                    if (aCtxts[i].__groupInfo) {
+                        aCtxts[i].__groupInfo.name = (function(mVal) {
+                            if (mVal === null || mVal === undefined) {
+                                return '{$groupCaption}{$this->escapeJsTextValue($grouper->getEmptyText())}';
+                            }
+                            return '{$groupCaption}' + {$groupFormatterJs}
+                        })(aCtxts[i].__groupInfo.name);
+                    }
+                    if (oBinding.isGroupHeader(i)) {
+                        iHeaderIdx++;
+                        if (mExpand === false || (Number.isInteger(mExpand) && iHeaderIdx >= (mExpand - 1))) {
+                            oBinding.collapse(i);
+                        }
+                    }
+                }
+                // Resize columns every time a group gets expanded
+                oBinding.attachChange(function(oEvent) {
+                    var iExpandedBefore = iExpanded;
+                    // Change-events on expand/collapse do not have a reason. Ignore others
+                    if (oEvent.getParameters().reason !== undefined) {
+                        return;
+                    }
+                    iExpanded = 0;
+                    for (var i=0; i<iRowCnt; i++) {
+                        if(oBinding.isExpanded(i)) iExpanded += 1;
+                    }
+                    // If a group just got expanded, there are more expanded nodes now.
+                    // Resize the columns to match the newly visible data
+                    if (iExpanded > iExpandedBefore) {
+                        setTimeout(function(){
+                            {$this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_RESIZE_COLUMNS, $this, 'oTable, ' . $oModelJs)}
+                        }, 100);
+                    }
+                });
+            })($oTableJs);
+JS;
+    }
+    
+    /**
+     * Optimize column width. This is not easy with sap.ui.table.Table :(
+     * 
+     * 1. oTable.autoResizeColumn() sets the focus to the column, so it is scrolled into
+     * view. After a number of workaround attempts, a hack of UI5 solves the problem now. 
+     * See Docs/UI5_modifications.md for details.
+     * 2. The optimizer only works AFTER all column were populated, so we need a setTimeout().
+     * TODO would be better to have an event, but none seemed suitable... Perhaps rowsUpdated? #ui5-update
+     * 3. Since the optimizer works asynchronously, it will break if while it is running the
+     * underlying data changes. In an attempt to avoid this, we do not optimize empty data.
+     * 4. It seems, that the empty space on the right side of the table (if it is not occupied
+     * with columns completely) is a column too. Optimizing that column will stretch some of
+     * the others again as it does not have any data. So we check if each column has a DOM
+     * element (that special column does not) and only optimize it then.
+     * 4. The optimizer does not take the column header into account, so on narrow columns
+     * the header gets truncated. We need to double-check this after all columns are resized
+     * 5. Also need to make sure, the maximum width of the column is not exceeded
+     * 6. TODO might need to check for minimum width too!
+     * 
+     * @param string $oTableJs
+     * @param string $oModelJs
+     * @return string
+     */
     protected function buildJsUiTableColumnResize(string $oTableJs, string $oModelJs) : string
     {
         return <<<JS
 
                 var bResized = false;
                 var oInitWidths = {};
-                /*
-                var domFocused = document.activeElement;
-                var domTableScroll = oTable.$().closest(".sapUiTableCtrlScr"); // Find the closest container element that wraps the table
-                var iTableLeft = domTableScroll.scrollLeft();
-                var domPageScroll = oTable.$().closest('.sapUxAPObjectPageScroll');
-                var iPageTop = domPageScroll.scrollTop();
-                */
                 if (! $oModelJs.getData().rows || $oModelJs.getData().rows.length === 0) {
                     return;
                 }
                 
-                oTable.getColumns().reverse().forEach(function(oCol, i) {
+                $oTableJs.getColumns().reverse().forEach(function(oCol, i) {
                     var oWidth = oCol.data('_exfWidth');
                     if (! oWidth || $('#'+oCol.getId()).length === 0) return;
-                    oInitWidths[oTable.indexOfColumn(oCol)] = $('#'+oCol.getId()).width();
+                    oInitWidths[$oTableJs.indexOfColumn(oCol)] = $('#'+oCol.getId()).width();
                     if (oCol.getVisible() === true && oWidth.auto === true) {
                         bResized = true;
-                        oTable.autoResizeColumn(oTable.indexOfColumn(oCol));
-                        // document.activeElement.blur();
-                        // domPageScroll.scrollTop(iPageTop);
+                        $oTableJs.autoResizeColumn($oTableJs.indexOfColumn(oCol));
                     }
                     if (oWidth.fixed) {
                         oCol.setWidth(oWidth.fixed);
@@ -1080,20 +1136,12 @@ JS;
 
                 if (bResized) {
                     setTimeout(function(){
-                        /*
-                        var domHScroll = (oTable._getScrollExtension() || {}).getHorizontalScrollbar();
-
-                        if (domFocused) {
-                            domFocused.focus();
-                        }
-                        */
-
-                        oTable.getColumns().forEach(function(oCol){
+                        $oTableJs.getColumns().forEach(function(oCol){
                             var oWidth = oCol.data('_exfWidth');
                             var jqCol = $('#'+oCol.getId());
                             var jqLabel = jqCol.find('label');
                             var iWidth = null;
-                            var iColIdx = oTable.indexOfColumn(oCol);
+                            var iColIdx = $oTableJs.indexOfColumn(oCol);
 
                             if (! oWidth) return;
                             if (! oCol.getWidth() && oWidth.auto === true && oInitWidths[iColIdx] !== undefined) {
@@ -1114,7 +1162,6 @@ JS;
                         });
                     }, 0);
                 }
-
 JS;
     }
     
