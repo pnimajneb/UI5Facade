@@ -187,8 +187,23 @@ JS;
             var iRow = oGantt.tasks.indexOf(oTask);
             var oCtxt = oTable.getRows()[iRow].getBindingContext();
             var oRow = oTable.getModel().getProperty(oCtxt.sPath);
-            oModel.setProperty(oCtxt.sPath + '/{$startCol->getDataColumnName()}', {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
-            oModel.setProperty(oCtxt.sPath + '/{$endCol->getDataColumnName()}', {$endFormatter->buildJsFormatDateObjectToInternal('dEnd')});
+            var sColNameStart = '{$startCol->getDataColumnName()}';
+            var sColNameEnd = '{$endCol->getDataColumnName()}';
+
+            /* TODO move children with parent when parent is dragged along the timeline
+            var iDurationOld = oRow[sColNameEnd] - oRow[sColNameStart]; // How to calculate the difference between two date in JS???
+            var iDurationNew = dEnd - dStart;
+            // Moving is when the duration does not change
+            if (iDurationOld === iDurationNew) {
+                oRow._children.forEach(function(oChildRow, iIdx) {
+                    // move dates of oChildRow as far as the parent row was moved
+                })
+                // what if the child row has children too???? 
+                // If we change oRow._children, do we need to explicitly update the oModel. Check oModel.getData()
+            }
+            */
+            oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
+            oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('dEnd')});
     	}
     });
 })();
