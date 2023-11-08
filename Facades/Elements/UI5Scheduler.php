@@ -54,6 +54,15 @@ class UI5Scheduler extends UI5AbstractElement implements UI5DataElementInterface
             intervalType: 'Month',
             showSubIntervals: false
         }),
+        new sap.m.PlanningCalendarView({
+            description: 'All',
+            key: 'All',
+            intervalsL: 24,
+            intervalsM: 16,
+            intervalsS: 12,
+            intervalType: 'Month',
+            showSubIntervals: false
+        }),
 JS;
         
         $showRowHeaders = $this->getWidget()->hasResources() ? 'true' : 'false';
@@ -65,6 +74,7 @@ JS;
             case DataTimeline::GRANULARITY_MONTHS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Month'; break;
             case DataTimeline::GRANULARITY_WEEKS: throw new FacadeUnsupportedWidgetPropertyWarning('Timeline granularity `weeks` currently not supported in UI5!'); break;
             case DataTimeline::GRANULARITY_YEARS: $viewKey = "'Years'"; break;
+            case DataTimeline::GRANULARITY_ALL: $viewKey = "'All'"; break;
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
@@ -264,9 +274,15 @@ JS;
         
             var aData = {$oModelJs}.getProperty('/rows');
             var oRows = [];
-            var dMin, dStart, dEnd, sEnd, oDataRow, sRowKey;
+            var dMin, dMax, dStart, dEnd, sEnd, oDataRow, sRowKey;
+            var oPCal = sap.ui.getCore().byId('{$this->getId()}');
+            var sColNameStart = "{$calItem->getStartTimeColumn()->getDataColumnName()}";
             for (var i in aData) {
                 oDataRow = aData[i];
+                
+                if (oDataRow[sColNameStart] === undefined || oDataRow[sColNameStart] === null || oDataRow[sColNameStart] === '') {
+                    continue;
+                }
 
                 sRowKey = {$rowKeyGetter};
                 if (oRows[sRowKey] === undefined) {
@@ -277,8 +293,8 @@ JS;
                     };
                 }
 
-                dStart = new Date(oDataRow["{$calItem->getStartTimeColumn()->getDataColumnName()}"]);
-                if (dMin === undefined) {
+                dStart = new Date(oDataRow[sColNameStart]);
+                if (dMin === undefined || dMin > dStart) {
                     dMin = new Date(dStart.getTime());
                     {$workdayStartJs}
                 }
@@ -288,6 +304,9 @@ JS;
                 } else {
                     dEnd = new Date(dStart.getTime());
                     dEnd.setHours(dEnd.getHours() + {$calItem->getDefaultDurationHours(1)});
+                }
+                if (dMax === undefined || dMax < dEnd) {
+                	dMax = dEnd;
                 }
                 oRows[sRowKey].items.push(
                     $.extend({
@@ -300,19 +319,35 @@ JS;
                 );
             }
 
-            if (dMin !== undefined && ! sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate') && {$oModelJs}.getProperty('/_scheduler') === undefined) {
-                sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate', dMin).setStartDate(dMin);
+            if (dMin !== undefined && ! oPCal.data('_exfStartDate') && {$oModelJs}.getProperty('/_scheduler') === undefined) {
+                oPCal.data('_exfStartDate', dMin).setStartDate(dMin);
             }
             {$oModelJs}.setProperty('/_scheduler', {
                 rows: Object.values(oRows),
             });
-
+            
+            if (dMin !== undefined && dMax > dMin) {
+	            var iDurationMonth = (function monthDiff(d1, d2) {
+				    var months;
+				    months = (d2.getFullYear() - d1.getFullYear()) * 12;
+				    months -= d1.getMonth();
+				    months += d2.getMonth();
+				    return months <= 0 ? 0 : months;
+				})(dMin, dMax);
+				
+	            oPCal.getViews().filter(function(oView) {return oView.getKey() === 'All'})[0].setIntervalsL(iDurationMonth + 1);
+                // TODO set start date also when switching from another view to the all-view
+	            if (oPCal.getViewKey() === 'All') {
+	            	oPCal.setStartDate(dMin);
+	            }
+            }
+            
             setTimeout(function(){
                 {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
             }, 0);
             // fire selection change as selected rows are reseted
             setTimeout(function(){                
-                sap.ui.getCore().byId('{$this->getId()}').fireRowSelectionChange();
+                oPCal.fireRowSelectionChange();
             }, 0);
 			
 JS;
@@ -339,7 +374,7 @@ JS;
             var oSchedulerModel = oPCal.getModel().getProperty('/_scheduler');
             var oStartDate = oPCal.getStartDate();
             var oEndDate = oPCal.getEndDate !== undefined ? oPCal.getEndDate() : oPCal._getFirstAndLastRangeDate().oEndDate.oDate;
-            if (oSchedulerModel !== undefined) {
+            if (oSchedulerModel !== undefined && oPCal.getViewKey() !== 'All') {
                 if ($oParamsJs.data.filters === undefined) {
                     $oParamsJs.data.filters = {operator: "AND", conditions: []};
                 }
