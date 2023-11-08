@@ -98,7 +98,8 @@ JS;
 new sap.m.PlanningCalendar("{$this->getId()}", {
     {$startDateProp}
     {$aptHeight}
-	appointmentsVisualization: "Filled",
+	appointmentsVisualization: sap.ui.unified.CalendarAppointmentVisualization.Filled,
+    groupAppointmentsMode: sap.ui.unified.GroupAppointmentsMode.Expanded,
     builtInViews: [
         sap.ui.unified.CalendarIntervalType.Hour,
         sap.ui.unified.CalendarIntervalType.Day,
