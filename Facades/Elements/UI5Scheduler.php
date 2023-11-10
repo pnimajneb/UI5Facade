@@ -103,6 +103,25 @@ JS;
         
         $startDateProp = $this->getWidget()->getStartDate() ? "startDate: exfTools.date.parse('{$this->getWidget()->getStartDate()}')," : '';
         
+        // Add large nav-buttons on the sides of the scheduler to avoid having to move the mouse
+        // up to the header to navigate left/right.
+        $toolbar = $this->buildJsToolbarContent($oControllerJs);
+        $toolbar .= <<<JS
+        
+                    new sap.m.Button("{$this->getId()}_navleft", {
+                        icon: "sap-icon://slim-arrow-left",
+                        press: function(oEvent) {
+                            sap.ui.getCore().byId('{$this->getId()}-Header-NavToolbar-NextBtn').firePress();
+                        }
+                    }).addStyleClass('exf-scheduler-nav exf-scheduler-navleft'),
+                    new sap.m.Button("{$this->getId()}_navright", {
+                        icon: "sap-icon://slim-arrow-right",
+                        press: function(oEvent) {
+                            sap.ui.getCore().byId('{$this->getId()}-Header-NavToolbar-PrevBtn').firePress();
+                        }
+                    }).addStyleClass('exf-scheduler-nav exf-scheduler-navright'),
+JS;
+        
         return <<<JS
 
 new sap.m.PlanningCalendar("{$this->getId()}", {
@@ -129,7 +148,7 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
     appointmentSelect: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
     rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_ROW_SELECTION_CHANGE, true)},
 	toolbarContent: [
-		{$this->buildJsToolbarContent($oControllerJs)}
+		{$toolbar}
 	],
 	rows: {
 		path: '/_scheduler/rows',
@@ -340,10 +359,12 @@ JS;
 	            if (oPCal.getViewKey() === 'All') {
 	            	oPCal.setStartDate(dMin);
 	            }
-            }
-            
+            }            
+
             setTimeout(function(){
                 {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
+
+                oPCal.$().find('.exf-scheduler-nav').height(oPCal.$().find('.sapMTableTBody').height());
             }, 0);
             // fire selection change as selected rows are reseted
             setTimeout(function(){                
