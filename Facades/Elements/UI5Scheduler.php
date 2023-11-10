@@ -78,6 +78,23 @@ JS;
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
+        $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, <<<JS
+
+                (function(){
+                    var oPCal = sap.ui.getCore().byId('{$this->getId()}');
+                    var oView = oPCal._getView(oPCal.getViewKey());
+                    var iMonth = oPCal.getStartDate().getMonth() + 1;
+                    if (oView.getIntervalType() === 'Month' && oPCal._getIntervals(oView) >= 3) {
+                        oPCal._oMonthsRow.$().find('.sapUiCalItems > div').each(function(i, div){
+                            if ((i+iMonth-1) % 12 === 0) {
+                                $(div).find('.sapUiCalItemText').text(oPCal.getStartDate().getFullYear() + Math.floor(i/12));
+                            }
+                        })
+                    }
+                })()
+JS
+        );
+        
         if ($this->getWidget()->isPaged()) {
             $refreshOnNavigation = <<<JS
 
@@ -88,7 +105,13 @@ JS;
             $refreshOnNavigation = <<<JS
             
     startDateChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, true)},
-    viewChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, true)},
+    viewChange: function(oEvent){
+        if (oEvent.getSource().getViewKey() === 'All') {
+            {$controller->buildJsMethodCallFromController('onLoadData', $this, '', $oControllerJs)}
+        } else {
+            {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
+        }
+    },
 JS;
         }
         
@@ -293,7 +316,7 @@ JS;
         
             var aData = {$oModelJs}.getProperty('/rows');
             var oRows = [];
-            var dMin, dMax, dStart, dEnd, sEnd, oDataRow, sRowKey;
+            var dMin, dMax, dStart, dEnd, sEnd, oDataRow, sRowKey, iDurationMonth;
             var oPCal = sap.ui.getCore().byId('{$this->getId()}');
             var sColNameStart = "{$calItem->getStartTimeColumn()->getDataColumnName()}";
             for (var i in aData) {
@@ -346,7 +369,7 @@ JS;
             });
             
             if (dMin !== undefined && dMax > dMin) {
-	            var iDurationMonth = (function monthDiff(d1, d2) {
+	            iDurationMonth = (function monthDiff(d1, d2) {
 				    var months;
 				    months = (d2.getFullYear() - d1.getFullYear()) * 12;
 				    months -= d1.getMonth();
