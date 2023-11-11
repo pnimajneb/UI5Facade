@@ -114,6 +114,7 @@ class UI5DataTable extends UI5AbstractElement implements UI5DataElementInterface
         $controller = $this->getController();
         return <<<JS
         new sap.m.VBox({
+            {$this->buildJsPropertyVisibile()}
             width: "{$this->getWidth()}",
     		items: [
                 new sap.m.Table("{$this->getId()}", {
@@ -300,7 +301,8 @@ JS;
         		sort: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
                 rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
                 firstVisibleRowChanged: {$controller->buildJsEventHandler($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, true)},
-        		toolbar: [
+        		{$this->buildJsPropertyVisibile()}
+                toolbar: [
         			{$toolbar}
         		],
         		columns: [

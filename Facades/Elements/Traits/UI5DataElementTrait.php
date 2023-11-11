@@ -1235,6 +1235,7 @@ JS;
         return <<<JS
         
         new sap.f.DynamicPage("{$this->getIdOfDynamicPage()}", {
+            {$this->buildJsPropertyVisibile()}
             fitContent: true,
             preserveHeaderStateOnScroll: true,
             headerExpanded: (sap.ui.Device.system.phone === false),

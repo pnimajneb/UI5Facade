@@ -148,6 +148,7 @@ JS;
         return <<<JS
 
 new sap.m.PlanningCalendar("{$this->getId()}", {
+    {$this->buildJsPropertyVisibile()}
     {$startDateProp}
     {$aptHeight}
 	appointmentsVisualization: sap.ui.unified.CalendarAppointmentVisualization.Filled,
