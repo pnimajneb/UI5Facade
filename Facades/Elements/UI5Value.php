@@ -576,7 +576,7 @@ JS;
      *
      * @return bool
      */
-    protected function getRenderCaptionAsLayout(bool $default = true) : bool
+    protected function getRenderCaptionAsLayout(bool $default = false) : bool
     {
         return $this->renderCaptionAsLayout ?? $default;
     }
