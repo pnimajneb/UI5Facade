@@ -135,7 +135,7 @@ JS;
      */
     protected function buildJsLabelWrapper($element_constructor)
     {
-        if (! $this->getRenderCaptionAsLayout()) {
+        if (! $this->getRenderCaptionAsLayout() || $this->getWidget()->getHideCaption()) {
             return $this->buildJsConstructorForLabel() . $element_constructor;
         } else {
             $layout = $this->getRenderCaptionAsLayoutType() === self::LABEL_FLEXBOX_HORIZONTAL ? 'HorizontalLayout' : 'VerticalLayout';
