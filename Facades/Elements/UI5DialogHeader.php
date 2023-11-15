@@ -44,7 +44,13 @@ class UI5DialogHeader extends UI5Container
             // Render any custom display widget or input directly
             case $widget instanceof iDisplayValue && $widget->getWidgetType() !== 'Display':
             case $widget instanceof Input:
-                $js = $this->getFacade()->getElement($widget)->buildJsConstructor($oControllerJs);
+                $el = $this->getFacade()->getElement($widget);
+                
+                // Make sure, the sap.m.Label for the caption is placed in a sap.m.HBox if used insied
+                // a header because otherwise they will be displayed as two absolutely independent controls 
+                $el->setRenderCaptionAsLayout(true, true);
+                
+                $js = $el->buildJsConstructor($oControllerJs);
                 break;
             // Render regular generic value widgets as sap.m.ObjectStatus
             case $widget instanceof iHaveValue:

@@ -19,6 +19,9 @@ use exface\Core\DataTypes\NumberDataType;
  */
 class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, UI5CompoundControlInterface
 {
+    const LABEL_FLEXBOX_HORIZONTAL = 'horizontal';
+    const LABEL_FLEXBOX_VERTICAL = 'vertical';
+    
     use JqueryLiveReferenceTrait {
         registerLiveReferenceAtLinkedElement as registerLiveReferenceAtLinkedElementViaTrait;
     }
@@ -32,6 +35,10 @@ class UI5Value extends UI5AbstractElement implements UI5ValueBindingInterface, U
     private $valueBoundToModel = null;
     
     private $renderCaptionAsLabel = null;
+    
+    private $renderCaptionAsLayout = null;
+    
+    private $renderCaptionAsLayoutType = null;
     
     private $labelRendered = false;
     
@@ -128,7 +135,20 @@ JS;
      */
     protected function buildJsLabelWrapper($element_constructor)
     {
-        return $this->buildJsConstructorForLabel() . $element_constructor;
+        if (! $this->getRenderCaptionAsLayout()) {
+            return $this->buildJsConstructorForLabel() . $element_constructor;
+        } else {
+            $layout = $this->getRenderCaptionAsLayoutType() === self::LABEL_FLEXBOX_HORIZONTAL ? 'HorizontalLayout' : 'VerticalLayout';
+            return <<<JS
+
+new sap.ui.layout.{$layout}({
+    content: [
+        {$this->buildJsConstructorForLabel()}
+        {$element_constructor}
+    ]
+}).addStyleClass('exf-label-{$this->getRenderCaptionAsLayoutType()}')
+JS;
+        }
     }
     
     /**
@@ -144,6 +164,9 @@ JS;
         if ($this->getRenderCaptionAsLabel() === false) {
             return '';
         }        
+        if ($this->getRenderCaptionAsLayout() === true) {
+            $caption .= ':';
+        }
         $caption = $this->escapeJsTextValue($caption);
         $labelAppearance = '';
         if ($widget->getHideCaption() === true || $widget->isHidden()) {
@@ -550,6 +573,40 @@ JS;
     }
     
     /**
+     *
+     * @return bool
+     */
+    protected function getRenderCaptionAsLayout(bool $default = true) : bool
+    {
+        return $this->renderCaptionAsLayout ?? $default;
+    }
+    
+    /**
+     * 
+     * @param string $default
+     * @return string|NULL
+     */
+    protected function getRenderCaptionAsLayoutType(string $default = self::LABEL_FLEXBOX_HORIZONTAL) : ?string
+    {
+        return $this->renderCaptionAsLayoutType ?? $default;
+    }
+    
+    /**
+     * Set to TRUE to render label and control inside a sap.ui.layout.HorizontalLayout or VerticalLayout
+     * instead of simply next to each other.
+     * 
+     * @param bool $value
+     * @param bool $horizontal
+     * @return UI5Value
+     */
+    public function setRenderCaptionAsLayout(bool $value, bool $horizontal = true) : UI5Value
+    {
+        $this->renderCaptionAsLayout = $value;
+        $this->renderCaptionAsLayoutType = $horizontal ? self::LABEL_FLEXBOX_HORIZONTAL : self::LABEL_FLEXBOX_VERTICAL;
+        return $this;
+    }
+    
+    /**
      * 
      * @return bool
      */
@@ -558,11 +615,20 @@ JS;
         return $this->labelRendered;
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function getIdOfLabel() : string
     {
         return $this->getUseWidgetId() ? $this->getId() . '__label' : '';
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsSetHidden()
+     */
     protected function buildJsSetHidden(bool $hidden, string $elementId = null) : string
     {
         $showHideLabelJs = '';
