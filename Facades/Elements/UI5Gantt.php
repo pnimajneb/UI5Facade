@@ -313,6 +313,21 @@ JS;
                             oDataTree.rows[i]._children = [];
                         }
                     }
+
+                    console.log('Hier');
+
+
+                    // remove rows with no children in oDataTree.rows if 'is_folder_flag' is set to 1
+                    for (let i = oDataTree.rows.length - 1; i >= 0; i--) {
+                        removeRowsWithoutChildren(oDataTree.rows[i], i, oDataTree.rows);
+                    }
+
+                    function removeRowsWithoutChildren(item, index, arr) {
+                        if (item['{$this->getWidget()->getTreeFolderFlagAttributeAlias()}'] === 1 && item['_children'].length === 0) {
+                            arr.splice(index, 1);
+                        }
+                    }
+
                     return oDataTree;
                 })($oDataJs)
 
