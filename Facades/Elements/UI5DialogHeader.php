@@ -7,6 +7,7 @@ use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 use exface\Core\Interfaces\Widgets\iDisplayValue;
 use exface\Core\Widgets\Input;
 use exface\Core\Interfaces\WidgetInterface;
+use exface\Core\DataTypes\BooleanDataType;
 
 /**
  * Generates the controls inside a sap.uxap.ObjectPageHeader.
@@ -41,10 +42,17 @@ class UI5DialogHeader extends UI5Container
     protected function buildJsConstructorForChild(WidgetInterface $widget, string $oControllerJs) : string
     {
         switch (true) {
-            // Render any custom display widget or input directly
-            case $widget instanceof iDisplayValue && $widget->getWidgetType() !== 'Display':
+            // Render any custom value widget or input directly (i.e. if widget type is not generic Display)
+            // Also do it for standard Displays with boolean values as they are ultimately rendered as icons
+            case $widget instanceof iDisplayValue && ($widget->getWidgetType() !== 'Display' || ($widget->getValueDataType() instanceof BooleanDataType)):
             case $widget instanceof Input:
-                $js = $this->getFacade()->getElement($widget)->buildJsConstructor($oControllerJs);
+                $el = $this->getFacade()->getElement($widget);
+                
+                // Make sure, the sap.m.Label for the caption is placed in a sap.m.HBox if used insied
+                // a header because otherwise they will be displayed as two absolutely independent controls 
+                $el->setRenderCaptionAsLayout(true, true);
+                
+                $js = $el->buildJsConstructor($oControllerJs);
                 break;
             // Render regular generic value widgets as sap.m.ObjectStatus
             case $widget instanceof iHaveValue:

@@ -59,7 +59,7 @@ JS;
     protected function buildJsPropertyTitle() : string
     {
         if ($caption = $this->getCaption()) {
-            return 'title: ' . json_encode($caption) . ',';
+            return 'title: ' . $this->escapeString($caption) . ',';
         }
         return '';
     }
