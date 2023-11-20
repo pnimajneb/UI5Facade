@@ -60,10 +60,11 @@ class UI5ImageGallery extends UI5AbstractElement
                             return;
                         }
 
-                        setTimeout(function() {
+
                         {$this->buildJsSlickInit()}
-                        {$this->buildJsSlickSlidesFromData('jqSlick', 'oModel.getData()')}
-                        }, 200);
+                        setTimeout(function() {
+                            {$this->buildJsSlickSlidesFromData('jqSlick', 'oModel.getData()')}
+                        }, 0);
 
                         {$this->buildJsUploaderInit('jqSlick')}
 
