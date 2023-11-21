@@ -1801,11 +1801,21 @@ JS;
     
     
     protected function buildJsContextMenuTrigger($eventJsVar = 'oEvent') {
+        if ($eventJsVar === '') {
+            $eventJsVar = 'null';
+        }
         return <<<JS
-        
-                var oMenu = {$this->buildJsContextMenu($this->getWidget()->getButtons())};
+                var mCellValue = $eventJsVar !== undefined ? $($eventJsVar.target).text() : null;
+                var oMenu = {$this->buildJsContextMenu($this->getWidget()->getButtons(), 'mCellValue')};
                 var eFocused = $(':focus');
-                var eDock = sap.ui.core.Popup.Dock;
+                var eDock = sap.ui.core.Popup.Dock;console.log(oEvent);
+                
+                if (mCellValue === null || mCellValue === undefined || mCellValue === '') {
+                    oMenu.getItems()[0].setEnabled(false);
+                } else {
+                    oMenu.getItems()[0].setEnabled(true);
+                }
+
                 oMenu.open(true, eFocused, eDock.CenterCenter, eDock.CenterBottom,  {$eventJsVar}.target);
                 
 JS;
@@ -1964,13 +1974,22 @@ JS;
      * @param Button[]
      * @return string
      */
-    protected function buildJsContextMenu(array $buttons)
+    protected function buildJsContextMenu(array $buttons, string $cellValueJs = "''")
     {
+        $coreTltr = $this->getWorkbench()->getCoreApp()->getTranslator();
         return <<<JS
         
                 new sap.ui.unified.Menu({
                     items: [
-                        {$this->buildJsContextMenuButtons($buttons)}
+                        new sap.ui.unified.MenuItem({
+                            icon: "sap-icon://paste",
+                            text: "{$coreTltr->translate('WIDGET.UXONEDITOR.CONTEXT_MENU.CLIPBOARD.COPY_VALUE')}",
+                            tooltip: "{$coreTltr->translate('WIDGET.UXONEDITOR.CONTEXT_MENU.CLIPBOARD.COPY_HINT')}",
+                            select: function(oEvent) {
+                                navigator.clipboard.writeText($cellValueJs);
+                            }
+                        }),
+                        {$this->buildJsContextMenuButtons($buttons, true)}
                     ],
                     itemSelect: function(oEvent) {
                         var oMenu = oEvent.getSource();
@@ -1989,11 +2008,12 @@ JS;
      * @param Button[] $buttons
      * @return string
      */
-    protected function buildJsContextMenuButtons(array $buttons)
+    protected function buildJsContextMenuButtons(array $buttons, bool $startSection = false)
     {
         $context_menu_js = '';
         
         $last_parent = null;
+        $startSectionOnFirstButton = $startSection;
         foreach ($buttons as $button) {
             if ($button->isHidden()) {
                 continue;
@@ -2001,7 +2021,12 @@ JS;
             if ($button->getParent() == $this->getWidget()->getToolbarMain()->getButtonGroupForSearchActions()) {
                 continue;
             }
-            $startSection = ! is_null($last_parent) && $button->getParent() !== $last_parent;
+            if ($startSectionOnFirstButton === false) {
+                $startSection = ! is_null($last_parent) && $button->getParent() !== $last_parent;
+            } else {
+                $startSection = true;
+                $startSectionOnFirstButton = false;
+            }
             $last_parent = $button->getParent();
             
             $context_menu_js .= ($context_menu_js ? ',' : '') . $this->buildJsContextMenuItem($button, $startSection);
