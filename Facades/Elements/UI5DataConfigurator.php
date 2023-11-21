@@ -8,6 +8,7 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Widgets\Dialog;
 use exface\Core\Widgets\Data;
 use exface\Core\Interfaces\Widgets\iCanEditData;
+use exface\Core\DataTypes\ComparatorDataType;
 
 /**
  * 
@@ -416,6 +417,7 @@ JS;
                     });
 
                     oPanel.setIncludeOperations(["Contains", "EQ", "LT", "LE", "GT", "GE"]);
+                    oPanel.setExcludeOperations(["Contains", "EQ", "LT", "LE", "GT", "GE"]);
                     return oPanel;
                 }(),
 JS;
@@ -577,15 +579,27 @@ JS;
             return $this->buildJsDataGetterViaTrait($action, $unrendered);
         }
         
+        $notMap = [];
+        foreach (ComparatorDataType::getValuesStatic() as $comp) {
+            if (ComparatorDataType::isInvertable($comp)) {
+                $notMap[$comp] = ComparatorDataType::invert($comp);
+            }
+        }
+        $notMapJs = json_encode($notMap);
+        
         return <<<JS
 
 function(){
     var oData = {$this->buildJsDataGetterViaTrait($action)};
     var aFilters = sap.ui.getCore().byId('{$this->getId()}_AdvancedSearchPanel').getFilterItems();
     var i = 0;
+    var fnNot = function(oCondition) {
+        var oNotMap = $notMapJs;
+        oCondition.comparator = oNotMap[oCondition.comparator] || oCondition.comparator;
+        return oCondition;
+    };
     if (aFilters.length > 0) {
         var includeGroup = {operator: "AND", ignore_empty_values: true, conditions: []};
-        var excludeGroup = {operator: "NAND", ignore_empty_values: true, conditions: []};
         var oComponent = {$this->getController()->buildJsComponentGetter()};
         var oFilter, oCondition;
         for (i in aFilters) {
@@ -596,11 +610,7 @@ function(){
                 value: oFilter.getValue1(), 
                 object_alias: "{$this->getWidget()->getMetaObject()->getAliasWithNamespace()}"
             };
-            if (oFilter.getExclude() === false) {
-                includeGroup.conditions.push(oCondition);
-            } else {
-                excludeGroup.conditions.push(oCondition);
-            }
+            includeGroup.conditions.push(oFilter.getExclude() === false ? oCondition : fnNot(oCondition));
         }
         
         if (oData.filters === undefined) {
@@ -611,7 +621,6 @@ function(){
             oData.filters.nested_groups = [];
         }
         oData.filters.nested_groups.push(includeGroup);
-        //oData.filters.nested_groups.push(excludeGroup);
     }
     return oData;
 }()

@@ -475,10 +475,6 @@ JS;
         if ($this->isUiTable() === true) {            
             $tableParams = <<<JS
 
-            if (oTable.getEnableGrouping() === true) {
-                
-            }
-        
             // Add filters and sorters from column menus
             oTable.getColumns().forEach(oColumn => {
     			if (oColumn.getFiltered() === true){
