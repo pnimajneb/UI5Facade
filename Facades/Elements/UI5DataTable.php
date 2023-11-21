@@ -35,6 +35,7 @@ class UI5DataTable extends UI5AbstractElement implements UI5DataElementInterface
        getCaption as getCaptionViaTrait;
        init as initViaTrait;
        UI5DataElementTrait::buildJsResetter insteadof JqueryDataTableTrait;
+       UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
     }
     
     const EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED = 'firstVisibleRowChanged';
@@ -1040,11 +1041,18 @@ JS;
             default: $expandGroupJs = 'true';
             
         }
+        
+        // NOTE: sap.ui.table.utils._GroupingUtils.resetExperimentalGrouping($oTableJs) did not work: it produced
+        // empty group titles whenever their content was to change
         return  <<<JS
             
-            sap.ui.table.utils._GroupingUtils.resetExperimentalGrouping($oTableJs);
-            $oTableJs.setGroupBy('{$this->getFacade()->getElement($grouper->getGroupByColumn())->getId()}');
-            (function(oTable) {
+            (function(oTable, oModel) {
+                if (! oModel.getData().rows || oModel.getData().rows.length === 0) {
+                    return;
+                }
+                oTable.setEnableGrouping(true);
+                oTable.setGroupBy('{$this->getFacade()->getElement($grouper->getGroupByColumn())->getId()}');
+                
                 var oBinding = oTable.getBinding('rows');
                 var iRowCnt = oTable._getTotalRowCount();
                 var iHeaderIdx = -1;
@@ -1086,7 +1094,7 @@ JS;
                         }, 100);
                     }
                 });
-            })($oTableJs);
+            })($oTableJs, $oModelJs);
 JS;
     }
     
@@ -1743,5 +1751,20 @@ JS;
             $js .= StringDataType::replacePlaceholders(($col->getCellStylerScript() ?? ''), ['table_id' => $this->getId()]);
         }
         return $js;
+    }
+    
+    /**
+     * 
+     * @see UI5DataElementTrait::buildJsDataResetter()
+     */
+    protected function buildJsDataResetter() : string
+    {
+        $resetUiTable = ! $this->isUiTable() ? '' : <<<JS
+
+            if (sap.ui.getCore().byId('{$this->getId()}').getEnableGrouping() === true) {
+                sap.ui.getCore().byId('{$this->getId()}').setEnableGrouping(false);
+            }   
+JS;
+        return $resetUiTable . $this->buildJsDataResetterViaTrait();
     }
 }
