@@ -383,7 +383,7 @@ JS;
     {
         return <<<JS
                 function() {
-                    var oPanel = new sap.m.P13nFilterPanel("{$this->getId()}_AdvancedSearchPanel", {
+                    var oPanel = new sap.m.P13nFilterPanel("{$this->getIdOfSearchPanel()}", {
                         title: "{$this->translate('WIDGET.DATATABLE.SETTINGS_DIALOG.ADVANCED_SEARCH')}",
                         visible: true,
                         layoutMode: "Desktop",
@@ -570,6 +570,15 @@ JS;
     
     /**
      * 
+     * @return string
+     */
+    public function getIdOfSearchPanel() : string
+    {
+        return $this->getId() . '_AdvancedSearchPanel';
+    }
+    
+    /**
+     * 
      * {@inheritDoc}
      * @see JqueryDataConfiguratorTrait::buildJsDataGetter()
      */
@@ -591,7 +600,7 @@ JS;
 
 function(){
     var oData = {$this->buildJsDataGetterViaTrait($action)};
-    var aFilters = sap.ui.getCore().byId('{$this->getId()}_AdvancedSearchPanel').getFilterItems();
+    var aFilters = sap.ui.getCore().byId('{$this->getIdOfSearchPanel()}').getFilterItems();
     var i = 0;
     var fnNot = function(oCondition) {
         var oNotMap = $notMapJs;
@@ -721,7 +730,7 @@ JS;
                 var oCurrentModel = oDialog.getModel('{$this->getModelNameForConfig()}');
                 
                 // reset advanced search filters
-                sap.ui.getCore().byId('{$this->getId()}_AdvancedSearchPanel').removeAllFilterItems();
+                sap.ui.getCore().byId('{$this->getIdOfSearchPanel()}').removeAllFilterItems();
                 
                 // reset sorters
                 oCurrentModel.setProperty('/sorters', oInitModel.getProperty('/sorters'));

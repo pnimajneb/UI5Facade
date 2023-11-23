@@ -852,6 +852,21 @@ JS;
     
     /**
      * 
+     * @see UI5DataElementTrait::buildJsClickGetColumnAttributeAlias()
+     */
+    protected function buildJsClickGetColumnAttributeAlias(string $oDomElementClickedJs) : string
+    {
+        if ($this->isUiTable()) {
+            return "(function(domEl){var oCell = sap.ui.getCore().byId($(domEl).closest('[data-sap-ui-colid]').data('sap-ui-colid')); return oCell ? oCell.data('_exfAttributeAlias') : null;})($oDomElementClickedJs)";
+        }
+        if ($this->isMTable()) {
+            return "(function(domEl){var oCell = sap.ui.getCore().byId($(domEl).closest('[data-sap-ui-column]').data('sap-ui-column')); return oCell ? oCell.data('_exfAttributeAlias') : null;})($oDomElementClickedJs)";
+        }
+        return "null";
+    }
+    
+    /**
+     * 
      * {@inheritdoc}
      * @see UI5DataElementTrait::buildJsClickHandlerLeftClick()
      */

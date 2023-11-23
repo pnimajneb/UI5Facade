@@ -25,6 +25,7 @@ use exface\Core\CommonLogic\UxonObject;
 use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
 use exface\Core\Widgets\DataButton;
+use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -1805,19 +1806,11 @@ JS;
             $eventJsVar = 'null';
         }
         return <<<JS
-                var mCellValue = $eventJsVar !== undefined ? $($eventJsVar.target).text() : null;
-                var oMenu = {$this->buildJsContextMenu($this->getWidget()->getButtons(), 'mCellValue')};
+                var domTarget = $eventJsVar !== undefined ? $eventJsVar.target : null;
+                var oMenu = {$this->buildJsContextMenu($this->getWidget()->getButtons(), 'domTarget')};
                 var eFocused = $(':focus');
-                var eDock = sap.ui.core.Popup.Dock;console.log(oEvent);
-                
-                if (mCellValue === null || mCellValue === undefined || mCellValue === '') {
-                    oMenu.getItems()[0].setEnabled(false);
-                } else {
-                    oMenu.getItems()[0].setEnabled(true);
-                }
-
-                oMenu.open(true, eFocused, eDock.CenterCenter, eDock.CenterBottom,  {$eventJsVar}.target);
-                
+                var eDock = sap.ui.core.Popup.Dock;
+                oMenu.open(true, eFocused, eDock.CenterCenter, eDock.CenterBottom,  {$eventJsVar}.target);         
 JS;
     }
     
@@ -1909,7 +1902,8 @@ JS;
                 if (iRowIdx !== -1) {
                     {$this->buildJsSelectRowByIndex("sap.ui.getCore().byId('{$this->getId()}')", 'iRowIdx', false, 'false')}
                 }
-                
+
+
                 {$rightclick_script}
         	})
         	
@@ -1926,6 +1920,15 @@ JS;
     protected function buildJsClickGetRowIndex(string $oDomElementClickedJs) : string
     {
         return "$({$oDomElementClickedJs}).parents('tr').index()";
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsClickGetColumnAttributeAlias(string $oDomElementClickedJs) : string
+    {
+        return "null";
     }
     
     /**
@@ -1969,14 +1972,31 @@ JS;
     }
     
     /**
+     * Returns the JS constructor for a sap.ui.unified.Menu to be used on right-click on a data item.
+     * 
+     * The standard menu includes:
+     * - a copy-to-clipboard item if the user clicks on a non-emtpy value
+     * - a submenu to filter over the clicked value - unless the clicked value is empty or the data column could
+     * not be determined from the click event
+     * - items for every Button in the data widget
+     * - submenus for every MenuButton in the data widget
+     * 
      * IDEA move context-menu-related methods to separate element UI5ContextMenu
      * 
      * @param Button[]
      * @return string
      */
-    protected function buildJsContextMenu(array $buttons, string $cellValueJs = "''")
+    protected function buildJsContextMenu(array $buttons, string $domTargetJs = "null")
     {
         $coreTltr = $this->getWorkbench()->getCoreApp()->getTranslator();
+        
+        $filterableAliases = [];
+        foreach ($this->getWidget()->getColumns() as $col) {
+            if ($col->isFilterable() && ! ($col->getCellWidget()->getValueDataType() instanceof EnumDataTypeInterface)) {
+                $filterableAliases[] = $col->getAttributeAlias();
+            }
+        }
+        $filterableAliasesJs = json_encode($filterableAliases);
         return <<<JS
         
                 new sap.ui.unified.Menu({
@@ -1985,10 +2005,94 @@ JS;
                             icon: "sap-icon://paste",
                             text: "{$coreTltr->translate('WIDGET.UXONEDITOR.CONTEXT_MENU.CLIPBOARD.COPY_VALUE')}",
                             tooltip: "{$coreTltr->translate('WIDGET.UXONEDITOR.CONTEXT_MENU.CLIPBOARD.COPY_HINT')}",
+                            enabled: (function(){
+                                if (! $domTargetJs) return false;
+                                var mCellValue = $(domTarget).text();
+                                if (mCellValue === null || mCellValue === undefined || mCellValue === '') {
+                                    return false;
+                                } else {
+                                    return true;
+                                }
+                            })($domTargetJs),
                             select: function(oEvent) {
-                                navigator.clipboard.writeText($cellValueJs);
+                                if (! $domTargetJs) return;
+                                var mCellValue = $(domTarget).text();
+                                navigator.clipboard.writeText(mCellValue);
                             }
                         }),
+                        (function(domClicked){
+                            if (! domClicked) {
+                                return new sap.ui.unified.MenuItem({visible: false});
+                            }
+                            var aFilterableAliases = $filterableAliasesJs;
+                            var oSearchPanel = sap.ui.getCore().byId('{$this->getConfiguratorElement()->getIdOfSearchPanel()}');
+                            var aFilterItems = oSearchPanel.getFilterItems();
+                            var sAttrAlias = {$this->buildJsClickGetColumnAttributeAlias('domClicked')};
+                            var mCellValue = $(domClicked).text();
+                            var bIsAttribute = (sAttrAlias !== undefined && sAttrAlias !== null && sAttrAlias !== '');
+                            var bFilterable = bIsAttribute && aFilterableAliases.includes(sAttrAlias) && (mCellValue !== undefined && mCellValue !== '' && mCellValue !== null);
+                            var sValueTrunc = bFilterable ? mCellValue.toString() : '';
+                            var oFilterItem;
+
+                            aFilterItems.forEach(function(oItem){
+                                if (oItem.getColumnKey() === sAttrAlias) {
+                                    oFilterItem = oItem;
+                                }
+                            });   
+  
+                            var sValueTrunc = mCellValue.toString();
+                            if (sValueTrunc.length > 30) {
+                                sValueTrunc = sValueTrunc.substring(0, 30) + '...';
+                            }
+                            return new sap.ui.unified.MenuItem({
+                                icon: "sap-icon://filter",
+                                text: {$this->escapeString($this->translate('WIDGET.DATATABLE.FILTER_BY_VALUE'))},
+                                tooltip: {$this->escapeString($this->translate('WIDGET.DATATABLE.FILTER_BY_VALUE_HINT'))},
+                                visible: (bIsAttribute && bFilterable),
+                                submenu: new sap.ui.unified.Menu({
+                                    items: [
+                                        new sap.ui.unified.MenuItem({
+                                            icon: "sap-icon://clear-filter",
+                                            text: {$this->escapeString($this->translate('WIDGET.DATATABLE.FILTER_BY_VALUE_CLEAR'))},
+                                            visible: (oFilterItem ? true : false),
+                                            select: function(oEvent) {
+                                                oSearchPanel.removeFilterItem(oFilterItem);
+                                                {$this->getController()->buildJsMethodCallFromController('onLoadData', $this, '')}
+                                            }
+                                        }),
+                                        new sap.ui.unified.MenuItem({
+                                            icon: "sap-icon://overlay",
+                                            text: {$this->escapeString($this->translate('WIDGET.DATATABLE.FILTER_BY_VALUE_INCLUDE'))} + ' ' + JSON.stringify(sValueTrunc),
+                                            visible: (oFilterItem ? false : true),
+                                            select: function(oEvent) {
+                                                var oFilterItem;
+                                                oSearchPanel.addFilterItem(new sap.m.P13nFilterItem({
+                                                    columnKey: sAttrAlias,
+                                                    exclude: false,
+                                                    operation: 'EQ',
+                                                    value1: mCellValue
+                                                }));
+                                                {$this->getController()->buildJsMethodCallFromController('onLoadData', $this, '')}
+                                            }
+                                        }),
+                                        new sap.ui.unified.MenuItem({
+                                            icon: "sap-icon://sys-minus",
+                                            text: {$this->escapeString($this->translate('WIDGET.DATATABLE.FILTER_BY_VALUE_EXCLUDE'))} + ' ' + JSON.stringify(sValueTrunc),
+                                            select: function(oEvent) {
+                                                var oFilterItem;
+                                                oSearchPanel.addFilterItem(new sap.m.P13nFilterItem({
+                                                    columnKey: sAttrAlias,
+                                                    exclude: true,
+                                                    operation: 'EQ',
+                                                    value1: mCellValue
+                                                }));
+                                                {$this->getController()->buildJsMethodCallFromController('onLoadData', $this, '')}
+                                            }
+                                        })
+                                    ]
+                                })
+                            });
+                        })($domTargetJs),
                         {$this->buildJsContextMenuButtons($buttons, true)}
                     ],
                     itemSelect: function(oEvent) {
