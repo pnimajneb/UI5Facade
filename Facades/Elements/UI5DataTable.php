@@ -477,28 +477,35 @@ JS;
 
             // Add filters and sorters from column menus
             oTable.getColumns().forEach(oColumn => {
-    			if (oColumn.getFiltered() === true){
-    				{$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + oColumn.getFilterProperty()] = oColumn.getFilterValue();
+                var mVal = oColumn.getFilterValue();
+                var fnParser = oColumn.data('_exfFilterParser');
+    			if (oColumn.getFiltered() === true && mVal !== undefined && mVal !== null && mVal !== ''){
+                    mVal = fnParser !== undefined ? fnParser(mVal) : mVal;
+    				{$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + oColumn.getFilterProperty()] = mVal;
     			}
     		});
             
             // If filtering just now, make sure the filter from the event is set too (eventually overwriting the previous one)
     		if ({$oControlEventJsVar} && {$oControlEventJsVar}.getId() == 'filter'){
-                var oColumn = {$oControlEventJsVar}.getParameters().column;
-                var sFltrProp = oColumn.getFilterProperty();
-                var sFltrVal = {$oControlEventJsVar}.getParameters().value;
-                
-                {$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + sFltrProp] = sFltrVal;
-                
-                if (sFltrVal !== null && sFltrVal !== undefined && sFltrVal !== '') {
-                    oColumn.setFiltered(true).setFilterValue(sFltrVal);
-                } else {
-                    oColumn.setFiltered(false).setFilterValue('');
-                }         
+                (function(oEvent) {
+                    var oColumn = oEvent.getParameters().column;
+                    var sFltrProp = oColumn.getFilterProperty();
+                    var sFltrVal = oEvent.getParameters().value;
+                    var fnParser = oColumn.data('_exfFilterParser'); 
+                    var mFltrParsed = fnParser !== undefined ? fnParser(sFltrVal) : sFltrVal;
 
-                // Also make sure the built-in UI5-filtering is not applied.
-                $oControlEventJsVar.cancelBubble();
-                $oControlEventJsVar.preventDefault();
+                    {$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + sFltrProp] = mFltrParsed;
+                    
+                    if (mFltrParsed !== null && mFltrParsed !== undefined && mFltrParsed !== '') {
+                        oColumn.setFiltered(true).setFilterValue(sFltrVal);
+                    } else {
+                        oColumn.setFiltered(false).setFilterValue('');
+                    }         
+    
+                    // Also make sure the built-in UI5-filtering is not applied.
+                    oEvent.cancelBubble();
+                    oEvent.preventDefault();
+                })($oControlEventJsVar);
             }
     		
     		// If sorting just now, overwrite the sort string and make sure the sorter in the configurator is set too
@@ -533,6 +540,26 @@ JS;
                     oColumn.setSorted(false);
                 }
             });
+            
+            // Make sure, the column filter indicator is ON if the column is filtered over via advanced search 
+            (function(){
+                var oSearchPanel = sap.ui.getCore().byId('{$this->getConfiguratorElement()->getIdOfSearchPanel()}');
+                var aSearchFItems = oSearchPanel.getFilterItems();
+                var aColumns = oTable.getColumns();
+                aColumns.forEach(function(oColumn) {
+                    var sFilterVal = oColumn.getFilterValue();
+                    var bFiltered = sFilterVal !== '' && sFilterVal !== null && sFilterVal !== undefined;
+                    if (bFiltered) {
+                        return;
+                    }
+                    aSearchFItems.forEach(function(oItem){
+                        if (oItem.getColumnKey() === oColumn.data('_exfAttributeAlias')) {
+                            bFiltered = true;
+                        }
+                    });
+                    oColumn.setFiltered(bFiltered);
+                });
+            })();
 		
 JS;
         } elseif ($this->isMTable()) {

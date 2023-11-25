@@ -1992,7 +1992,7 @@ JS;
         
         $filterableAliases = [];
         foreach ($this->getWidget()->getColumns() as $col) {
-            if ($col->isFilterable() && ! ($col->getCellWidget()->getValueDataType() instanceof EnumDataTypeInterface)) {
+            if ($col->isFilterable()) {
                 $filterableAliases[] = $col->getAttributeAlias();
             }
         }

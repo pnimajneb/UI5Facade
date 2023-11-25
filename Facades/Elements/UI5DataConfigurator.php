@@ -596,6 +596,16 @@ JS;
         }
         $notMapJs = json_encode($notMap);
         
+        $parsers = [];
+        foreach ($this->getWidget()->getDataWidget()->getColumns() as $col) {
+            if (! $col->isFilterable() || ! $col->isBoundToAttribute()) {
+                continue;
+            }
+            $formatter = $this->getFacade()->getDataTypeFormatter($col->getDataType());
+            $parsers[] = "'{$col->getAttributeAlias()}': function(mVal){ return {$formatter->buildJsFormatParser('mVal')} }";
+        }
+        $parsersJs = '{' . implode(",\n", $parsers) . '}';
+        
         return <<<JS
 
 function(){
@@ -607,20 +617,21 @@ function(){
         oCondition.comparator = oNotMap[oCondition.comparator] || oCondition.comparator;
         return oCondition;
     };
+    var aParsers = $parsersJs;
     if (aFilters.length > 0) {
         var includeGroup = {operator: "AND", ignore_empty_values: true, conditions: []};
         var oComponent = {$this->getController()->buildJsComponentGetter()};
-        var oFilter, oCondition;
-        for (i in aFilters) {
-            oFilter = aFilters[i];
-            oCondition = {
+        aFilters.forEach(function(oFilter){
+            var mVal = oFilter.getValue1();
+            var fnParser = aParsers[oFilter.getColumnKey()];
+            var oCondition = {
                 expression: oFilter.getColumnKey(), 
                 comparator: oComponent.convertConditionOperationToConditionGroupOperator(oFilter.getOperation()), 
-                value: oFilter.getValue1(), 
+                value: (fnParser !== undefined ? fnParser(mVal) : mVal), 
                 object_alias: "{$this->getWidget()->getMetaObject()->getAliasWithNamespace()}"
             };
             includeGroup.conditions.push(oFilter.getExclude() === false ? oCondition : fnNot(oCondition));
-        }
+        });
         
         if (oData.filters === undefined) {
             oData.filters = {};
