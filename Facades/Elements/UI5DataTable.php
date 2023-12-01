@@ -35,6 +35,7 @@ class UI5DataTable extends UI5AbstractElement implements UI5DataElementInterface
        getCaption as getCaptionViaTrait;
        init as initViaTrait;
        UI5DataElementTrait::buildJsResetter insteadof JqueryDataTableTrait;
+       UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
     }
     
     const EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED = 'firstVisibleRowChanged';
@@ -474,34 +475,37 @@ JS;
         if ($this->isUiTable() === true) {            
             $tableParams = <<<JS
 
-            if (oTable.getEnableGrouping() === true) {
-                
-            }
-        
             // Add filters and sorters from column menus
             oTable.getColumns().forEach(oColumn => {
-    			if (oColumn.getFiltered() === true){
-    				{$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + oColumn.getFilterProperty()] = oColumn.getFilterValue();
+                var mVal = oColumn.getFilterValue();
+                var fnParser = oColumn.data('_exfFilterParser');
+    			if (oColumn.getFiltered() === true && mVal !== undefined && mVal !== null && mVal !== ''){
+                    mVal = fnParser !== undefined ? fnParser(mVal) : mVal;
+    				{$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + oColumn.getFilterProperty()] = mVal;
     			}
     		});
             
             // If filtering just now, make sure the filter from the event is set too (eventually overwriting the previous one)
     		if ({$oControlEventJsVar} && {$oControlEventJsVar}.getId() == 'filter'){
-                var oColumn = {$oControlEventJsVar}.getParameters().column;
-                var sFltrProp = oColumn.getFilterProperty();
-                var sFltrVal = {$oControlEventJsVar}.getParameters().value;
-                
-                {$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + sFltrProp] = sFltrVal;
-                
-                if (sFltrVal !== null && sFltrVal !== undefined && sFltrVal !== '') {
-                    oColumn.setFiltered(true).setFilterValue(sFltrVal);
-                } else {
-                    oColumn.setFiltered(false).setFilterValue('');
-                }         
+                (function(oEvent) {
+                    var oColumn = oEvent.getParameters().column;
+                    var sFltrProp = oColumn.getFilterProperty();
+                    var sFltrVal = oEvent.getParameters().value;
+                    var fnParser = oColumn.data('_exfFilterParser'); 
+                    var mFltrParsed = fnParser !== undefined ? fnParser(sFltrVal) : sFltrVal;
 
-                // Also make sure the built-in UI5-filtering is not applied.
-                $oControlEventJsVar.cancelBubble();
-                $oControlEventJsVar.preventDefault();
+                    {$oParamsJs}['{$this->getFacade()->getUrlFilterPrefix()}' + sFltrProp] = mFltrParsed;
+                    
+                    if (mFltrParsed !== null && mFltrParsed !== undefined && mFltrParsed !== '') {
+                        oColumn.setFiltered(true).setFilterValue(sFltrVal);
+                    } else {
+                        oColumn.setFiltered(false).setFilterValue('');
+                    }         
+    
+                    // Also make sure the built-in UI5-filtering is not applied.
+                    oEvent.cancelBubble();
+                    oEvent.preventDefault();
+                })($oControlEventJsVar);
             }
     		
     		// If sorting just now, overwrite the sort string and make sure the sorter in the configurator is set too
@@ -536,6 +540,26 @@ JS;
                     oColumn.setSorted(false);
                 }
             });
+            
+            // Make sure, the column filter indicator is ON if the column is filtered over via advanced search 
+            (function(){
+                var oSearchPanel = sap.ui.getCore().byId('{$this->getConfiguratorElement()->getIdOfSearchPanel()}');
+                var aSearchFItems = oSearchPanel.getFilterItems();
+                var aColumns = oTable.getColumns();
+                aColumns.forEach(function(oColumn) {
+                    var sFilterVal = oColumn.getFilterValue();
+                    var bFiltered = sFilterVal !== '' && sFilterVal !== null && sFilterVal !== undefined;
+                    if (bFiltered) {
+                        return;
+                    }
+                    aSearchFItems.forEach(function(oItem){
+                        if (oItem.getColumnKey() === oColumn.data('_exfAttributeAlias')) {
+                            bFiltered = true;
+                        }
+                    });
+                    oColumn.setFiltered(bFiltered);
+                });
+            })();
 		
 JS;
         } elseif ($this->isMTable()) {
@@ -855,6 +879,21 @@ JS;
     
     /**
      * 
+     * @see UI5DataElementTrait::buildJsClickGetColumnAttributeAlias()
+     */
+    protected function buildJsClickGetColumnAttributeAlias(string $oDomElementClickedJs) : string
+    {
+        if ($this->isUiTable()) {
+            return "(function(domEl){var oCell = sap.ui.getCore().byId($(domEl).closest('[data-sap-ui-colid]').data('sap-ui-colid')); return oCell ? oCell.data('_exfAttributeAlias') : null;})($oDomElementClickedJs)";
+        }
+        if ($this->isMTable()) {
+            return "(function(domEl){var oCell = sap.ui.getCore().byId($(domEl).closest('[data-sap-ui-column]').data('sap-ui-column')); return oCell ? oCell.data('_exfAttributeAlias') : null;})($oDomElementClickedJs)";
+        }
+        return "null";
+    }
+    
+    /**
+     * 
      * {@inheritdoc}
      * @see UI5DataElementTrait::buildJsClickHandlerLeftClick()
      */
@@ -1040,11 +1079,18 @@ JS;
             default: $expandGroupJs = 'true';
             
         }
+        
+        // NOTE: sap.ui.table.utils._GroupingUtils.resetExperimentalGrouping($oTableJs) did not work: it produced
+        // empty group titles whenever their content was to change
         return  <<<JS
             
-            sap.ui.table.utils._GroupingUtils.resetExperimentalGrouping($oTableJs);
-            $oTableJs.setGroupBy('{$this->getFacade()->getElement($grouper->getGroupByColumn())->getId()}');
-            (function(oTable) {
+            (function(oTable, oModel) {
+                if (! oModel.getData().rows || oModel.getData().rows.length === 0) {
+                    return;
+                }
+                oTable.setEnableGrouping(true);
+                oTable.setGroupBy('{$this->getFacade()->getElement($grouper->getGroupByColumn())->getId()}');
+                
                 var oBinding = oTable.getBinding('rows');
                 var iRowCnt = oTable._getTotalRowCount();
                 var iHeaderIdx = -1;
@@ -1086,7 +1132,7 @@ JS;
                         }, 100);
                     }
                 });
-            })($oTableJs);
+            })($oTableJs, $oModelJs);
 JS;
     }
     
@@ -1743,5 +1789,20 @@ JS;
             $js .= StringDataType::replacePlaceholders(($col->getCellStylerScript() ?? ''), ['table_id' => $this->getId()]);
         }
         return $js;
+    }
+    
+    /**
+     * 
+     * @see UI5DataElementTrait::buildJsDataResetter()
+     */
+    protected function buildJsDataResetter() : string
+    {
+        $resetUiTable = ! $this->isUiTable() ? '' : <<<JS
+
+            if (sap.ui.getCore().byId('{$this->getId()}').getEnableGrouping() === true) {
+                sap.ui.getCore().byId('{$this->getId()}').setEnableGrouping(false);
+            }   
+JS;
+        return $resetUiTable . $this->buildJsDataResetterViaTrait();
     }
 }

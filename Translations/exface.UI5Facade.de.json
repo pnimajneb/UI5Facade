@@ -100,6 +100,11 @@
 	
 	"WIDGET.DATATABLE.FILTERED_BY": "Filter",
 	"WIDGET.DATATABLE.FILTERED_BY_NONE": "Keine",
+	"WIDGET.DATATABLE.FILTER_BY_VALUE": "Nach Wert filtern",
+	"WIDGET.DATATABLE.FILTER_BY_VALUE_HINT": "Einen Filter nach diesem Wert hinzufügen",
+	"WIDGET.DATATABLE.FILTER_BY_VALUE_INCLUDE": "Einschließen",
+	"WIDGET.DATATABLE.FILTER_BY_VALUE_EXCLUDE": "Ausschließen",
+	"WIDGET.DATATABLE.FILTER_BY_VALUE_CLEAR": "Filter von dieser Spalte zurücksetzen",
 	"WIDGET.DATATABLE.GO_BUTTON_TEXT": "Suchen",
 	"WIDGET.DATATABLE.OFFLINE_HINT": "Diese Daten sind nur online verfügbar!",
 	"WIDGET.DATATABLE.OFFLINE_ERROR": "Diese Daten sind nur online verfügbar!",

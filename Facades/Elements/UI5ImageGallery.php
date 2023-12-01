@@ -52,17 +52,23 @@ class UI5ImageGallery extends UI5AbstractElement
 
                 new sap.ui.core.HTML("{$this->getId()}", {
                     content: "<div id=\"{$this->getId()}\" style=\"height: calc({$this->getHeight()} - 2.75rem - 2px);\"><div id=\"{$this->getIdOfSlick()}\" class=\"slick-carousel horizontal\" style=\"height: 100%\"></div></div>",
-                    afterRendering: function(oEvent) { 
+                    afterRendering: function(oEvent) {
                         var jqSlick = $('#{$this->getIdOfSlick()}');
+                        var oHtml = sap.ui.getCore().byId('{$this->getId()}');
+                        var oModel = oHtml.getModel();
                         if (jqSlick.hasClass('slick-initialized')) {
                             return;
                         }
 
+
                         {$this->buildJsSlickInit()}
+                        setTimeout(function() {
+                            {$this->buildJsSlickSlidesFromData('jqSlick', 'oModel.getData()')}
+                        }, 0);
 
                         {$this->buildJsUploaderInit('jqSlick')}
 
-                        sap.ui.getCore().byId('{$this->getId()}').getParent().addStyleClass('sapUiNoContentPadding');
+                        oHtml.getParent().addStyleClass('sapUiNoContentPadding');
                     }
                 })
 

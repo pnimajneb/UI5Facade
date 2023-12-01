@@ -10,7 +10,7 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 
 /**
  * 
- * @method \exface\Core\Widgets\Scheduler getWidget()
+ * @method \exface\Core\Widgets\Gantt getWidget()
  * 
  * @author Andrej Kabachnik
  *
@@ -299,11 +299,30 @@ JS;
      */
     protected function buildJsTransformToTree(string $oDataJs) : string
     {
+        $cleanupJs = '';
+        $widget = $this->getWidget();
+        
+        if (null !== $folderFlagAlias = $widget->getTreeFolderFlagAttributeAlias()) {
+            $cleanupJs = <<<JS
+
+                    // remove rows without children in oDataTree.rows if 'is_folder_flag' is set to 1
+                    for (let i = oDataTree.rows.length - 1; i >= 0; i--) {
+                        fnRemoveRowsWithoutChildren(oDataTree.rows[i], i, oDataTree.rows);
+                    }
+
+                    var fnRemoveRowsWithoutChildren = function(item, index, arr) {
+                        if (item['{$folderFlagAlias}'] === 1 && item['_children'].length === 0) {
+                            arr.splice(index, 1);
+                        }
+                    }
+JS;
+        }
+        
         return <<<JS
 
                 (function(oDataFlat) {
                     var oDataTree = $.extend({}, oDataFlat);
-                    var sParentCol = '{$this->getWidget()->getTreeParentRelationAlias()}';
+                    var sParentCol = '{$widget->getTreeParentRelationAlias()}';
 
                     function list_to_tree(list) {
                       var map = {}, node, roots = [], i;
@@ -333,6 +352,8 @@ JS;
                         }
                     }
 
+                    $cleanupJs
+                    
                     return oDataTree;
                 })($oDataJs)
 

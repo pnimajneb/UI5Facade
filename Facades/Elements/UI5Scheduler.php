@@ -99,7 +99,12 @@ JS
             $refreshOnNavigation = <<<JS
 
     startDateChange: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
-    viewChange: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
+    viewChange: function(oEvent){
+            {$controller->buildJsMethodCallFromController('onLoadData', $this, '', $oControllerJs)}
+            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(true);
+            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(true);
+            {$this->buildJsNavRefresh()}
+    },
 JS;
         } else {
             $refreshOnNavigation = <<<JS
@@ -108,8 +113,13 @@ JS;
     viewChange: function(oEvent){
         if (oEvent.getSource().getViewKey() === 'All') {
             {$controller->buildJsMethodCallFromController('onLoadData', $this, '', $oControllerJs)}
+            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(false);
+            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(false);
         } else {
             {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
+            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(true);
+            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(true);
+            {$this->buildJsNavRefresh()}
         }
     },
 JS;
@@ -131,16 +141,16 @@ JS;
         $toolbar = $this->buildJsToolbarContent($oControllerJs);
         $toolbar .= <<<JS
         
-                    new sap.m.Button("{$this->getId()}_navleft", {
+                    new sap.m.Button("{$this->getIdOfBigNavButtonPrev()}", {
                         icon: "sap-icon://slim-arrow-left",
                         press: function(oEvent) {
-                            sap.ui.getCore().byId('{$this->getId()}-Header-NavToolbar-NextBtn').firePress();
+                            sap.ui.getCore().byId('{$this->getId()}-Header-NavToolbar-PrevBtn').firePress();
                         }
                     }).addStyleClass('exf-scheduler-nav exf-scheduler-navleft'),
-                    new sap.m.Button("{$this->getId()}_navright", {
+                    new sap.m.Button("{$this->getIdOfBigNavButtonNext()}", {
                         icon: "sap-icon://slim-arrow-right",
                         press: function(oEvent) {
-                            sap.ui.getCore().byId('{$this->getId()}-Header-NavToolbar-PrevBtn').firePress();
+                            sap.ui.getCore().byId('{$this->getId()}-Header-NavToolbar-NextBtn').firePress();
                         }
                     }).addStyleClass('exf-scheduler-nav exf-scheduler-navright'),
 JS;
@@ -184,6 +194,16 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
 {$this->buildJsClickHandlers($oControllerJs)}
 
 JS;
+    }
+    
+    protected function getIdOfBigNavButtonPrev() : string
+    {
+        return "{$this->getId()}_navleft";
+    }
+    
+    protected function getIdOfBigNavButtonNext() : string
+    {
+        return "{$this->getId()}_navright";
     }
 		
     protected function buildJsRowsConstructors() : string
@@ -387,14 +407,21 @@ JS;
 
             setTimeout(function(){
                 {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
-
-                oPCal.$().find('.exf-scheduler-nav').height(oPCal.$().find('.sapMTableTBody').height());
+                {$this->buildJsNavRefresh()}
             }, 0);
             // fire selection change as selected rows are reseted
             setTimeout(function(){                
                 oPCal.fireRowSelectionChange();
             }, 0);
 			
+JS;
+    }
+    
+    protected function buildJsNavRefresh() : string
+    {
+        return <<<JS
+
+                oPCal.$().find('.exf-scheduler-nav').height(oPCal.$().find('.sapMTableTBody').height());
 JS;
     }
     
