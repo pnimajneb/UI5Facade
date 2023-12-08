@@ -10,6 +10,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\Core\Exceptions\Facades\FacadeUnsupportedWidgetPropertyWarning;
 use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
+use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 
 /**
  * 
@@ -27,6 +28,8 @@ class UI5Scheduler extends UI5AbstractElement implements UI5DataElementInterface
     }
     
     use JsValueScaleTrait;
+    
+    use UI5ColorClassesTrait;
 
     const EVENT_NAME_TIMELINE_SHIFT = 'timeline_shift';
     
@@ -65,6 +68,7 @@ class UI5Scheduler extends UI5AbstractElement implements UI5DataElementInterface
         }),
 JS;
         
+        // Calculate the interval type
         $showRowHeaders = $this->getWidget()->hasResources() ? 'true' : 'false';
         switch ($this->getWidget()->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
             case DataTimeline::GRANULARITY_HOURS: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
@@ -78,32 +82,17 @@ JS;
             default: $viewKey = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
-        $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, <<<JS
-
-                (function(){
-                    var oPCal = sap.ui.getCore().byId('{$this->getId()}');
-                    var oView = oPCal._getView(oPCal.getViewKey());
-                    var iMonth = oPCal.getStartDate().getMonth() + 1;
-                    if (oView.getIntervalType() === 'Month' && oPCal._getIntervals(oView) >= 3) {
-                        oPCal._oMonthsRow.$().find('.sapUiCalItems > div').each(function(i, div){
-                            if ((i+iMonth-1) % 12 === 0) {
-                                $(div).find('.sapUiCalItemText').text(oPCal.getStartDate().getFullYear() + Math.floor(i/12));
-                            }
-                        })
-                    }
-                })()
-JS
-        );
+        // Add event handler for changing the view/time or any other redrawing operation
+        $this->registerEventTimeshift();
         
         if ($this->getWidget()->isPaged()) {
             $refreshOnNavigation = <<<JS
 
     startDateChange: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
     viewChange: function(oEvent){
+            var oPCal = oEvent.getSource();
             {$controller->buildJsMethodCallFromController('onLoadData', $this, '', $oControllerJs)}
-            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(true);
-            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(true);
-            {$this->buildJsNavRefresh()}
+            {$this->buildJsNavRefresh('oPCal')}
     },
 JS;
         } else {
@@ -111,15 +100,13 @@ JS;
             
     startDateChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, true)},
     viewChange: function(oEvent){
-        if (oEvent.getSource().getViewKey() === 'All') {
+        var oPCal = oEvent.getSource();
+        if (oPCal.getViewKey() === 'All') {
             {$controller->buildJsMethodCallFromController('onLoadData', $this, '', $oControllerJs)}
             sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(false);
             sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(false);
         } else {
             {$controller->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
-            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(true);
-            sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(true);
-            {$this->buildJsNavRefresh()}
         }
     },
 JS;
@@ -191,6 +178,13 @@ new sap.m.PlanningCalendar("{$this->getId()}", {
 })
 .data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())})
 .addStyleClass('$cssClasses')
+.addEventDelegate({
+    onAfterRendering: function() {
+        setTimeout(function(){ 
+            {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)} 
+        }, 0)
+    }
+})
 {$this->buildJsClickHandlers($oControllerJs)}
 
 JS;
@@ -236,7 +230,7 @@ JS;
                 template: new sap.ui.unified.CalendarAppointment({
 					startDate: "{_start}",
 					endDate: "{_end}",
-					icon: "{pic}",
+					// icon: "{pic}",
 					title: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
 					tooltip: {$this->buildJsValueBindingForWidget($calItem->getTitleColumn()->getCellWidget())},
 					{$subtitleOptions}
@@ -255,8 +249,74 @@ JS;
 				})
             },*/
 		})
-
 JS;
+    }
+    
+    /**
+     * 
+     * @return void
+     */
+    protected function registerEventTimeshift()
+    {
+        $widget = $this->getWidget();
+        if ($widget->getItemsConfig()->hasIndicator()) {
+            $indicatorCfg = $widget->getItemsConfig()->getIndicatorConfig();
+            if ($indicatorCfg->hasColorScale()) {
+                $indicatorColorScale = $indicatorCfg->getColorScale();
+                $this->registerColorClasses($indicatorColorScale, '.exf-custom-color.exf-color-[#color#]', 'border-left-color: [#color#] !important; border-left-width: 1rem;', false);
+                $semanticColors = $this->getFacade()->getSemanticColors();
+                $semanticColorsJs = json_encode(empty($semanticColors) ? new \stdClass() : $semanticColors);
+                $setIndicatorClassesJs = <<<JS
+                
+                    oPCal.getRows().forEach(function(oCalRow){
+                        oCalRow.getAppointments().forEach(function(oAppt){
+                            var oData = oAppt.getBindingContext().getObject();
+                            var mVal = oData['{$indicatorCfg->getColorColumn()->getDataColumnName()}'];
+                            var sColor = {$this->buildJsScaleResolver('mVal', $indicatorColorScale, $indicatorCfg->isColorScaleRangeBased())}
+                            var sCssColor = '';
+                            var oSemanticColors = $semanticColorsJs;
+                            if (sColor.startsWith('~')) {
+                                sCssColor = oSemanticColors[sColor] || '';
+                            } else if (sColor) {
+                                sCssColor = sColor;
+                            }
+                            
+                            (oAppt.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
+                                if (sClass.startsWith('exf-color-')) {
+                                    oAppt.$().removeClass(sClass);
+                                }
+                            });
+                            if (sColor === null) {
+                                oAppt.$().removeClass('exf-custom-color');
+                            } else {
+                                oAppt.$().addClass('exf-custom-color exf-color-' + sCssColor.replace("#", ""));
+                            }
+                        });
+                    });
+JS;
+            }
+        }
+        
+        $this->getController()->addOnEventScript($this, self::EVENT_NAME_TIMELINE_SHIFT, <<<JS
+            
+                (function(){
+                    var oPCal = sap.ui.getCore().byId('{$this->getId()}');
+                    var oView = oPCal._getView(oPCal.getViewKey());
+                    var iMonth = oPCal.getStartDate().getMonth() + 1;
+                    if (oView.getIntervalType() === 'Month' && oPCal._getIntervals(oView) >= 3) {
+                        oPCal._oMonthsRow.$().find('.sapUiCalItems > div').each(function(i, div){
+                            if ((i+iMonth-1) % 12 === 0) {
+                                $(div).find('.sapUiCalItemText').text(oPCal.getStartDate().getFullYear() + Math.floor(i/12));
+                            }
+                        })
+                    }
+                    setTimeout(function(){
+                    {$setIndicatorClassesJs}
+                    }, 0);
+                    {$this->buildJsNavRefresh('oPCal')}
+                })()
+JS
+        );
     }
     
     protected function buildJsAppointmentPropertyColor(DataCalendarItem $calItem) : string
@@ -404,24 +464,31 @@ JS;
 	            	oPCal.setStartDate(dMin);
 	            }
             }            
-
+            // fire time shift to update nav buttons, indicators, etc.
             setTimeout(function(){
                 {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)}
-                {$this->buildJsNavRefresh()}
             }, 0);
             // fire selection change as selected rows are reseted
-            setTimeout(function(){                
+            setTimeout(function(){               
                 oPCal.fireRowSelectionChange();
             }, 0);
 			
 JS;
     }
     
-    protected function buildJsNavRefresh() : string
+    protected function buildJsNavRefresh(string $oPCalJs) : string
     {
         return <<<JS
-
-                oPCal.$().find('.exf-scheduler-nav').height(oPCal.$().find('.sapMTableTBody').height());
+                (function(oPCal) {
+                    if (oPCal.getViewKey === 'All') {
+                        sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(false);
+                        sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(false);
+                    } else {
+                        oPCal.$().find('.exf-scheduler-nav').height(oPCal.$().find('.sapMTableTBody').height());
+                        sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(true);
+                        sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(true);
+                    }
+                })($oPCalJs)
 JS;
     }
     
