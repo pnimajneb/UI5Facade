@@ -85,6 +85,16 @@ JS;
         // Add event handler for changing the view/time or any other redrawing operation
         $this->registerEventTimeshift();
         
+        $this->getController()->addOnInitScript(<<<JS
+
+$(document).on('click', '#{$this->getId()} .sapUiCalItemText', function(){
+    setTimeout(function(){
+        {$this->getController()->buildJsEventHandler($this, self::EVENT_NAME_TIMELINE_SHIFT, false)} 
+    }, 0);
+});
+
+JS, false);
+        
         if ($this->getWidget()->isPaged()) {
             $refreshOnNavigation = <<<JS
 
@@ -306,14 +316,16 @@ JS;
                     if (oView.getIntervalType() === 'Month' && oPCal._getIntervals(oView) >= 3) {
                         oPCal._oMonthsRow.$().find('.sapUiCalItems > div').each(function(i, div){
                             if ((i+iMonth-1) % 12 === 0) {
-                                $(div).find('.sapUiCalItemText').text(oPCal.getStartDate().getFullYear() + Math.floor(i/12));
+                                $(div).find('.sapUiCalItemText')
+                                .addClass('exf-scheduler-head-year')
+                                .text(parseInt(oPCal.getStartDate().getFullYear().toString().substr(-2)) + Math.floor(i/12));
                             }
                         })
                     }
                     setTimeout(function(){
-                    {$setIndicatorClassesJs}
+                        {$setIndicatorClassesJs}
+                        {$this->buildJsNavRefresh('oPCal')}
                     }, 0);
-                    {$this->buildJsNavRefresh('oPCal')}
                 })()
 JS
         );
@@ -480,13 +492,17 @@ JS;
     {
         return <<<JS
                 (function(oPCal) {
-                    if (oPCal.getViewKey === 'All') {
+                    if (oPCal.getViewKey() === 'All') {
                         sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(false);
                         sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(false);
                     } else {
-                        oPCal.$().find('.exf-scheduler-nav').height(oPCal.$().find('.sapMTableTBody').height());
                         sap.ui.getCore().byId('{$this->getIdOfBigNavButtonPrev()}').setVisible(true);
                         sap.ui.getCore().byId('{$this->getIdOfBigNavButtonNext()}').setVisible(true);
+                        setTimeout(function(){
+                            var iTop = oPCal.$().find('.sapMListInfoTBarContainer').innerHeight() + oPCal.$().find('.sapMPCHead').innerHeight();
+                            oPCal.$().find('.exf-scheduler-nav').css('top', iTop);
+                            oPCal.$().find('.exf-scheduler-nav').height(oPCal.$().find('.sapMTableTBody').height());
+                        }, 0)
                     }
                 })($oPCalJs)
 JS;
