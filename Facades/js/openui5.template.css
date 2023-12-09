@@ -267,9 +267,10 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .sapMPlanCal.halfHeight>.sapMList .sapMListTblCell.sapMPlanCalAppRow {height: inherit;}
 .sapMPlanCal.halfHeight>.sapMList .sapMPlanCalAppRow>.sapUiCalendarRow {height: 100%}
 /* Nav buttons */
-.sapMBtn.exf-scheduler-nav {position: absolute; top: 142px;}
+.sapMBtn.exf-scheduler-nav {position: absolute; padding: 0;}
 .sapMBtn.exf-scheduler-nav > span {height: 100%}
 .sapMBtn.exf-scheduler-nav > span > .sapMBtnIcon {margin-top:auto; margin-bottom:auto; color: transparent;}
 .sapMBtn.exf-scheduler-nav:hover > span > .sapMBtnIcon {color: initial;}
 .sapMBtn.exf-scheduler-navleft {left: -8px;}
 .sapMBtn.exf-scheduler-navright {right: 0;}
+.exf-scheduler-head-year {font-weight: bold}

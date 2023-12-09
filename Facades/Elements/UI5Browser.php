@@ -13,7 +13,10 @@ class UI5Browser extends UI5AbstractElement
         $control = <<<JS
         
         new sap.ui.core.HTML("{$this->getId()}_wrapper", {
-            content: {$escapedHtml}
+            content: {$escapedHtml},
+            afterRendering: function(oEvent) {
+                {$this->buildJsIFrameInit()}
+            }
         })
         
 JS;
@@ -65,5 +68,33 @@ JS;
         })
         
 JS;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsBusyIconShow()
+     */
+    public function buildJsBusyIconShow($global = false)
+    {
+        if ($global) {
+            return parent::buildJsBusyIconShow($global);
+        } else {
+            return 'sap.ui.getCore().byId("' . $this->getId() . '_wrapper").setBusyIndicatorDelay(0).setBusy(true);';
+        }
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsBusyIconHide()
+     */
+    public function buildJsBusyIconHide($global = false)
+    {
+        if ($global) {
+            return parent::buildJsBusyIconHide($global);
+        } else {
+            return 'sap.ui.getCore().byId("' . $this->getId() . '_wrapper").setBusy(false);';
+        }
     }
 }

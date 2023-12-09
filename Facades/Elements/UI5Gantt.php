@@ -190,18 +190,37 @@ JS;
             var sColNameStart = '{$startCol->getDataColumnName()}';
             var sColNameEnd = '{$endCol->getDataColumnName()}';
 
-            /* TODO move children with parent when parent is dragged along the timeline
-            var iDurationOld = oRow[sColNameEnd] - oRow[sColNameStart]; // How to calculate the difference between two date in JS???
-            var iDurationNew = dEnd - dStart;
-            // Moving is when the duration does not change
-            if (iDurationOld === iDurationNew) {
-                oRow._children.forEach(function(oChildRow, iIdx) {
-                    // move dates of oChildRow as far as the parent row was moved
-                })
-                // what if the child row has children too???? 
-                // If we change oRow._children, do we need to explicitly update the oModel. Check oModel.getData()
+            // move children with parent when parent is dragged along the timeline
+            var oldStart = new Date(oRow[sColNameStart]);
+            var oldEnd = new Date(oRow[sColNameEnd]);
+            var newStart = new Date({$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
+            var newEnd = new Date({$startFormatter->buildJsFormatDateObjectToInternal('dEnd')});
+
+            // Check if the parent has been moved without the duration changing
+            var iDurationOld = oldEnd - oldStart;
+            var iDurationNew = newEnd - newStart;
+            
+            if (iDurationOld ===  iDurationNew) {
+                var moveDiffInDays = (newStart - oldStart) / 1000 / 60 / 60 / 24;
+                
+                function processChildrenRecursively(oRow, moveDiffInDays, sColNameStart, sColNameEnd) {
+                    oRow._children.forEach(function(oChildRow, iIdx) {
+                        // move dates of oChildRow as far as the parent row was moved
+                        var startDateChild = new Date(oChildRow['date_start_plan']);
+                        var endDateChild = new Date(oChildRow['date_end_plan']);
+                        startDateChild.setDate(startDateChild.getDate() + moveDiffInDays);
+                        endDateChild.setDate(endDateChild.getDate() + moveDiffInDays);
+                        oRow._children[iIdx][sColNameStart] = {$startFormatter->buildJsFormatDateObjectToInternal('startDateChild')};
+                        oRow._children[iIdx][sColNameEnd] = {$startFormatter->buildJsFormatDateObjectToInternal('endDateChild')};
+
+                        // if the child row has children too, call the function recursively
+                        if (oChildRow._children && oChildRow._children.length > 0) {
+                            processChildrenRecursively(oChildRow, moveDiffInDays, sColNameStart, sColNameEnd);
+                        }
+                    });
+                }
+                processChildrenRecursively(oRow, moveDiffInDays, sColNameStart, sColNameEnd);
             }
-            */
             oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
             oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('dEnd')});
     	}
@@ -283,19 +302,17 @@ JS;
         $cleanupJs = '';
         $widget = $this->getWidget();
         
+        // remove rows without children in oDataTree.rows if $folderFlagAlias is set to 1
         if (null !== $folderFlagAlias = $widget->getTreeFolderFlagAttributeAlias()) {
             $cleanupJs = <<<JS
 
-                    // remove rows without children in oDataTree.rows if 'is_folder_flag' is set to 1
                     for (let i = oDataTree.rows.length - 1; i >= 0; i--) {
-                        fnRemoveRowsWithoutChildren(oDataTree.rows[i], i, oDataTree.rows);
-                    }
-
-                    var fnRemoveRowsWithoutChildren = function(item, index, arr) {
-                        if (item['{$folderFlagAlias}'] === 1 && item['_children'].length === 0) {
-                            arr.splice(index, 1);
-                        }
-                    }
+                        (function(oItem, iIndex, aArr) {
+                            if (oItem['{$folderFlagAlias}'] === 1 && oItem['_children'].length === 0) {
+                                aArr.splice(iIndex, 1);
+                            }
+                         })(oDataTree.rows[i], i, oDataTree.rows);
+                    }  
 JS;
         }
         
@@ -334,7 +351,7 @@ JS;
                     }
 
                     $cleanupJs
-
+                    
                     return oDataTree;
                 })($oDataJs)
 
