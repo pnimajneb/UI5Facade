@@ -115,6 +115,25 @@ JS);
                 }
             }
         }
+        
+        // lookup if only a single suggestion is found if the view is shown or the prefill changes
+        // TODO idea: also do that if widgets bound to that combo as filters change values (similar as above)
+        if ($widget->getAutoSearchSingleSuggestion()) {
+            $jsSearchSingleSuggestion = <<<JS
+            setTimeout(function(){
+                    console.log('Autosearch');
+                    var oInput = sap.ui.getCore().byId('{$this->getId()}');
+                    var mKey = oInput.getSelectedKey();
+                    if (mKey == undefined || mKey == null || mKey == '') {
+                        oInput.fireSuggest({$this->buildJsFireSuggestParamForSilentKeyLookup('""')});
+                    }
+            },0);
+            
+JS;
+            
+            $this->getController()->addOnShowViewScript($jsSearchSingleSuggestion, false);
+            //$this->getController()->addOnPrefillDataChangedScript($jsSearchSingleSuggestion);
+        }
     }
     
     /**
@@ -316,6 +335,7 @@ JS;
 
 JS;
         }
+        
         
         return <<<JS
 
