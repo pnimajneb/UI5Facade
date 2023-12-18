@@ -54,7 +54,10 @@ JS;
             $initPropsJs .= $this->buildJsSetDisabled(true);
         }
         
-        $css = StringDataType::replaceLineBreaks($this->getWidget()->getCss(), ' ');
+        if (null !== $css = $this->getWidget()->getCss()) {
+            $css = StringDataType::replaceLineBreaks($css, ' ');
+            $appendCssJs = "$('head').append($('<style id=\"{$this->getId()}_css\">{$css}</style>'));";
+        }
         
         return <<<JS
 
@@ -64,7 +67,7 @@ JS;
                 {$initJs}
                 {$initPropsJs}
                 if ($('#{$this->getId()}_css').length === 0) {
-                    $('head').append($('<style id="{$this->getId()}_css">{$css}</style>'));
+                    $appendCssJs
                 }
             }
         })
@@ -95,7 +98,7 @@ JS;
      */
     public function buildJsValueSetter($value)
     {
-        return $this->getWidget()->getScriptToSetValue($value) ?? '';
+        return $this->getWidget()->getScriptToSetValue($value) ?? $this->buildJsFallbackForEmptyScript('script_to_set_value');
     }
     
     /**
@@ -105,7 +108,7 @@ JS;
      */
     public function buildJsValueGetter()
     {
-        return $this->getWidget()->getScriptToGetValue() ?? '';
+        return $this->getWidget()->getScriptToGetValue() ?? $this->buildJsFallbackForEmptyScript('script_to_get_value');
     }
     
     /**
@@ -151,5 +154,16 @@ JS;
     public function buildJsDataSetter(string $jsData) : string
     {
         return $this->getWidget()->getScriptToSetData($jsData) ?? parent::buildJsDataSetter($jsData);
+    }
+    
+    /**
+     *
+     * @param string $widgetProperty
+     * @param string $returnValueJs
+     * @return string
+     */
+    protected function buildJsFallbackForEmptyScript(string $widgetProperty, string $returnValueJs = "''") : string
+    {
+        return "(function(){console.warn('Property {$widgetProperty} not set for widget InputCustom. Falling back to empty string'); return {$returnValueJs};})()";
     }
 }

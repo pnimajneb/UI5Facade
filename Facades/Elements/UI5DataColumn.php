@@ -9,6 +9,7 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\DataTypes\StringDataType;
 use exface\Core\Widgets\DataColumnResponsive;
 use exface\Core\Interfaces\Widgets\iCanWrapText;
+use exface\Core\Facades\AbstractAjaxFacade\Formatters\JsEnumFormatter;
 
 /**
  *
@@ -61,6 +62,13 @@ class UI5DataColumn extends UI5AbstractElement
         ]);
         $labelWrappingJs = $col->getNowrap() ? 'wrapping: false,' : 'wrapping: true,';
         
+        $formatter = $this->getFacade()->getDataTypeFormatter($col->getDataType());
+        if ($col->isBoundToAttribute() && $formatter instanceof JsEnumFormatter) {
+            $formatParserJs = $formatter->buildJsFormatParser('mVal', true, $col->getAttribute()->getValueListDelimiter());
+        } else {
+            $formatParserJs = $formatter->buildJsFormatParser('mVal');
+        }
+        
         // The tooltips for columns of the UI table also include the column caption
         // because columns may get quite narrow and in this case there would not be
         // any way to see the entire caption except for using the tooltip.
@@ -84,6 +92,7 @@ class UI5DataColumn extends UI5AbstractElement
 	.data('_exfAttributeAlias', '{$col->getAttributeAlias()}')
 	.data('_exfDataColumnName', '{$col->getDataColumnName()}')
 	.data('_exfWidth', {$widthJson})
+    .data('_exfFilterParser', function(mVal){ return {$formatParserJs} })
 JS;
     }
     
@@ -95,12 +104,8 @@ JS;
     protected function buildJsPropertyShowFilterMenuEntry() : string
     {
         $col = $this->getWidget();
-        $filterable = $col->isFilterable() === true ? 'true' : 'false';
-        if ($col->getCellWidget()->getValueDataType() instanceof EnumDataTypeInterface) {
-            $filterable = 'false';
-        }
-        
-        return "showFilterMenuEntry: $filterable,
+        $filterableJs = $col->isFilterable() === true ? 'true' : 'false';
+        return "showFilterMenuEntry: $filterableJs,
         filterProperty: '{$col->getAttributeAlias()}',";
     }
     

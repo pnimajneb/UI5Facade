@@ -8,6 +8,7 @@ use exface\Core\Interfaces\Actions\ActionInterface;
 use exface\Core\Widgets\Dialog;
 use exface\Core\Widgets\Data;
 use exface\Core\Interfaces\Widgets\iCanEditData;
+use exface\Core\DataTypes\ComparatorDataType;
 
 /**
  * 
@@ -382,7 +383,7 @@ JS;
     {
         return <<<JS
                 function() {
-                    var oPanel = new sap.m.P13nFilterPanel("{$this->getId()}_AdvancedSearchPanel", {
+                    var oPanel = new sap.m.P13nFilterPanel("{$this->getIdOfSearchPanel()}", {
                         title: "{$this->translate('WIDGET.DATATABLE.SETTINGS_DIALOG.ADVANCED_SEARCH')}",
                         visible: true,
                         layoutMode: "Desktop",
@@ -416,6 +417,7 @@ JS;
                     });
 
                     oPanel.setIncludeOperations(["Contains", "EQ", "LT", "LE", "GT", "GE"]);
+                    oPanel.setExcludeOperations(["Contains", "EQ", "LT", "LE", "GT", "GE"]);
                     return oPanel;
                 }(),
 JS;
@@ -568,6 +570,15 @@ JS;
     
     /**
      * 
+     * @return string
+     */
+    public function getIdOfSearchPanel() : string
+    {
+        return $this->getId() . '_AdvancedSearchPanel';
+    }
+    
+    /**
+     * 
      * {@inheritDoc}
      * @see JqueryDataConfiguratorTrait::buildJsDataGetter()
      */
@@ -577,31 +588,50 @@ JS;
             return $this->buildJsDataGetterViaTrait($action, $unrendered);
         }
         
+        $notMap = [];
+        foreach (ComparatorDataType::getValuesStatic() as $comp) {
+            if (ComparatorDataType::isInvertable($comp)) {
+                $notMap[$comp] = ComparatorDataType::invert($comp);
+            }
+        }
+        $notMapJs = json_encode($notMap);
+        
+        $parsers = [];
+        foreach ($this->getWidget()->getDataWidget()->getColumns() as $col) {
+            if (! $col->isFilterable() || ! $col->isBoundToAttribute()) {
+                continue;
+            }
+            $formatter = $this->getFacade()->getDataTypeFormatter($col->getDataType());
+            $parsers[] = "'{$col->getAttributeAlias()}': function(mVal){ return {$formatter->buildJsFormatParser('mVal')} }";
+        }
+        $parsersJs = '{' . implode(",\n", $parsers) . '}';
+        
         return <<<JS
 
 function(){
     var oData = {$this->buildJsDataGetterViaTrait($action)};
-    var aFilters = sap.ui.getCore().byId('{$this->getId()}_AdvancedSearchPanel').getFilterItems();
+    var aFilters = sap.ui.getCore().byId('{$this->getIdOfSearchPanel()}').getFilterItems();
     var i = 0;
+    var fnNot = function(oCondition) {
+        var oNotMap = $notMapJs;
+        oCondition.comparator = oNotMap[oCondition.comparator] || oCondition.comparator;
+        return oCondition;
+    };
+    var aParsers = $parsersJs;
     if (aFilters.length > 0) {
         var includeGroup = {operator: "AND", ignore_empty_values: true, conditions: []};
-        var excludeGroup = {operator: "NAND", ignore_empty_values: true, conditions: []};
         var oComponent = {$this->getController()->buildJsComponentGetter()};
-        var oFilter, oCondition;
-        for (i in aFilters) {
-            oFilter = aFilters[i];
-            oCondition = {
+        aFilters.forEach(function(oFilter){
+            var mVal = oFilter.getValue1();
+            var fnParser = aParsers[oFilter.getColumnKey()];
+            var oCondition = {
                 expression: oFilter.getColumnKey(), 
                 comparator: oComponent.convertConditionOperationToConditionGroupOperator(oFilter.getOperation()), 
-                value: oFilter.getValue1(), 
+                value: (fnParser !== undefined ? fnParser(mVal) : mVal), 
                 object_alias: "{$this->getWidget()->getMetaObject()->getAliasWithNamespace()}"
             };
-            if (oFilter.getExclude() === false) {
-                includeGroup.conditions.push(oCondition);
-            } else {
-                excludeGroup.conditions.push(oCondition);
-            }
-        }
+            includeGroup.conditions.push(oFilter.getExclude() === false ? oCondition : fnNot(oCondition));
+        });
         
         if (oData.filters === undefined) {
             oData.filters = {};
@@ -611,7 +641,6 @@ function(){
             oData.filters.nested_groups = [];
         }
         oData.filters.nested_groups.push(includeGroup);
-        //oData.filters.nested_groups.push(excludeGroup);
     }
     return oData;
 }()
@@ -712,7 +741,7 @@ JS;
                 var oCurrentModel = oDialog.getModel('{$this->getModelNameForConfig()}');
                 
                 // reset advanced search filters
-                sap.ui.getCore().byId('{$this->getId()}_AdvancedSearchPanel').removeAllFilterItems();
+                sap.ui.getCore().byId('{$this->getIdOfSearchPanel()}').removeAllFilterItems();
                 
                 // reset sorters
                 oCurrentModel.setProperty('/sorters', oInitModel.getProperty('/sorters'));

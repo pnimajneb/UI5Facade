@@ -33,7 +33,7 @@ trait UI5ColorClassesTrait {
                 if ($skipSemanticColors === true) {
                     continue;
                 } else {
-                    // TODO
+                    $color = $this->getFacade()->getSemanticColors()[$color];
                 }
             }
             $class = StringDataType::replacePlaceholder($cssSelectorToColor, 'color', trim(trim($color), "#"));

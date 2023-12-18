@@ -115,6 +115,25 @@ JS);
                 }
             }
         }
+        
+        // lookup if only a single suggestion is found if the view is shown or the prefill changes
+        // TODO idea: also do that if widgets bound to that combo as filters change values (similar as above)
+        if ($widget->getAutoSearchSingleSuggestion()) {
+            $jsSearchSingleSuggestion = <<<JS
+            setTimeout(function(){
+                    var oInput = sap.ui.getCore().byId('{$this->getId()}');
+                    var mKey = oInput.getSelectedKey();
+                    if (mKey == undefined || mKey == null || mKey == '') {
+                        oInput.fireSuggest({$this->buildJsFireSuggestParamForSilentKeyLookup('""')});
+                    }
+            },0);
+            
+JS;
+            
+            $this->getController()->addOnShowViewScript($jsSearchSingleSuggestion, false);
+            //TODO should we also look for a single suggestion on prefill change?
+            //$this->getController()->addOnPrefillDataChangedScript($jsSearchSingleSuggestion);
+        }
     }
     
     /**
@@ -316,6 +335,7 @@ JS;
 
 JS;
         }
+        
         
         return <<<JS
 
@@ -891,13 +911,30 @@ JS;
     {
         $widget = $this->getWidget();
         $validJs = '';
+        $delim = $this->getWidget()->getMultiSelectTextDelimiter();
         if ($widget->getAllowNewValues() === false) {
             // check if the vale state is `ERROR` and an actual invalid key is selected, else it could be possible to
             // safe values that are not actually valid
+            // we have to actually do a check if the selected value(s) are valid as they might have change via the
+            // value helper (lookup) dialog
             $validJs .=<<<JS
 var oInput = sap.ui.getCore().byId('{$this->getId()}');
-if(oInput !== undefined && oInput.getValueState() == sap.ui.core.ValueState.Error && oInput._invalidKey === true) {
-    {$onFailJs}
+var oModel, aRows, aSelectedKeys;
+if(oInput !== undefined && oInput.getValueState() == sap.ui.core.ValueState.Error && oInput._invalidKey === true
+    && $valueJs !== undefined && $valueJs !== null && $valueJs !== '') {
+    oModel = oInput.getModel('{$this->getModelNameForAutosuggest()}');
+    aRows = oModel.getData().rows || [];
+    aSelectedKeys = $valueJs.split('{$delim}');    
+    aSelectedKeys.forEach(function(sKey) {
+        aRows.forEach(function(oRow) {
+            // don't compare type strict as the selected key is a string and the
+            // value attribute in the rows might be an integer
+            if (oRow['{$this->getWidget()->getValueAttributeAlias()}'] !== sKey) {
+                {$onFailJs}
+            }
+        })
+    })
+    oInput._invalidKey === false;
 }
 JS;
         }
