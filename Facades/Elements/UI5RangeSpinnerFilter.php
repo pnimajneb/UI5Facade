@@ -18,22 +18,11 @@ class UI5RangeSpinnerFilter extends UI5RangeFilter
     
     protected function buildCssWidthOfStepButton() : string
     {
-        return '18px';
+        return '2rem';
     }
     
     protected function buildCssWidthOfRangeSeparator() : string
     {
         return '1rem';
     }
-    /*
-    public function buildJsConstructor($oControllerJs = 'oController') : string
-    {
-        $inlineGrp = $this->getWidgetInlineGroup();
-        foreach ($inlineGrp->getWidgets() as $w) {
-            if ($w instanceof Button) {
-                $this->getFacade()->getElement($w)->setButtonType('Transparent');
-            }
-        }
-        return parent::buildJsConstructor($oControllerJs);
-    }*/
 }
