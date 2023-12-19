@@ -28,6 +28,13 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 /* make disabled inputs a little more vibrant */
 .sapMInputBaseDisabledWrapper>.sapMInputBaseInner {color: black;}
 
+/* RangeSpinnerFilter */
+.exf-range-spinner > div {margin-right: 0 !important}
+.exf-range-spinner .sapMBtnInner {border: .0625rem solid #89919a}
+.exf-range-spinner > div:first-of-type button {margin-right: -3px}
+.exf-range-spinner > div:last-of-type button {margin-left: -3px;}
+.exf-range-spinner > div:last-of-type {overflow: hidden}
+
 /* sap.m.Table */
 .sapMList.sapMListBGTranslucent.sapMListTblCnt {overflow-x: scroll}
 .sapMTB-Info-CTX .sapMBtnTransparent>.sapMBtnIcon {color: #fff}
