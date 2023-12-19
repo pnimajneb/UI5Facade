@@ -74,9 +74,20 @@ JS;
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsPropertyAlignment()
      */
-    protected function buildJsPropertyAlignment()
+    protected function buildJsPropertyAlignment() : string
     {
-        return $this->alignmentProperty ? 'textAlign: ' . $this->alignmentProperty . ',' : '';
+        if ($this->alignmentProperty === null) {
+            $widgetAlign = $this->getWidget()->getAlign();
+            switch ($widgetAlign) {
+                case EXF_ALIGN_DEFAULT: $align = 'Begin'; break;
+                case EXF_ALIGN_OPPOSITE: $align = 'End'; break;
+                default:
+                    $align = ucfirst($widgetAlign);
+            }
+        } else {
+            $align = $this->alignmentProperty;
+        }
+        return "textAlign: '{$align}',";
     }
     
     /**

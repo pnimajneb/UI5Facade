@@ -153,7 +153,7 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsPropertyAlignment()
+    protected function buildJsPropertyAlignment() : string
     {
         return $this->alignmentProperty ? 'textAlign: ' . $this->alignmentProperty . ',' : '';
     }
