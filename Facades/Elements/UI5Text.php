@@ -87,7 +87,7 @@ JS;
         } else {
             $align = $this->alignmentProperty;
         }
-        return "textAlign: '{$align}',";
+        return "textAlign: {$align},";
     }
     
     /**
