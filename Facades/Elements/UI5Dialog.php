@@ -119,35 +119,43 @@ class UI5Dialog extends UI5Form
             })($oControllerJs);
 JS, false));
         
+        // Add a controller method to close the dialog
         if ($this->isMaximized() === false) {
-            $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
-
-                try { 
+            $closeDialogJs = "sap.ui.getCore().byId('{$this->getFacade()->getElement($widget)->getId()}').close();";
+        } else {
+            $closeDialogJs = "this.navBack(oEvent);";
+        }    
+        $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
+            
+                try {
                     var oViewModel = this.getView().getModel('view');
-                    oViewModel.setProperty('/_prefill/current_data_hash', null); 
-                    oViewModel.setProperty('/_prefill/refresh_needed', false); 
-                    oViewModel.setProperty('/_closed', true);
-                    sap.ui.getCore().byId('{$this->getFacade()->getElement($widget)->getId()}').close(); 
-                } catch (e) { 
-                    console.error('Could not close dialog: ' + e); 
+                    var bCheckChanges = ! (oEvent !== undefined && oEvent.getParameters().bCheckChanges === false);
+                    var bHasChanges;
+                    var fnClose = function(){
+                        oViewModel.setProperty('/_prefill/current_data_hash', null);
+                        oViewModel.setProperty('/_prefill/refresh_needed', false);
+                        oViewModel.setProperty('/_closed', true);
+                        {$closeDialogJs}
+                        {$dialogOpenerBtnEl->buildJsTriggerActionEffects($dialogOpenerAction)}
+                    }.bind(this);
+                    if (bCheckChanges === true) {
+                        bHasChanges = {$this->buildJsHasChanges()};
+                        if (bHasChanges === true) {
+                            this.showWarningAboutUnsavedChanges(fnClose);
+                            return;
+                        }
+                    }
+                } catch (e) {
+                    console.error('Error while closing dialog: ' + e);
                 }
-                {$dialogOpenerBtnEl->buildJsTriggerActionEffects($dialogOpenerAction)}
+                fnClose();
 JS
-            );
+        );
+        
+        // Build the dialog and return its JS constructor
+        if ($this->isMaximized() === false) {
             return $this->buildJsDialog();
         } else {
-            // Controller method to close the dialog
-            $controller->addMethod(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, 'oEvent', <<<JS
-
-                var oViewModel = this.getView().getModel('view');
-                oViewModel.setProperty('/_prefill/current_data_hash', null); 
-                oViewModel.setProperty('/_prefill/refresh_needed', false); 
-                oViewModel.setProperty('/_closed', true);
-                this.onNavBack(oEvent);
-                {$dialogOpenerBtnEl->buildJsTriggerActionEffects($dialogOpenerAction)}
-JS
-            );
-            
             // Controller method to apply height-fix for inner controls with virtual scrolling
             // This piece of JS code will calculate the available vertical space (by subtracting
             // any header height from the total page height) and apply it to the section marked
@@ -156,7 +164,7 @@ JS
             // change a little, so we use setTimeout() to adjust the height again
             if ($this->isObjectPageLayout()) {
                 $controller->addMethod(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', <<<JS
-    
+                    
                     var oPage = sap.ui.getCore().byId('{$this->getid()}');
                     var jqPageCont = $('#{$this->getid()}-cont');
                     var iHeightContent = jqPageCont.outerHeight();
@@ -183,12 +191,12 @@ JS
                         sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}'), function(){
                             {$fixInnerPanelHeightJs}
                         });
-
+                        
                         sap.ui.core.ResizeHandler.register(sap.ui.getCore().byId('{$this->getId()}').getContent()[0]._getHeaderContent(), function(){
                             {$fixInnerPanelHeightJs}
                         });
 JS
-                );
+                            );
             }
             
             if ($this->isObjectPageLayout()) {
@@ -979,9 +987,10 @@ JS;
      * 
      * @return string
      */
-    public function buildJsCloseDialog() : string
+    public function buildJsCloseDialog(bool $checkChanges = true) : string
     {
-        return $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, '') . ';';
+        $checkChangesJs = $checkChanges ? 'true' : 'false';
+        return $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, "(new sap.ui.base.Event('navButtonPress', sap.ui.getCore().byId('{$this->getId()}'), {bCheckChanges: {$checkChangesJs}}))") . ';';
     }
     
     /**
@@ -1064,27 +1073,5 @@ JS;
             return '';
         }
         return parent::buildJsRegisterOnActionPerformed($scriptJs);
-    }
-    
-    /**
-     * 
-     * @return string
-     */
-    protected function buildJsHasChanges() : string
-    {
-        $checks = [];
-        foreach ($this->getWidget()->getInputWidgets() as $w) {
-            $el = $this->getFacade()->getElement($w);
-            if (method_exists($el, 'buildJsHasChanges')) {
-                if ('' !== $check = $el->buildJsHasChanges()) {
-                    $checks[] = $check;
-                }
-            }
-        }
-        if (empty($checks)) {
-            return 'false';
-        }
-        
-        return "(function(){var bChanged = " . implode(' || ', $checks) . "; console.log('Dialog changed {$this->getCaption()}', bChanged); return bChanged;})()";
     }
 }

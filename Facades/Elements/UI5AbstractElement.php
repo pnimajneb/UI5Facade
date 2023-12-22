@@ -782,4 +782,13 @@ JS;
     {
         return false;
     }
+    
+    /**
+     * 
+     * @return string
+     */
+    public function buildJsHasChanges() : string
+    {
+        return 'false';
+    }
 }

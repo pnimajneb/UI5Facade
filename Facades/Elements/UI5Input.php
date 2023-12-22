@@ -380,6 +380,11 @@ JS;
         return $js;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsHasChanges()
+     */
     public function buildJsHasChanges() : string
     {
         $widget = $this->getWidget();

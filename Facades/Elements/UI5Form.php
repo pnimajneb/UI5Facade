@@ -114,4 +114,26 @@ JS;
     {
         return 'exf-form';
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsHasChanges()
+     */
+    public function buildJsHasChanges() : string
+    {
+        $checks = [];
+        foreach ($this->getWidget()->getInputWidgets() as $w) {
+            $el = $this->getFacade()->getElement($w);
+            $check = $el->buildJsHasChanges();
+            if ($check !== '' && $check !== 'false') {
+                $checks[] = $check;
+            }
+        }
+        if (empty($checks)) {
+            return 'false';
+        }
+        
+        return "(function(){var bChanged = " . implode(' || ', $checks) . "; return bChanged;})()";
+    }
 }

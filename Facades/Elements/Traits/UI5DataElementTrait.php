@@ -1184,7 +1184,7 @@ JS;
         $backButton = <<<JS
                                     new sap.m.Button({
                                         icon: "sap-icon://nav-back",
-                                        press: [oController.onNavBack, oController],
+                                        press: [oController.navBack, oController],
                                         type: sap.m.ButtonType.Transparent
                                     }).addStyleClass('exf-page-heading-btn'),
 JS;
@@ -2440,5 +2440,14 @@ JS;
     {
         $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
         return $this->buildJsDataResetter() . ';' . ($this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '') . ';' . $configuratorElement->buildJsResetter();
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    public function buildJsHasChanges() : string
+    {
+        return $this->buildJsEditableChangesChecker("sap.ui.getCore().byId('{$this->getId()}')");
     }
 }

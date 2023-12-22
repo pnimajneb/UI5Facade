@@ -225,4 +225,14 @@ JS;
     {
         return $this->buildJsDataResetter();
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsHasChanges()
+     */
+    public function buildJsHasChanges() : string
+    {
+        return "{$this->buildJsJqueryElement()}[0].exfWidget.hasChanges()";
+    }
 }
