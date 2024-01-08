@@ -101,7 +101,6 @@ class UI5Dialog extends UI5Form
         $controller->addOnInitScript($this->buildJsRegisterOnActionPerformed(<<<JS
 
             (function(oController){
-                var bHasChanges = false;
                 var oCtrl = sap.ui.getCore().byId('{$this->getId()}');
                 var jqCtrl;
                 // Avoid errors if the view/dialog is closed
@@ -130,7 +129,7 @@ JS, false));
                 try {
                     var oViewModel = this.getView().getModel('view');
                     var bCheckChanges = ! (oEvent !== undefined && oEvent.getParameters().bCheckChanges === false);
-                    var bHasChanges;
+                    var aChanges = [];
                     var fnClose = function(){
                         oViewModel.setProperty('/_prefill/current_data_hash', null);
                         oViewModel.setProperty('/_prefill/refresh_needed', false);
@@ -138,9 +137,21 @@ JS, false));
                         {$closeDialogJs}
                         {$dialogOpenerBtnEl->buildJsTriggerActionEffects($dialogOpenerAction)}
                     }.bind(this);
+
+                    // Check for unsaved changes if required.
                     if (bCheckChanges === true) {
-                        bHasChanges = {$this->buildJsHasChanges()};
-                        if (bHasChanges === true) {
+                        aChanges = {$this->buildJsChangesGetter()};
+                        // Ignore changes in invisible controls because the user does not see them!
+                        aChanges = aChanges.filter(function(oChange) {
+                            var oCtrl;
+                            if (! oChange.elementId) return true;
+                            oCtrl = sap.ui.getCore().byId(oChange.elementId);
+                            if (oCtrl && oCtrl.getVisible !== undefined) {
+                                return oCtrl.getVisible();
+                            }
+                            return true;
+                        });
+                        if (aChanges.length > 0) {
                             this.showWarningAboutUnsavedChanges(fnClose);
                             return;
                         }

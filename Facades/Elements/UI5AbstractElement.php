@@ -784,11 +784,25 @@ JS;
     }
     
     /**
+     * Returns a JS snippet that resolves to an array of JSON objects with depicting changed values within this element
+     * 
+     * Structure:
+     * 
+     * ```
+     *  [
+     *      {
+     *          elementId: <id of template element>,
+     *          caption:
+     *          valueOld:
+     *          valueNew:
+     *      }
+     *  ]
+     * ```
      * 
      * @return string
      */
-    public function buildJsHasChanges() : string
+    public function buildJsChangesGetter() : string
     {
-        return 'false';
+        return '[]';
     }
 }

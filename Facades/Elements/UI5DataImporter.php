@@ -229,10 +229,10 @@ JS;
     /**
      *
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsHasChanges()
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsChangesGetter()
      */
-    public function buildJsHasChanges() : string
+    public function buildJsChangesGetter() : string
     {
-        return "{$this->buildJsJqueryElement()}[0].exfWidget.hasChanges()";
+        return "({$this->buildJsJqueryElement()}[0].exfWidget.hasChanges() ? [{elementId: '{$this->getId()}', caption: {$this->escapeString($this->getCaption())}}] : [])";
     }
 }

@@ -118,22 +118,22 @@ JS;
     /**
      * 
      * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsHasChanges()
+     * @see \exface\UI5Facade\Facades\Elements\UI5Container::buildJsChangesGetter()
      */
-    public function buildJsHasChanges() : string
+    public function buildJsChangesGetter() : string
     {
         $checks = [];
         foreach ($this->getWidget()->getInputWidgets() as $w) {
             $el = $this->getFacade()->getElement($w);
-            $check = $el->buildJsHasChanges();
-            if ($check !== '' && $check !== 'false') {
+            $check = $el->buildJsChangesGetter();
+            if ($check !== '' && $check !== '[]') {
                 $checks[] = $check;
             }
         }
         if (empty($checks)) {
-            return 'false';
+            return '[]';
         }
         
-        return "(function(){var bChanged = " . implode(' || ', $checks) . "; return bChanged;})()";
+        return "([]).concat(\n" . implode(",\n", $checks) . "\n)";
     }
 }
