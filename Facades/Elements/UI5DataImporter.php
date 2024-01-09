@@ -115,22 +115,48 @@ JS;
     }
     
     /**
-     * 
+     * @see UI5DataSpreadSheet::buildJsFixOverflowVisibility()
      * @return string
      */
     protected function buildJsFixOverflowVisibility() : string
     {
         return <<<JS
-
-                        var aParents = {$this->buildJsJqueryElement()}.parents();
-                        for (var i = 0; i < aParents.length; i++) {
-                            var jqParent = $(aParents[i]);
-                            if (jqParent.hasClass('sapUiRespGrid ') === true) {
-                                break;
-                            }
-                            $(jqParent).css('overflow', 'visible');
-                        }
-
+                        (function() {
+                            var jExcel = {$this->buildJsJqueryElement()}[0].exfWidget.getJExcel();
+                            var fnOnEditStart = jExcel.options.oneditionstart;
+                            var fnOnEditEnd = jExcel.options.oneditionend;
+                            
+                            jExcel.options.oneditionstart = function(el, domCell, x, y){
+                                var jqCell = $(domCell);
+                                // The dropdown is not instantiated yet! There is just the cell
+                                if (jqCell.hasClass('jexcel_dropdown')) {
+                                    setTimeout(function(){
+                                        // Now the dropdown is here
+                                        var jqExcel = {$this->buildJsJqueryElement()};
+                                        var jqScroller = jqExcel.parents('.sapMPanelContent').first();
+                                        var jqDD = jqCell.find('.jdropdown-container');
+                                        var oPosCellInit = jqCell.offset();
+                                        var oPosDDInit = jqDD.offset();
+                                        jqDD.css('position', 'fixed');
+                                        oPos = jqCell.offset();
+                                        jqScroller.on('scroll', function(oEvent) {
+                                            var oPosCellCur = jqCell.offset();
+                                            var iScrollTop = oPosCellCur.top - oPosCellInit.top;
+                                            var iScrollLeft = oPosCellCur.left - oPosCellInit.left;
+                                            jqDD.offset({
+                                                top: oPosDDInit.top + iScrollTop,
+                                                left: oPosDDInit.left + iScrollLeft
+                                            });
+                                        });
+                                    }, 0);
+                                }
+                                
+                                if (fnOnEditStart) {
+                                    fnOnEditStart(el, domCell, x, y);
+                                }
+                            };
+                        })();
+                        
 JS;
     }
     
