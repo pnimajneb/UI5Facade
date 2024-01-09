@@ -53,13 +53,11 @@ JS;
         $toolbar = $toolbar ?? $this->buildJsToolbar($oControllerJs);
         $hDim = $this->getWidget()->getHeight();
         if (! $hDim->isUndefined()) {
-            $height = $this->getHeight();
-        } else {
-            $height = $this->buildCssHeightDefaultValue();
-        }
+            $height = "height: '{$this->getHeight()}',";
+        } 
         return <<<JS
         new sap.m.Panel({
-            height: "$height",
+            $height
             headerToolbar: [
                 {$toolbar}.addStyleClass("sapMTBHeader-CTX")
             ],
@@ -70,6 +68,8 @@ JS;
         
 JS;
     }
+    
+    
     
     /**
      * 
