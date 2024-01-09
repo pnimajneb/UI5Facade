@@ -1,21 +1,22 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JExcelTrait;
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
-use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
 use exface\Core\Interfaces\Actions\ActionInterface;
+use exface\UI5Facade\Facades\Elements\Traits\UI5JExcelTrait;
 
 class UI5DataSpreadSheet extends UI5AbstractElement implements UI5DataElementInterface
 {    
-    use JExcelTrait;
+    use UI5JExcelTrait;
     use UI5DataElementTrait {
         UI5DataElementTrait::buildJsDataResetter as buildJsDataResetterViaTrait;
         UI5DataElementTrait::buildJsDataLoaderOnLoaded as buildJsDataLoaderOnLoadedViaTrait;
-        JExcelTrait::buildJsDataResetter as buildJsJExcelResetter;
-        JExcelTrait::buildJsDataGetter as buildJsJExcelDataGetter;
-        JExcelTrait::buildJsValueGetter insteadof UI5DataElementTrait;
+        UI5JExcelTrait::buildJsDataResetter as buildJsJExcelResetter;
+        UI5JExcelTrait::buildJsDataGetter as buildJsJExcelDataGetter;
+        UI5JExcelTrait::buildJsValueGetter insteadof UI5DataElementTrait;
+        UI5JExcelTrait::registerExternalModules insteadof UI5DataElementTrait;
+        UI5JExcelTrait::buildJsChangesGetter insteadof UI5DataElementTrait;
     }
     
     /**
@@ -30,10 +31,7 @@ class UI5DataSpreadSheet extends UI5AbstractElement implements UI5DataElementInt
         $this->registerReferencesAtLinkedElements();
         
         $controller = $this->getController();
-        $controller->addOnDefineScript($this->buildJsFixJqueryImportUseStrict());
-        
-        $controller->addMethod('onFixedFooterSpread', $this, '', $this->buildJsFixedFootersSpreadFunctionBody());
-        
+        $this->registerControllerMethods($controller);
         $this->registerExternalModules($controller);
         
         $table = <<<JS
@@ -54,71 +52,6 @@ JS;
     }
     
     /**
-     * Dropdowns from jExcel are cut off by the border of the containing UI5 control sometimes
-     * because that UI5 control has overflow:hidden at some point. This code fixes this.
-     * 
-     * Every time a dropdown is opened, the corresponding menu gets the css property `position:fixed`.
-     * This nails down the current position relative to the viewport. Thus, the menu is not bound by
-     * the encoling DOM elements anymore and is displayed above them. 
-     * 
-     * However, if the spreadsheet is scrollable, the menu does not scroll with it. This is done
-     * explicitly by recalculating the menus offset on scroll events.
-     * 
-     * The idea was taken from https://medium.com/@thomas.ryu/css-overriding-the-parents-overflow-hidden-90c75a0e7296
-     * 
-     * @return string
-     */
-    protected function buildJsFixOverflowVisibility() : string
-    {
-        return <<<JS
-                        (function() {
-                            var jExcel = {$this->buildJsJqueryElement()}[0].exfWidget.getJExcel();
-                            var fnOnEditStart = jExcel.options.oneditionstart;
-                            var fnOnEditEnd = jExcel.options.oneditionend;
-
-                            jExcel.options.oneditionstart = function(el, domCell, x, y){
-                                var jqCell = $(domCell);
-                                // The dropdown is not instantiated yet! There is just the cell
-                                if (jqCell.hasClass('jexcel_dropdown')) {                                    
-                                    setTimeout(function(){
-                                        // Now the dropdown is here 
-                                        var jqExcel = {$this->buildJsJqueryElement()};
-                                        var jqScroller = jqExcel.parents('.sapMPanelContent').first();
-                                        var jqDD = jqCell.find('.jdropdown-container');
-                                        var oPosCellInit = jqCell.offset();
-                                        var oPosDDInit = jqDD.offset();
-                                        jqDD.css('position', 'fixed');
-                                        oPos = jqCell.offset();
-                                        jqScroller.on('scroll', function(oEvent) {
-                                            var oPosCellCur = jqCell.offset();
-                                            var iScrollTop = oPosCellCur.top - oPosCellInit.top;
-                                            var iScrollLeft = oPosCellCur.left - oPosCellInit.left;
-                                            jqDD.offset({
-                                                top: oPosDDInit.top + iScrollTop,
-                                                left: oPosDDInit.left + iScrollLeft
-                                            });
-                                        });
-                                    }, 0);
-                                }
-
-                                if (fnOnEditStart) {
-                                    fnOnEditStart(el, domCell, x, y);
-                                }
-                            };
-                        })();
-
-JS;
-    }
-    
-    /**
-     * @see JExcelTrait::buildJsJqueryElement()
-     */
-    protected function buildJsJqueryElement() : string
-    {
-        return "$('#{$this->getId()}_jexcel')";
-    }
-    
-    /**
      *
      * {@inheritdoc}
      * @see UI5DataElementTrait::buildJsDataLoaderOnLoaded()
@@ -131,43 +64,6 @@ JS;
         {$this->buildJsFooterRefresh('oModel.getData()', $this->buildJsJqueryElement())}
 
 JS;
-    }
-    
-    /**
-     * 
-     * @return string
-     */
-    protected function buildJsFixedFootersSpread() : string
-    {
-        return $this->getController()->buildJsMethodCallFromController('onFixedFooterSpread', $this, '');
-    }
-    
-    /**
-     *
-     * @return array
-     */
-    protected function getJsIncludes() : array
-    {
-        $htmlTagsArray = $this->buildHtmlHeadTagsForJExcel();
-        $tags = implode('', $htmlTagsArray);
-        $jsTags = [];
-        preg_match_all('#<script[^>]*src="([^"]*)"[^>]*></script>#is', $tags, $jsTags);
-        return $jsTags[1];
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerExternalModules()
-     */
-    public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
-    {
-        $controller->addExternalModule('exface.openui5.jexcel', $this->getFacade()->buildUrlToSource("LIBS.JEXCEL.JS"), null, 'jexcel');
-        $controller->addExternalCss($this->getFacade()->buildUrlToSource('LIBS.JEXCEL.CSS'));
-        $controller->addExternalModule('exface.openui5.jsuites', $this->getFacade()->buildUrlToSource("LIBS.JEXCEL.JS_JSUITES"), null, 'jsuites');
-        $controller->addExternalCss($this->getFacade()->buildUrlToSource('LIBS.JEXCEL.CSS_JSUITES'));
-        
-        return $this;
     }
     
     /**
@@ -197,34 +93,6 @@ JS;
     protected function buildJsDataResetter() : string
     {
         return $this->buildJsDataResetterViaTrait() . ';' . $this->buildJsJExcelResetter();
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsBusyIconShow()
-     */
-    public function buildJsBusyIconShow($global = false)
-    {
-        if ($global) {
-            return parent::buildJsBusyIconShow($global);
-        } else {
-            return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusyIndicatorDelay(0).setBusy(true);';
-        }
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsBusyIconHide()
-     */
-    public function buildJsBusyIconHide($global = false)
-    {
-        if ($global) {
-            return parent::buildJsBusyIconHide($global);
-        } else {
-            return 'sap.ui.getCore().byId("' . $this->getId() . '").getParent().setBusy(false);';
-        }
     }
     
     /**
@@ -260,15 +128,6 @@ JS;
     }
     
     /**
-     * 
-     * @see JExcelTrait::buildJsCheckHidden()
-     */
-    protected function buildJsCheckHidden(string $jqElement) : string
-    {
-        return "($jqElement.parents().filter('.sapUiHidden').length > 0)";
-    }
-    
-    /**
      *
      * {@inheritDoc}
      * @see JExcelTrait::buildJsDataGetter()
@@ -286,15 +145,5 @@ JS;
             return ({$this->buildJsJExcelDataGetter($action)});
         }())
 JS;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsChangesGetter()
-     */
-    public function buildJsChangesGetter() : string
-    {
-        return "({$this->buildJsJqueryElement()}[0].exfWidget.hasChanges() ? [{elementId: '{$this->getId()}', caption: {$this->escapeString($this->getCaption())}}] : [])";
     }
 }
