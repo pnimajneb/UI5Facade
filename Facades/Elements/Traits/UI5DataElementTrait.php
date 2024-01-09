@@ -2456,7 +2456,7 @@ JS;
                 }
                 return [
                     {
-                        elementId: '{$this->getId()}'
+                        elementId: '{$this->getId()}',
                         caption: {$this->escapeString($this->getCaption())}
                     }
                 ];
