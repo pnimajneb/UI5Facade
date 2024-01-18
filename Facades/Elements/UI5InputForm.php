@@ -33,6 +33,17 @@ class UI5InputForm extends UI5Input
         
         $this->registerExternalModules($controller);
         
+        // Update the survey every time the value in the UI5 model changes.
+        // Also update the UI5 model every time the answer to a survey question changes. Note,
+        // that this doesnot seem to trigger a binding change, so there will be no recursion
+        $this->addOnChangeScript(<<<JS
+            
+                    (function(oHtml) {
+                        var oCurrentValue = {$this->buildJsValueGetter()};
+                        oHtml.getModel().setProperty('{$this->getValueBindingPath()}', oCurrentValue);
+                    })(sap.ui.getCore().byId("{$this->getId()}"))
+JS);
+        
         return <<<JS
 
         new sap.ui.core.HTML("{$this->getId()}", {
