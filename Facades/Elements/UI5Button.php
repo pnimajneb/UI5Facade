@@ -16,6 +16,7 @@ use exface\Core\Actions\SendToWidget;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\Factories\UiPageFactory;
 use exface\UI5Facade\Facades\UI5Facade;
+use exface\Core\Interfaces\Actions\iCallWidgetFunction;
 
 /**
  * Generates sap.m.Button for Button widgets.
@@ -539,10 +540,23 @@ JS;
         return $output;
     }
     
-    protected function buildJsCloseDialog(bool $checkChanges = true) : string
+    protected function buildJsCloseDialog(bool $checkChanges = null) : string
     {
         $widget = $this->getWidget();
         if (($widget instanceof DialogButton) && $widget->getCloseDialogAfterActionSucceeds()) {
+            if ($checkChanges === null) {
+                $action = $widget->getAction();
+                switch (true) {
+                    case $action instanceof SendToWidget:
+                    case $action instanceof iCallWidgetFunction:
+                    case $action instanceof iRunFacadeScript: 
+                        $checkChanges = false; 
+                        break;
+                    default: 
+                        $checkChanges = true; 
+                        break;
+                }
+            }
             return $this->getFacade()->getElement($widget->getDialog())->buildJsCloseDialog($checkChanges);
         }
         return "";
