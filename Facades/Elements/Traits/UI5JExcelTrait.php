@@ -152,6 +152,9 @@ trait UI5JExcelTrait {
                                         var jqDC = jqCell.find('.jdropdown-container');
                                         var oPosCellInit = jqCell.offset();
                                         var oPosDCInit = jqDC.offset();
+                                        if (oPosCellInit === undefined || oPosDCInit === undefined) {
+                                            return;
+                                        }
                                         var fnFixPosition = function() {
                                             var oPosCellCur = jqCell.offset();
                                             var iViewTop = jqScroller.offset().top;
