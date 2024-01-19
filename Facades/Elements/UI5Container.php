@@ -25,6 +25,10 @@ class UI5Container extends UI5AbstractElement
      */
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
+        if ($this->getWidget()->isDisabled()) {
+            $this->getController()->addOnShowViewScript($this->buildJsSetDisabled(true), false);
+        }
+        
         $js = $this->buildJsPanelWrapper($this->buildJsChildrenConstructors());
         
         if ($this->hasPageWrapper() === true) {
@@ -251,5 +255,22 @@ JS;
         }
         
         return "([]).concat(\n" . implode(",\n", $checks) . "\n)";
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerConditionalProperties()
+     */
+    public function registerConditionalProperties() : UI5AbstractElement
+    {
+        parent::registerConditionalProperties();
+        
+        // If the entire container is disable, call the disabler of all inner elements here
+        if ($this->getWidget()->isDisabled()) {
+            $this->getController()->addOnShowViewScript($this->buildJsSetDisabled(true), false);
+        }
+        
+        return $this;
     }
 }
