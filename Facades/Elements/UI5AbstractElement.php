@@ -805,4 +805,14 @@ JS;
     {
         return '[]';
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface::buildJsCheckInitialized()
+     */
+    public function buildJsCheckInitialized() : string
+    {
+        return "(sap.ui.getCore().byId('{$this->getId()}') !== undefined)";
+    }
 }
