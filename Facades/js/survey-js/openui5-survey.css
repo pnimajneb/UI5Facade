@@ -107,6 +107,7 @@
 }
 
 /* Booleans, sliders */
+.sv_q_text_root[aria-invalid="true"] {border: 0.125rem solid #b00!important;}
 .sv_main.sv_main .sv-boolean__switch {background-color: #ebf5fe; border: 1px solid #89919a; padding-top: 1px}
 .sv_main.sv_main .sv-boolean__slider {background-color: #0854a0;}
 .sv-boolean__switch {
@@ -130,10 +131,6 @@
 .sv-boolean--disabled {cursor: default!important;}
 .sv-boolean--disabled .sv-boolean__label {cursor: default!important;}
 .sv-boolean--disabled .sv-boolean__switch{opacity: 40%;cursor: default!important;}
-
-.sv_q_text_root[aria-invalid="true"] {
-    border: 0.125rem solid #b00!important;
-}
 
 [aria-invalid="true"] .sv-boolean__switch  {
     border: 0.125rem solid #b00!important;
