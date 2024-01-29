@@ -98,6 +98,7 @@ JS;
             classes.headerLeft += ' sapUiRespGridSpanXL5 sapUiRespGridSpanL4 sapUiRespGridSpanM4 sapUiRespGridSpanS12';
         }
     });
+    window['{$this->getId()}'] = $oSurveyJs; 
 
 JS;
     }
@@ -109,8 +110,16 @@ JS;
      */
     public function buildJsValidator(?string $valJs = null) : string
     {
-        // TODO
-        return "true";
+        if (!$this->getWidget()->isRequired())
+            return 'true';
+
+        return <<<JS
+        (function(){
+            const oSurvey = window?.['{$this->getId()}']; 
+            const res = oSurvey?.validate();
+            return res;
+        })()
+        JS;
     }
     
     /**
