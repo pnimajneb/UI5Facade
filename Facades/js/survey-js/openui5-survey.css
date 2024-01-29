@@ -131,6 +131,28 @@
 .sv-boolean--disabled .sv-boolean__label {cursor: default!important;}
 .sv-boolean--disabled .sv-boolean__switch{opacity: 40%;cursor: default!important;}
 
+.sv_q_text_root[aria-invalid="true"] {
+    border: 0.125rem solid #b00!important;
+}
+
+[aria-invalid="true"] .sv-boolean__switch  {
+    border: 0.125rem solid #b00!important;
+    background-color: #ffebeb!important;
+}
+
+/* Error box */
+.sv_qstn_error_bottom{margin-top: 0!important;}
+.sv_qstn_error_top{margin-bottom: 0!important;}
+.sv_q_erbox {
+    background-color: #ffebeb!important;
+    color: #32363a!important;
+    font-size: .75rem!important;
+    font-family: "72","72full",Arial,Helvetica,sans-serif!important;
+    border: none!important;
+    padding: 0.3rem 0.625rem!important;
+    width: fit-content!important;
+}
+
 /* Dynamic matrix */
 /* Add-button */
 .sv_main .sv_p_root .sv_q .sv_q_footer {
