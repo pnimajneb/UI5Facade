@@ -127,7 +127,8 @@ JS;
         return <<<JS
         
                     formatOptions: {
-                        dateFormat: '{$this->getDisplayFormat()}'
+                        dateFormat: '{$this->getDisplayFormat()}',
+                        valueFormat: '{$this->buildJsValueFormat()}'
                     },
 JS;
         
