@@ -336,7 +336,7 @@ JS;
             $revalidateJs = <<<JS
 
     sap.ui.getCore().byId('{$this->getId()}').setValueStateText($invalidText)           
-    if(! {$this->buildJsValidator()} ) {
+    if(! {$validator} ) {
         {$this->buildJsValidationError()};
     } else {
         sap.ui.getCore().byId('{$this->getId()}').setValueState('None');
