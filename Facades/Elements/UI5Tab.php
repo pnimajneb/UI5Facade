@@ -4,6 +4,18 @@ namespace exface\UI5Facade\Facades\Elements;
 use exface\Core\Widgets\Dialog;
 
 /**
+ * Renders a sap.m.IconTabFilter or a sap.uxap.ObjectPageSection for a Tab widget
+ * 
+ * The Tab may be represented by two different controls in UI5 depending on its position
+ * in the page structure: 
+ * 
+ * - Dialogs with Tabs are rendered as `sap.uxap.ObjectPage` where each Tab is a `sap.uxap.ObjectPageSection`.
+ * In this case, the Tab is actually rendered by the UI5Dialog class and this class only has
+ * some supporting logic. This might be a little misleading, but the ObjectPageLayout is very
+ * complex and was thought to be better placed in a single class.
+ * - All other Tabs are rendered an `sap.m.IconTabBar` where each Tab is an `sap.m.IconTabFilter`.
+ * This is done entirely by this class.
+ * 
  * @method \exface\Core\Widgets\Tab getWidget()
  * 
  * @author andrej.kabachnik
