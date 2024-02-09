@@ -20,7 +20,7 @@ class UI5DataTree extends UI5DataTable
      */
     protected function buildJsConstructorForControl($oControllerJs = 'oController') : string
     {
-        return $this->buildJsConstructorForTreeTable($oControllerJs);
+        return $this->buildJsPanelWrapper($this->buildJsConstructorForTreeTable($oControllerJs), $oControllerJs);
     }
     
     /**
@@ -129,7 +129,7 @@ JS;
         return parent::buildJsDataLoaderOnLoaded($oModelJs) . <<<JS
 
                 var oDataTree = {$this->buildJsTransformToTree($oModelJs . '.getData()')};
-                {$oModelJs}.setData(oDataTree);
+                {$oModelJs}.setData(oDataTree); console.log('loaded');
                 {$treeModeJs}
 
 JS;
