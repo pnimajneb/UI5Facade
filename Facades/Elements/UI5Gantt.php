@@ -15,7 +15,7 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
  * @author Andrej Kabachnik
  *
  */
-class UI5Gantt extends UI5DataTable
+class UI5Gantt extends UI5DataTree
 {
     use JsValueScaleTrait;
     use UI5ColorClassesTrait;
@@ -31,8 +31,6 @@ class UI5Gantt extends UI5DataTable
      */
     public function buildJsConstructorForControl($oControllerJs = 'oController') : string
     {
-        $controller = $this->getController();
-        $this->initConfiguratorControl($controller);
         $widget = $this->getWidget();
         $calItem = $widget->getTasksConfig();
         
@@ -40,63 +38,11 @@ class UI5Gantt extends UI5DataTable
             $this->registerColorClasses($calItem->getColorScale());
         }
         
-        $selection_mode = $widget->getMultiSelect() ? 'sap.ui.table.SelectionMode.MultiToggle' : 'sap.ui.table.SelectionMode.Single';
-        $selection_behavior = $widget->getMultiSelect() ? 'sap.ui.table.SelectionBehavior.Row' : 'sap.ui.table.SelectionBehavior.RowOnly';
-        
-        if ($widget->getTreeExpandedLevels() !== null) {
-            $numberOfExpandedLevelsJs = "numberOfExpandedLevels: {$widget->getTreeExpandedLevels()},";
-        } else {
-            $numberOfExpandedLevelsJs = "";
-        }
-        
         $gantt = <<<JS
         new sap.ui.layout.Splitter({
+            {$this->buildJsProperties()}
             contentAreas: [
-                new sap.ui.table.TreeTable('{$this->getId()}', {
-                    columnHeaderHeight: 52,
-                    rows: {
-                        path:'/rows', 
-                        parameters: {
-                            arrayNames: [
-                                '_children'
-                            ],
-                            {$numberOfExpandedLevelsJs}
-                        }
-                    },
-                    selectionMode: {$selection_mode},
-    		        selectionBehavior: {$selection_behavior},
-            		columns: [
-            			{$this->buildJsColumnsForUiTable()}
-            		],
-                    noData: [
-                        new sap.m.FlexBox({
-                            height: "100%",
-                            width: "100%",
-                            justifyContent: "Center",
-                            alignItems: "Center",
-                            items: [
-                                new sap.m.Text("{$this->getId()}_noData", {text: "{$this->getWidget()->getEmptyText()}"})
-                            ]
-                        })
-                    ],
-                    toggleOpenState: function(oEvent) {
-                        var oTable = oEvent.getSource();
-                        setTimeout(function(){
-                            {$this->buildJsSyncTreeToGantt('oTable')};
-                        },10);
-                    },
-                    firstVisibleRowChanged: function(oEvent) {
-                        var oTable = oEvent.getSource();
-                        var domGanttContainer = $('#{$this->getId()}_gantt .gantt-container')[0];
-                        var iScrollLeft = domGanttContainer.scrollLeft;
-                        setTimeout(function(){
-                            {$this->buildJsSyncTreeToGantt('oTable')};
-                            domGanttContainer.scrollTo(iScrollLeft, 0);
-                        },10);
-                    }
-                })
-                {$this->buildJsClickHandlers('oController')}
-                {$this->buildJsPseudoEventHandlers()}
+                {$this->buildJsConstructorForTreeTable($oControllerJs)}
                 ,
                 new sap.ui.core.HTML("{$this->getId()}_wrapper", {
                     content: "<div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
@@ -131,11 +77,63 @@ JS;
         return $this->buildJsPanelWrapper($gantt, $oControllerJs) . ".addStyleClass('sapUiNoContentPadding')";
     }
     
+    /**
+     *
+     * @return string
+     */
+    protected function buildJsPropertyColumnHeight() : string
+    {
+        return 'columnHeaderHeight: 52,';
+    }
+    
+    /**
+     *
+     * @param string $oEventJs
+     * @return string
+     */
+    protected function buildJsOnOpenScript(string $oEventJs) : string
+    {
+        return <<<JS
+
+                var oTable = oEvent.getSource();
+                setTimeout(function(){
+                    {$this->buildJsSyncTreeToGantt('oTable')};
+                },10);
+JS;
+    }
+    
+    /**
+     *
+     * @param string $oEventJs
+     * @return string
+     */
+    protected function buildJsOnCloseScript(string $oEventJs) : string
+    {
+        return <<<JS
+        
+                var oTable = oEvent.getSource();
+                var domGanttContainer = $('#{$this->getId()}_gantt .gantt-container')[0];
+                var iScrollLeft = domGanttContainer.scrollLeft;
+                setTimeout(function(){
+                    {$this->buildJsSyncTreeToGantt('oTable')};
+                    domGanttContainer.scrollTo(iScrollLeft, 0);
+                },10);
+JS;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsGanttGetInstance() : string
     {
         return $this->getController()->buildJsDependentObjectGetter('gantt', $this);
     }
 		
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsGanttInit() : string
     {
         $widget = $this->getWidget();
@@ -226,134 +224,6 @@ JS;
     	}
     });
 })();
-
-JS;
-    }
-    
-    /**
-     * 
-     * @param string $oModelJs
-     * @return string
-     */
-    protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
-    {    
-        if (! $this->getWidget()->getTreeParentRelationAlias()) {
-            $treeModeJs = "sap.ui.getCore().byId('{$this->getId()}').setUseFlatMode(true);";
-        } else {
-            $treeModeJs = '';
-        }
-        return parent::buildJsDataLoaderOnLoaded($oModelJs) . <<<JS
-
-                var oDataTree = {$this->buildJsTransformToTree($oModelJs . '.getData()')};
-                {$oModelJs}.setData(oDataTree);
-                {$treeModeJs}
-
-JS;
-    }
-    
-    /**
-     * 
-     * @param string $oControlJs
-     * @return string
-     */
-    protected function buildJsGetRowsAll(string $oControlJs) : string
-    {
-        // NOTE: oTable.getModel().getData() returns only the top level rows, but .getJSON() yields
-        // all. This is why the JSON parsing became neccessary
-        return "({$this->buildJsTransformFromTree("JSON.parse({$oControlJs}.getModel().getJSON()")}).rows || [])";
-    }
-    
-    /**
-     * 
-     * @param string $oDataJs
-     * @return string
-     */
-    protected function buildJsTransformFromTree(string $oDataJs) : string
-    {
-        return <<<JS
-        
-                (function(oDataTree) {
-                    var oDataFlat = $.extend({}, oDataTree);
-                    var fnFlatten = function(aRows) {
-                        var aFlat = [];
-                        aRows.forEach(function(oRow) {
-                            aFlat.push(oRow);
-                            if (Array.isArray(oRow._children) && oRow._children.length > 0) {
-                                aFlat.push(...fnFlatten(oRow._children));
-                            }
-                            delete oRow._children;
-                        });
-                        return aFlat;
-                    };
-                    oDataFlat.rows = fnFlatten(oDataTree.rows || []);                  
-                    return oDataFlat;
-                })($oDataJs)
-                
-JS;
-    }
-    
-    /**
-     * 
-     * @param string $oDataJs
-     * @return string
-     */
-    protected function buildJsTransformToTree(string $oDataJs) : string
-    {
-        $cleanupJs = '';
-        $widget = $this->getWidget();
-        
-        // remove rows without children in oDataTree.rows if $folderFlagAlias is set to 1
-        if (null !== $folderFlagAlias = $widget->getTreeFolderFlagAttributeAlias()) {
-            $cleanupJs = <<<JS
-
-                    for (let i = oDataTree.rows.length - 1; i >= 0; i--) {
-                        (function(oItem, iIndex, aArr) {
-                            if (oItem['{$folderFlagAlias}'] === 1 && oItem['_children'].length === 0) {
-                                aArr.splice(iIndex, 1);
-                            }
-                         })(oDataTree.rows[i], i, oDataTree.rows);
-                    }  
-JS;
-        }
-        
-        return <<<JS
-
-                (function(oDataFlat) {
-                    var oDataTree = $.extend({}, oDataFlat);
-                    var sParentCol = '{$widget->getTreeParentRelationAlias()}';
-
-                    function list_to_tree(list) {
-                      var map = {}, node, roots = [], i;
-                      
-                      for (i = 0; i < list.length; i += 1) {
-                        map[list[i].id] = i; // initialize the map
-                        list[i]._children = []; // initialize the children
-                      }
-                      
-                      for (i = 0; i < list.length; i += 1) {
-                        node = list[i];
-                        // Check, if parent node exists and place the node in its _children array
-                        // Nodes with non-existent parents will be the roots
-                        if (node[sParentCol] !== '' && node[sParentCol] !== null && map[node[sParentCol]] !== undefined) {
-                            list[map[node[sParentCol]]]._children.push(node);
-                        } else {
-                            roots.push(node);
-                        }
-                      }
-                      return roots;
-                    }
-                    if (sParentCol !== '') {
-                        oDataTree.rows = list_to_tree(oDataFlat.rows);
-                    } else {
-                        for (var i = 0; i < oDataTree.rows.length; i++) {
-                            oDataTree.rows[i]._children = [];
-                        }
-                    }
-
-                    $cleanupJs
-                    
-                    return oDataTree;
-                })($oDataJs)
 
 JS;
     }
@@ -479,36 +349,6 @@ JS;
     protected function buildJsDataResetter() : string
     {
         return parent::buildJsDataResetter() . "; sap.ui.getCore().byId('{$this->getId()}').data('_exfStartDate', {$this->escapeString($this->getWidget()->getStartDate())});";
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isUiTable()
-     */
-    protected function isUiTable() : bool
-    {
-        return true;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isMTable()
-     */
-    protected function isMTable() : bool
-    {
-        return false;
-    }
-    
-    /**
-     * TODO For some reason, transforming model data to tree did not work when there was a dirty-column
-     * 
-     * @return bool
-     */
-    protected function hasDirtyColumn() : bool
-    {
-        return false;
     }
     
     /**
