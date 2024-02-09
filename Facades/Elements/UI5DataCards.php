@@ -1,8 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\Display;
-
 class UI5DataCards extends UI5DataTable
 {
     /**
