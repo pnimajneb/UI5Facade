@@ -3,6 +3,7 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * 
@@ -129,7 +130,7 @@ JS;
         return parent::buildJsDataLoaderOnLoaded($oModelJs) . <<<JS
 
                 var oDataTree = {$this->buildJsTransformToTree($oModelJs . '.getData()')};
-                {$oModelJs}.setData(oDataTree); console.log('loaded');
+                {$oModelJs}.setData(oDataTree); 
                 {$treeModeJs}
 
 JS;
@@ -200,17 +201,22 @@ JS;
 JS;
         }
         
+        if (! $widget->hasUidColumn()) {
+            throw new FacadeRuntimeError('Cannot render DataTree in UI5 if data has no UID column!');
+        }
+        
         return <<<JS
 
                 (function(oDataFlat) {
                     var oDataTree = $.extend({}, oDataFlat);
                     var sParentCol = '{$widget->getTreeParentRelationAlias()}';
+                    var sUidCol = '{$widget->getUidColumn()->getDataColumnName()}';
 
                     function list_to_tree(list) {
                       var map = {}, node, roots = [], i;
                       
                       for (i = 0; i < list.length; i += 1) {
-                        map[list[i].id] = i; // initialize the map
+                        map[list[i][sUidCol]] = i; // initialize the map
                         list[i]._children = []; // initialize the children
                       }
                       
