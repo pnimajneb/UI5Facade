@@ -3,9 +3,14 @@ namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Widgets\Dialog;
 
+/**
+ * @method \exface\Core\Widgets\Tab getWidget()
+ * 
+ * @author andrej.kabachnik
+ *
+ */
 class UI5Tab extends UI5Panel
 {
-    
     /**
      * 
      * {@inheritDoc}
@@ -19,12 +24,30 @@ class UI5Tab extends UI5Panel
     
     /**
      * 
+     * @return bool
+     */
+    protected function isObjectPageSection() : bool
+    {
+        $tabsWidget = $this->getWidget()->getTabs();
+        if ($tabsWidget->hasParent() && ($tabsWidget->getParent() instanceof Dialog)) {
+            /* @var $dialogEl UI5Dialog */
+            $dialogEl = $this->getFacade()->getElement($tabsWidget->getParent());
+            if ($dialogEl->isObjectPageLayout() === true) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    /**
+     * 
      * @return string
      */
     protected function buildJsIconTabFilter()
     {
         $caption = json_encode($this->getCaption());
         return <<<JS
+
     new sap.m.IconTabFilter("{$this->getId()}", {
         text: {$caption},
         content: [
@@ -78,11 +101,9 @@ JS;
             return '';
         }
         $widget = $this->getWidget();
-        if ($widget->getTabs()->hasParent() && ($parent = $widget->getTabs()->getParent()) instanceof Dialog) {
-            $dialogEl = $this->getFacade()->getElement($parent);
-            if ($dialogEl->isObjectPageLayout()) {
-                return "sap.ui.getCore().byId('{$dialogEl->getIdOfObjectPageLayout()}').setSelectedSection('{$this->getId()}')";
-            }
+        if ($this->isObjectPageSection()) {
+            $dialogEl = $this->getFacade()->getElement($widget->getTabs()->getParent());
+            return "sap.ui.getCore().byId('{$dialogEl->getIdOfObjectPageLayout()}').setSelectedSection('{$this->getId()}')";
         }
         return "sap.ui.getCore().byId('{$this->getFacade()->getElement($widget->getTabs())->getId()}').setSelectedKey('{$widget->getTabIndex()}')";
     }
