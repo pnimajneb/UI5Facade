@@ -35,6 +35,8 @@ class UI5DataTree extends UI5DataTable
         $this->initConfiguratorControl($controller);
         $widget = $this->getWidget();
         
+        $this->getController()->addOnEventScript($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, $this->buildJsOnCloseScript('oEvent'));
+        
         $selection_mode = $widget->getMultiSelect() ? 'sap.ui.table.SelectionMode.MultiToggle' : 'sap.ui.table.SelectionMode.Single';
         $selection_behavior = $widget->getMultiSelect() ? 'sap.ui.table.SelectionBehavior.Row' : 'sap.ui.table.SelectionBehavior.RowOnly';
         
@@ -49,6 +51,15 @@ class UI5DataTree extends UI5DataTable
         new sap.ui.table.TreeTable('{$this->getId()}', {
             {$this->buildJsProperties()}
             {$this->buildJsPropertyColumnHeight()}
+            selectionMode: {$selection_mode},
+	        selectionBehavior: {$selection_behavior},
+    		rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
+            firstVisibleRowChanged: {$controller->buildJsEventHandler($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, true)},
+    		filter: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
+    		sort: {$controller->buildJsMethodCallFromView('onLoadData', $this)},
+            columns: [
+    			{$this->buildJsColumnsForUiTable()}
+    		],
             rows: {
                 path:'/rows', 
                 parameters: {
@@ -58,11 +69,6 @@ class UI5DataTree extends UI5DataTable
                     {$numberOfExpandedLevelsJs}
                 }
             },
-            selectionMode: {$selection_mode},
-	        selectionBehavior: {$selection_behavior},
-    		columns: [
-    			{$this->buildJsColumnsForUiTable()}
-    		],
             noData: [
                 new sap.m.FlexBox({
                     height: "100%",
@@ -77,9 +83,6 @@ class UI5DataTree extends UI5DataTable
             toggleOpenState: function(oEvent) {
                 {$this->buildJsOnOpenScript('oEvent')}
             },
-            firstVisibleRowChanged: function(oEvent) {
-                {$this->buildJsOnCloseScript('oEvent')}
-            }
         })
         {$this->buildJsClickHandlers('oController')}
         {$this->buildJsPseudoEventHandlers()}
@@ -130,7 +133,7 @@ JS;
         return parent::buildJsDataLoaderOnLoaded($oModelJs) . <<<JS
 
                 var oDataTree = {$this->buildJsTransformToTree($oModelJs . '.getData()')};
-                {$oModelJs}.setData(oDataTree); 
+                {$oModelJs}.setData(oDataTree); console.log('loaded');
                 {$treeModeJs}
 
 JS;
