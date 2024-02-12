@@ -90,28 +90,35 @@ JS, false);
      * 
      * @param string $oControlJs
      * @param string $sColorJs
-     * @param string $cssCustomColorClass
+     * @param string $cssCustomCssClass
      * @param string $cssColorClassPrefix
      * @return string
      */
-    protected function buildJsColorClassSetter(string $oControlJs, string $sColorJs, string $cssCustomColorClass = 'exf-custom-color', $cssColorClassPrefix = 'exf-color-') : string
+    protected function buildJsColorClassSetter(string $oControlJs, string $sColorJs, string $cssCustomCssClass = 'exf-custom-color', $cssColorClassPrefix = 'exf-color-') : string
     {
         $cssReplaceJSON = json_encode($this->cssClassNameRemoveChars);
+        // Note, the 
         return <<<JS
         
         (function(oCtrl, sColor){
-            var aCssClassReplace = $cssReplaceJSON;
-            var sColorClassSuffix = (sColor === null || sColor === undefined ? '' : sColor).toString();
             var fnStyler = function(){
+                var aCssSelectorRemoveChars = $cssReplaceJSON;
+                var sColorClassSuffix = '';
+                var sColorClassPrefix = '{$cssColorClassPrefix}';
+                var sCustomCssClass = '{$cssCustomCssClass}';
                 (oCtrl.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
-                    if (sClass.startsWith('{$cssColorClassPrefix}')) {
+                    if (sClass.startsWith(sColorClassPrefix)) {
                         oCtrl.removeStyleClass(sClass);
                     }
                 });
                 if (sColor === null) {
-                    oCtrl.removeStyleClass('{$cssCustomColorClass}');
+                    oCtrl.removeStyleClass(sCustomCssClass);
                 } else {
-                    oCtrl.addStyleClass('{$cssCustomColorClass} {$cssColorClassPrefix}' + sColorClassSuffix);
+                    sColorClassSuffix = sColor.toString();
+                    aCssSelectorRemoveChars.forEach(function(sChar) {
+                        sColorClassSuffix = sColorClassSuffix.replace(sChar, '');
+                    });
+                    oCtrl.addStyleClass(sCustomCssClass + ' ' + sColorClassPrefix + sColorClassSuffix);
                 }
             };
             var oDelegate = {
@@ -120,9 +127,6 @@ JS, false);
                     oCtrl.removeEventDelegate(oDelegate);
                 }
             };
-            aCssClassReplace.forEach(function(sChar) {
-                sColorClassSuffix = sColorClassSuffix.replace(sChar, '');
-            });
             fnStyler();
             if (oCtrl.$().length === 0) {
                 oCtrl.addEventDelegate(oDelegate);
