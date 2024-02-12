@@ -293,7 +293,12 @@ JS;
         } else {
             $height = $this->buildCssHeightDefaultValue();
         }
+        
+        if ($this->isFillingContainer()) {
+            $panelCssClass = 'exf-panel-no-border';
+        }
         return <<<JS
+
         new sap.m.Panel("{$this->getId()}_panel", {
             height: "$height",
             headerToolbar: [
@@ -303,8 +308,14 @@ JS;
                 {$contentConstructorsJs}
             ]
         })
-        
+        .addStyleClass('{$panelCssClass}')        
 JS;
+    }
+    
+    protected function isFillingContainer() : bool
+    {
+        $widget = $this->getWidget();
+        return $widget->hasParent() && $widget->getParent()->countWidgetsVisible() === 1;
     }
     
     /**

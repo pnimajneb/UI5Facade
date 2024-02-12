@@ -239,7 +239,11 @@ JS;
      */
     protected function buildCssHeightDefaultValue()
     {
-        return $this->getWidget()->isHorizontal() ? ($this->getHeightRelativeUnit() * 8) . 'px' : '100%';
+        $widget = $this->getWidget();
+        if ($this->isFillingContainer()) {
+            return '';
+        }
+        return $widget->isHorizontal() ? ($this->getHeightRelativeUnit() * 8) . 'px' : '100%';
     }
     
     /**
