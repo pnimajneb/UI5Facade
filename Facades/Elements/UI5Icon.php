@@ -138,6 +138,9 @@ JS;
         if ($widget->hasIconScale()) {
             if ($widget->getIconSet() === iHaveIcon::ICON_SET_SVG) {
                 $bSvgJs = 'true';
+                // Add the widget id to the CSS class in case there are multiple widgets
+                // with same values (like 1 and 0) but different icons
+                $svgClassPrefix = "exf-svg-" . str_replace($this->cssClassNameRemoveChars, '', $widget->getId()) . "-";
                 $iconScaleEncoded = [];
                 $iconScaleVals = [];
                 foreach ($widget->getIconScale() as $val => $icon) {
@@ -145,7 +148,7 @@ JS;
                     $iconScaleVals[$val] = str_replace($this->cssClassNameRemoveChars, '', trim($val));
                 }
                 $valueJs = $this->buildJsScaleResolver('value', $iconScaleVals, $widget->isIconScaleRangeBased());
-                $this->registerColorClasses($iconScaleEncoded, ".sapUiIcon.exf-svg-icon.exf-svg-[#value#]::before", 'content: url("data:image/svg+xml,[#color#]")');
+                $this->registerColorClasses($iconScaleEncoded, ".sapUiIcon.exf-svg-icon.{$svgClassPrefix}[#value#]::before", 'content: url("data:image/svg+xml,[#color#]")');
             } else {
                 $valueJs = $this->buildJsScaleResolver('value', $widget->getIconScale(), $widget->isIconScaleRangeBased());
             }
@@ -168,7 +171,7 @@ JS;
                         case sIcon === '':
                             return null;
                         case bSvg:
-                            {$this->buildJsColorClassSetter('oCtrl', 'sIcon', 'exf-svg-icon', 'exf-svg-')};
+                            {$this->buildJsColorClassSetter('oCtrl', 'sIcon', 'exf-svg-icon', $svgClassPrefix)};
                             return 'sap-icon://circle-task';
                         case ! sIcon.toString().startsWith('sap-icon://'):
                             return 'sap-icon://font-awesome/' + sIcon;
