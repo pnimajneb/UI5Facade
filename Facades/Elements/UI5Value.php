@@ -364,6 +364,9 @@ JS;
             case $dim->isPercentual():
                 $val = $dim->getValue();
                 break;
+            case $dim->isMax():
+                $val = '100%';
+                break;
             case $dim->isRelative() && $factor = NumberDataType::cast($dim->getValue()):
                 $val = ($this->getWidthRelativeUnit() * $factor) . 'px';
                 break;
