@@ -97,7 +97,7 @@ JS;
      */
     public function buildCssElementClass()
     {
-        return 'exf-tiles';
+        return 'exf-tiles' . ($this->isFillingContainer() ? ' exf-panel-no-border' : '');
     }
     
     /**

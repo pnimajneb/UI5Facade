@@ -65,6 +65,6 @@ JS;
      */
     public function buildCssElementClass()
     {
-        return 'exf-navtiles';
+        return 'exf-navtiles' . ($this->isFillingContainer() ? ' exf-panel-no-border' : '');
     }
 }

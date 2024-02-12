@@ -273,4 +273,14 @@ JS;
         
         return $this;
     }
+    
+    /**
+     * 
+     * @return bool
+     */
+    protected function isFillingContainer() : bool
+    {
+        $widget = $this->getWidget();
+        return $widget->hasParent() && $widget->getParent()->countWidgetsVisible() === 1;
+    }
 }
