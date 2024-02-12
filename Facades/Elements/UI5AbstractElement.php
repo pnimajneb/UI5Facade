@@ -182,6 +182,11 @@ JS;
         }
         
         switch (true) {
+            // Icon properties of some controls like sap.m.Button accept data-URLs for SVG
+            case $iconSet === iHaveIcon::ICON_SET_SVG:
+                $path = 'data:image/svg+xml;utf8,';
+                $icon_name = rawurlencode($icon_name);
+                break;
             case Icons::isDefined($icon_name) === true:
             case $iconSet === 'fa':
                 $path = 'sap-icon://font-awesome/';

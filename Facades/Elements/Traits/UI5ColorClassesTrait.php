@@ -21,6 +21,13 @@ use exface\Core\DataTypes\StringDataType;
 trait UI5ColorClassesTrait {
     
     /**
+     * Characters to be removed from values and colors if they are to be used in CSS selectors
+     * 
+     * @var string[]
+     */
+    private $cssClassNameRemoveChars = ['#', '.', '+'];
+    
+    /**
      * Makes the controller run a script to add custom CSS styles every time the view is shown.
      * 
      * @return void
@@ -28,7 +35,7 @@ trait UI5ColorClassesTrait {
     protected function registerColorClasses(array $colorScale, string $cssSelectorToColor = '.exf-custom-color.exf-color-[#color#]', string $cssColorProperties = 'background-color: [#color#]', bool $skipSemanticColors = true)
     {
         $css = '';
-        foreach ($colorScale as $color) {
+        foreach ($colorScale as $value => $color) {
             if (substr($color, 0, 1) === '~') {
                 if ($skipSemanticColors === true) {
                     continue;
@@ -36,8 +43,14 @@ trait UI5ColorClassesTrait {
                     $color = $this->getFacade()->getSemanticColors()[$color];
                 }
             }
-            $class = StringDataType::replacePlaceholder($cssSelectorToColor, 'color', trim(trim($color), "#"));
-            $properties = StringDataType::replacePlaceholder($cssColorProperties, 'color', $color);
+            $class = StringDataType::replacePlaceholders($cssSelectorToColor, [
+                'color' => str_replace($this->cssClassNameRemoveChars, '', trim($color)), 
+                'value' => str_replace($this->cssClassNameRemoveChars, '', trim($value))
+            ]);
+            $properties = StringDataType::replacePlaceholders($cssColorProperties, [
+                'color' => $color, 
+                'value' => $value
+            ]);
             $css .= "$class { $properties } ";
         }
         
@@ -83,9 +96,12 @@ JS, false);
      */
     protected function buildJsColorClassSetter(string $oControlJs, string $sColorJs, string $cssCustomColorClass = 'exf-custom-color', $cssColorClassPrefix = 'exf-color-') : string
     {
+        $cssReplaceJSON = json_encode($this->cssClassNameRemoveChars);
         return <<<JS
         
         (function(oCtrl, sColor){
+            var aCssClassReplace = $cssReplaceJSON;
+            var sColorClassSuffix = sColor.toString();
             var fnStyler = function(){
                 (oCtrl.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
                     if (sClass.startsWith('{$cssColorClassPrefix}')) {
@@ -95,7 +111,7 @@ JS, false);
                 if (sColor === null) {
                     oCtrl.removeStyleClass('{$cssCustomColorClass}');
                 } else {
-                    oCtrl.addStyleClass('{$cssCustomColorClass} {$cssColorClassPrefix}' + sColor.replace("#", ""));
+                    oCtrl.addStyleClass('{$cssCustomColorClass} {$cssColorClassPrefix}' + sColorClassSuffix);
                 }
             };
             var oDelegate = {
@@ -104,7 +120,9 @@ JS, false);
                     oCtrl.removeEventDelegate(oDelegate);
                 }
             };
-            
+            aCssClassReplace.forEach(function(sChar) {
+                sColorClassSuffix = sColorClassSuffix.replace(sChar, '');
+            });
             fnStyler();
             if (oCtrl.$().length === 0) {
                 oCtrl.addEventDelegate(oDelegate);

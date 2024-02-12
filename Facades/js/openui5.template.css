@@ -282,3 +282,11 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .sapMBtn.exf-scheduler-navleft {left: -8px;}
 .sapMBtn.exf-scheduler-navright {right: 0;}
 .exf-scheduler-head-year {font-weight: bold}
+
+/* SVG icons. Color filters computed via https://isotropic.co/tool/hex-color-to-css-filter/ */
+.sapMBtn.exf-svg-icon > .sapMBtnInner > .sapMImg {height: 18px; margin-top: auto; margin-bottom: auto;}
+.sapMBtn.exf-svg-icon > .sapMBtnInner > .sapMImg {filter:  invert(17%) sepia(90%) saturate(2858%) hue-rotate(198deg) brightness(92%) contrast(94%)}
+.sapMBtn.exf-svg-icon > .sapMBtnInner.sapMBtnActive > .sapMImg {filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(1deg) brightness(107%) contrast(101%);}
+
+.sapUiIcon.exf-svg-icon::before {padding-top: 1px; width: 16px; display: block; margin-left: auto; margin-right: auto;}
+.sapUiTableCellInner > .sapUiIcon::before {padding-top: 2px}

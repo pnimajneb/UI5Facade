@@ -17,6 +17,8 @@ use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\Factories\UiPageFactory;
 use exface\UI5Facade\Facades\UI5Facade;
 use exface\Core\Interfaces\Actions\iCallWidgetFunction;
+use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
+use exface\Core\Interfaces\Widgets\iHaveIcon;
 
 /**
  * Generates sap.m.Button for Button widgets.
@@ -178,7 +180,11 @@ JS;
         
         $handler = $this->buildJsClickViewEventHandlerCall();
         $press = $handler !== '' ? 'press: ' . $handler . ',' : '';
-        $icon = $widget->getIcon() && $widget->getShowIcon(true) ? 'icon: "' . $this->getIconSrc($widget->getIcon()) . '",' : '';
+        if ($widget->getShowIcon(true) && null !== $icon = $widget->getIcon()) {
+            $icon = "icon: '{$this->getIconSrc($icon)}',";
+        } else {
+            $icon = '';
+        }
         
         $options = <<<JS
 
@@ -742,5 +748,19 @@ JS;
                 return "sap.ui.getCore().byId('{$this->getId()}').focus()";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildCssElementClass()
+     */
+    public function buildCssElementClass()
+    {
+        $cls = parent::buildCssElementClass();
+        if ($this->getWidget()->getIconSet() === 'svg') {
+            $cls .= ' exf-svg-icon';
+        }
+        return $cls;
     }
 }
