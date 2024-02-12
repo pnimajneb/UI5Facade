@@ -726,11 +726,13 @@ var Gantt = (function () {
             if (!changed) return;
 
             // Remove the 24h offset that is added to the end date
-            this.gantt.trigger_event('date_change', [
-                this.task,
-                new_start_date,
-                date_utils.add(new_end_date, -24, 'hour'),
-            ]);
+            if (!this.gantt.view_is([VIEW_MODE.QUARTER_DAY, VIEW_MODE.HALF_DAY])) {
+                this.gantt.trigger_event('date_change', [
+                    this.task,
+                    new_start_date,
+                    date_utils.add(new_end_date, -24, 'hour'),
+                ]);
+            }
         }
 
         progress_changed() {
@@ -1179,7 +1181,9 @@ var Gantt = (function () {
 
                 // if hours is not set, assume the last day is full day
                 // e.g: 2018-09-09 becomes 2018-09-09 23:59:59
-                task._end = date_utils.add(task._end, 24, 'hour');
+                if (!this.view_is([VIEW_MODE.QUARTER_DAY, VIEW_MODE.HALF_DAY])) {
+                    task._end = date_utils.add(task._end, 24, 'hour');
+                }
 
                 task._start = date_utils.add(task._start, -1 * task._start.getTimezoneOffset(), 'minute');
                 task._end = date_utils.add(task._end, -1 * task._end.getTimezoneOffset(), 'minute');
