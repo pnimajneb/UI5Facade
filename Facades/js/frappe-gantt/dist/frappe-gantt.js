@@ -1181,7 +1181,7 @@ var Gantt = (function () {
 
                 // if hours is not set, assume the last day is full day
                 // e.g: 2018-09-09 becomes 2018-09-09 23:59:59
-                if (this.gantt.options.step >= 24 && (this.gantt.options.step % 24) === 0) {
+                if (this.options.step >= 24 && (this.options.step % 24) === 0) {
                     task._end = date_utils.add(task._end, 24, 'hour');
                 }
 
