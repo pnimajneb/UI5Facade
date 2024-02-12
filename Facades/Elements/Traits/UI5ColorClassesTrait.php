@@ -101,7 +101,7 @@ JS, false);
         
         (function(oCtrl, sColor){
             var aCssClassReplace = $cssReplaceJSON;
-            var sColorClassSuffix = sColor.toString();
+            var sColorClassSuffix = (sColor === null || sColor === undefined ? '' : sColor).toString();
             var fnStyler = function(){
                 (oCtrl.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
                     if (sClass.startsWith('{$cssColorClassPrefix}')) {
