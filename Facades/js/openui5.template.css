@@ -214,7 +214,7 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .exf-map-popup-table > tbody > tr > td:nth-of-type(2) {font-weight: bold}
 .exf-map .extra-marker > i.fa-map-marker {margin-top: 8px !important;}
 .exf-map .leaflet-marker-icon.selected:not(.exf-map-point)::before {content: ''; display: block; width: 40px; height: 27px; -moz-border-radius: 7.5px; -webkit-border-radius: 7.5px; border-radius: 50%; border: 5px solid gray; position: absolute; top: 23px; left: -7px; z-index: -1;}
-.exf-map .leaflet-marker-icon.selected.exf-map-point > div {border: 5px solid gray; margin-top: -5px; margin-left: -5px}
+.exf-map .leaflet-marker-icon.selected.exf-map-point > div:first-of-type {border: 5px solid gray; margin-top: -5px; margin-left: -5px}
 .exf-map .marker-cluster {background-clip: padding-box; border-radius: 20px;}
 .exf-map .marker-cluster div {width: 30px; height: 30px; margin-left: 5px; margin-top: 5px; color: white; text-align: center; border-radius: 15px;}
 .exf-map .marker-cluster i {line-height: 30px;}
