@@ -725,10 +725,11 @@ var Gantt = (function () {
 
             if (!changed) return;
 
+            // Remove the 24h offset that is added to the end date
             this.gantt.trigger_event('date_change', [
                 this.task,
                 new_start_date,
-                date_utils.add(new_end_date, -1, 'second'),
+                date_utils.add(new_end_date, -24, 'hour'),
             ]);
         }
 
@@ -746,17 +747,40 @@ var Gantt = (function () {
         compute_start_end_date() {
             const bar = this.$bar;
             const x_in_units = bar.getX() / this.gantt.options.column_width;
-            const new_start_date = date_utils.add(
+            let new_start_date = date_utils.add(
                 this.gantt.gantt_start,
-                x_in_units * this.gantt.options.step,
+                // Round for cases like 199.999999999995 -> 200
+                Math.round(x_in_units * this.gantt.options.step),
                 'hour'
             );
+
+            // Add timezone difference (summer - winter) between gantt chart start date and task start date
+            const start_offset = this.gantt.gantt_start.getTimezoneOffset() - new_start_date.getTimezoneOffset();
+            if (start_offset !== 0) {
+                new_start_date = date_utils.add(
+                    new_start_date,
+                    start_offset,
+                    'minute'
+                );
+            }
+
             const width_in_units = bar.getWidth() / this.gantt.options.column_width;
-            const new_end_date = date_utils.add(
+            let new_end_date = date_utils.add(
                 new_start_date,
-                width_in_units * this.gantt.options.step,
+                // Round for cases like 199.999999999995 -> 200
+                Math.round(width_in_units * this.gantt.options.step),
                 'hour'
             );
+
+            // Add timezone difference (summer - winter) between task start date date and task end date
+            const end_offset = new_start_date.getTimezoneOffset() - new_end_date.getTimezoneOffset();
+            if (end_offset !== 0) {
+                new_end_date = date_utils.add(
+                    new_end_date,
+                    end_offset,
+                    'minute'
+                );
+            }
 
             return { new_start_date, new_end_date };
         }
@@ -1155,11 +1179,11 @@ var Gantt = (function () {
 
                 // if hours is not set, assume the last day is full day
                 // e.g: 2018-09-09 becomes 2018-09-09 23:59:59
-                const task_end_values = date_utils.get_date_values(task._end);
-                if (task_end_values.slice(3).every((d) => d === 0)) {
-                    task._end = date_utils.add(task._end, 24, 'hour');
-                }
+                task._end = date_utils.add(task._end, 24, 'hour');
 
+                task._start = date_utils.add(task._start, -1 * task._start.getTimezoneOffset(), 'minute');
+                task._end = date_utils.add(task._end, -1 * task._end.getTimezoneOffset(), 'minute');
+            
                 // invalid flag
                 if (!task.start || !task.end) {
                     task.invalid = true;
@@ -1270,6 +1294,8 @@ var Gantt = (function () {
                 this.gantt_start = date_utils.add(this.gantt_start, -1, 'month');
                 this.gantt_end = date_utils.add(this.gantt_end, 1, 'month');
             }
+
+            this.gantt_start = date_utils.add(this.gantt_start, -1 * this.gantt_start.getTimezoneOffset(), 'minute');
         }
 
         setup_date_values() {
@@ -1967,6 +1993,12 @@ var Gantt = (function () {
         clear() {
             this.$svg.innerHTML = '';
         }
+
+        /* 
+         * Exporting date_utils to outside of Gantt module
+         * 
+         */
+        dateUtils = date_utils;
     }
 
     Gantt.VIEW_MODE = VIEW_MODE;
