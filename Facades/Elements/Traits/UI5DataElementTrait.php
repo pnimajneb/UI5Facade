@@ -284,7 +284,7 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsPanelWrapper(string $contentConstructorsJs, string $oControllerJs = 'oController', string $toolbar = null)  : string
+    protected function buildJsPanelWrapper(string $contentConstructorsJs, string $oControllerJs = 'oController', string $toolbar = null, bool $padding = true)  : string
     {
         $toolbar = $toolbar ?? $this->buildJsToolbar($oControllerJs);
         $hDim = $this->getWidget()->getHeight();
@@ -294,8 +294,9 @@ JS;
             $height = $this->buildCssHeightDefaultValue();
         }
         
+        $panelCssClass = $padding === false ? 'sapUiNoContentPadding' : '';
         if ($this->isFillingContainer()) {
-            $panelCssClass = 'exf-panel-no-border';
+            $panelCssClass .= ' exf-panel-no-border';
         }
         return <<<JS
 

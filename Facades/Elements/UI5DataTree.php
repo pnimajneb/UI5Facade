@@ -21,7 +21,7 @@ class UI5DataTree extends UI5DataTable
      */
     protected function buildJsConstructorForControl($oControllerJs = 'oController') : string
     {
-        return $this->buildJsPanelWrapper($this->buildJsConstructorForTreeTable($oControllerJs), $oControllerJs);
+        return $this->buildJsPanelWrapper($this->buildJsConstructorForTreeTable($oControllerJs), $oControllerJs, null, false);
     }
     
     /**
