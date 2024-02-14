@@ -820,4 +820,38 @@ JS;
     {
         return "(sap.ui.getCore().byId('{$this->getId()}') !== undefined)";
     }
+    
+    /**
+     * 
+     * @param string $css
+     * @param string $id
+     * @return UI5AbstractElement
+     */
+    protected function registerCustomCSS(string $css, string $id = '_custom_css') : UI5AbstractElement
+    {
+        $css = $this->escapeString(StringDataType::stripLineBreaks($css));
+        
+        $cssId = $this->getId();
+        if (! $this->getUseWidgetId()) {
+            $this->setUseWidgetId(true);
+            $cssId = $this->getId();
+            $this->setUseWidgetId(false);
+        }
+        $cssId .= $id;
+        
+        $this->getController()->addOnShowViewScript(<<<JS
+            
+(function(){
+    var jqTag = $('#{$cssId}');
+    if (jqTag.length === 0) {
+        $('head').append($('<style type="text/css" id="{$cssId}"></style>').text($css));
+    }
+})();
+
+JS, false);
+        
+        $this->getController()->addOnHideViewScript("$('#{$cssId}').remove();");
+        
+        return $this;
+    }
 }

@@ -13,7 +13,6 @@ use exface\UI5Facade\Facades\Elements\UI5Dialog;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Widgets\Dialog;
-use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 
 class UI5Controller implements UI5ControllerInterface
 {

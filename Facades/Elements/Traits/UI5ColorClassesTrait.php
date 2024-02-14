@@ -54,26 +54,7 @@ trait UI5ColorClassesTrait {
             $css .= "$class { $properties } ";
         }
         
-        $cssId = $this->getId();
-        if (! $this->getUseWidgetId()) {
-            $this->setUseWidgetId(true);
-            $cssId = $this->getId();
-            $this->setUseWidgetId(false);
-        }
-        $cssId .= '_color_css';
-        
-        $this->getController()->addOnShowViewScript(<<<JS
-            
-(function(){
-    var jqTag = $('#{$cssId}');
-    if (jqTag.length === 0) {
-        $('head').append($('<style type="text/css" id="{$cssId}"></style>').text('$css'));
-    }
-})();
-
-JS, false);
-        
-        $this->getController()->addOnHideViewScript("$('#{$cssId}').remove();");
+        $this->registerCustomCss($css, '_color_css');
         
         return;
     }
