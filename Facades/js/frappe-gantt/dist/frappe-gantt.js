@@ -137,7 +137,7 @@ var Gantt = (function () {
                     vals = vals.concat(time_parts);
                 }
 
-                return new Date(...vals);
+                return new Date(Date.UTC(...vals)); // 2023-02-10 -> 12445873454...
             }
         },
 
@@ -236,16 +236,7 @@ var Gantt = (function () {
 
         add(date, qty, scale) {
             qty = parseInt(qty, 10);
-            const vals = [
-                date.getFullYear() + (scale === YEAR ? qty : 0),
-                date.getMonth() + (scale === MONTH ? qty : 0),
-                date.getDate() + (scale === DAY ? qty : 0),
-                date.getHours() + (scale === HOUR ? qty : 0),
-                date.getMinutes() + (scale === MINUTE ? qty : 0),
-                date.getSeconds() + (scale === SECOND ? qty : 0),
-                date.getMilliseconds() + (scale === MILLISECOND ? qty : 0),
-            ];
-            return new Date(...vals);
+            return moment(date).add(qty, `${scale}s`).toDate();
         },
 
         start_of(date, scale) {
@@ -748,6 +739,7 @@ var Gantt = (function () {
 
         compute_start_end_date() {
             const bar = this.$bar;
+
             const x_in_units = bar.getX() / this.gantt.options.column_width;
             let new_start_date = date_utils.add(
                 this.gantt.gantt_start,
@@ -755,16 +747,6 @@ var Gantt = (function () {
                 Math.round(x_in_units * this.gantt.options.step),
                 'hour'
             );
-
-            // Add timezone difference (summer - winter) between gantt chart start date and task start date
-            const start_offset = this.gantt.gantt_start.getTimezoneOffset() - new_start_date.getTimezoneOffset();
-            if (start_offset !== 0) {
-                new_start_date = date_utils.add(
-                    new_start_date,
-                    start_offset,
-                    'minute'
-                );
-            }
 
             const width_in_units = bar.getWidth() / this.gantt.options.column_width;
             let new_end_date = date_utils.add(
@@ -774,15 +756,6 @@ var Gantt = (function () {
                 'hour'
             );
 
-            // Add timezone difference (summer - winter) between task start date date and task end date
-            const end_offset = new_start_date.getTimezoneOffset() - new_end_date.getTimezoneOffset();
-            if (end_offset !== 0) {
-                new_end_date = date_utils.add(
-                    new_end_date,
-                    end_offset,
-                    'minute'
-                );
-            }
 
             return { new_start_date, new_end_date };
         }
@@ -1184,9 +1157,6 @@ var Gantt = (function () {
                 if (this.options.step >= 24 && (this.options.step % 24) === 0) {
                     task._end = date_utils.add(task._end, 24, 'hour');
                 }
-
-                task._start = date_utils.add(task._start, -1 * task._start.getTimezoneOffset(), 'minute');
-                task._end = date_utils.add(task._end, -1 * task._end.getTimezoneOffset(), 'minute');
             
                 // invalid flag
                 if (!task.start || !task.end) {
