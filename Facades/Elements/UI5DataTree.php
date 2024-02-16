@@ -50,7 +50,8 @@ class UI5DataTree extends UI5DataTable
 
         new sap.ui.table.TreeTable('{$this->getId()}', {
             {$this->buildJsProperties()}
-            {$this->buildJsPropertyColumnHeight()}
+            {$this->buildJsPropertyColumnHeaderHeight()}
+            {$this->buildJsPropertyMinAutoRowCount()}
             selectionMode: {$selection_mode},
 	        selectionBehavior: {$selection_behavior},
     		rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
@@ -76,7 +77,7 @@ class UI5DataTree extends UI5DataTable
                     justifyContent: "Center",
                     alignItems: "Center",
                     items: [
-                        new sap.m.Text("{$this->getId()}_noData", {text: "{$this->getWidget()->getEmptyText()}"})
+                        new sap.m.Text("{$this->getIdOfNoDataOverlay()}", {text: "{$this->getWidget()->getEmptyText()}"})
                     ]
                 })
             ],
@@ -93,7 +94,7 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsPropertyColumnHeight() : string
+    protected function buildJsPropertyColumnHeaderHeight() : string
     {
         return '';
     }

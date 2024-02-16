@@ -17,6 +17,8 @@ use exface\Core\Interfaces\Actions\iModifyData;
 use exface\Core\Interfaces\Actions\iCallOtherActions;
 use exface\UI5Facade\Facades\Interfaces\UI5DataElementInterface;
 use exface\Core\Widgets\Parts\DataRowGrouper;
+use exface\Core\Widgets\DataTable;
+use exface\Core\DataTypes\NumberDataType;
 
 /**
  *
@@ -290,8 +292,8 @@ JS;
         $js = <<<JS
             new sap.ui.table.Table("{$this->getId()}", {
                 width: "{$this->getWidth()}",
-        		visibleRowCountMode: sap.ui.table.VisibleRowCountMode.Auto,
-                minAutoRowCount: 5,
+                visibleRowCountMode: sap.ui.table.VisibleRowCountMode.Auto,
+                {$this->buildJsPropertyMinAutoRowCount()}
                 selectionMode: {$selection_mode},
         		selectionBehavior: {$selection_behavior},
                 enableColumnReordering:true,
@@ -316,7 +318,7 @@ JS;
                         justifyContent: "Center",
                         alignItems: "Center",
                         items: [
-                            new sap.m.Text("{$this->getId()}_noData", {text: "{$widget->getEmptyText()}"})
+                            new sap.m.Text("{$this->getIdOfNoDataOverlay()}", {text: "{$widget->getEmptyText()}"})
                         ]
                     })
                 ],
@@ -327,6 +329,57 @@ JS;
 JS;
             
             return $js;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function getIdOfNoDataOverlay() : string
+    {
+        return $this->getId() . '_noData';
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsPropertyMinAutoRowCount() : string
+    {
+        $widget = $this->getWidget();
+        $heightInRows = $widget instanceof DataTable ? $widget->getHeightInRows() : null;
+        
+        $height = $widget->getHeight();
+        switch (true) {
+            case $heightInRows !== null:
+                $minAutoRowCount = $heightInRows;
+                break;
+            case $height->isRelative():
+            case $height->isFacadeSpecific() && StringDataType::endsWith($height->getValue(), 'px', false):
+                // TODO determine the height elements via JS
+                // iRowHeight = oTable.getRowHeight() // but oTable is not there yet. Maybe on-resize?
+                $heightPx = StringDataType::substringBefore($height->getValue(), 'px', $height->getValue(), true);
+                $heightPx = NumberDataType::cast($heightPx);
+                $minAutoRowCount = <<<JS
+                function(){
+                    var iRowHeight = 33;
+                    var jqTest = $('<div class="sapMTB sapMTBHeader-CTX"></div>').appendTo('body');
+                    var iToolbarHeight = jqTest.height();
+                    var iTableHeight = {$heightPx};
+                    jqTest.remove();
+                    return Math.floor((iTableHeight - iRowHeight - iToolbarHeight) / iRowHeight);
+                }()
+
+JS;
+                break;
+            //case $height->isUndefined():
+            //case $height->isAuto():
+            default:
+                $minAutoRowCount = $this->getFacade()->getConfig()->getOption('WIDGET.DATATABLE.ROWS_SHOWN_BY_DEFAULT');
+                break;            
+        }
+        
+        return "minAutoRowCount: {$minAutoRowCount},";
     }
     
     /**
@@ -1234,7 +1287,7 @@ JS;
         if ($this->isMList() || $this->isMTable()) {
             return $oTableJs . '.setNoDataText("' . $hint . '");';
         } else {
-            return "sap.ui.getCore().byId('{$this->getId()}_noData').setText(\"{$hint}\")";
+            return "sap.ui.getCore().byId('{$this->getIdOfNoDataOverlay()}').setText(\"{$hint}\")";
         }
         return '';
     }
@@ -1349,7 +1402,7 @@ JS;
         if ($this->isMList() || $this->isMTable()) {
             $setNoData = "sap.ui.getCore().byId('{$this->getId()}').setNoDataText('{$hint}')";
         } elseif ($this->isUiTable()) {
-            $setNoData = "sap.ui.getCore().byId('{$this->getId()}_noData').setText('{$hint}')";
+            $setNoData = "sap.ui.getCore().byId('{$this->getIdOfNoDataOverlay()}').setText('{$hint}')";
         }
         return $this->buildJsDataResetter() . ';' . $setNoData;
     }

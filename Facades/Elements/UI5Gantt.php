@@ -81,7 +81,7 @@ JS;
      *
      * @return string
      */
-    protected function buildJsPropertyColumnHeight() : string
+    protected function buildJsPropertyColumnHeaderHeight() : string
     {
         return 'columnHeaderHeight: 52,';
     }
