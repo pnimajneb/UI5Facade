@@ -315,10 +315,11 @@ JS;
                     var iMonth = oPCal.getStartDate().getMonth() + 1;
                     if (oView.getIntervalType() === 'Month' && oPCal._getIntervals(oView) >= 3) {
                         oPCal._oMonthsRow.$().find('.sapUiCalItems > div').each(function(i, div){
+                            // here the month january is replaced with the current year in the format e.g. '24' for 2024
                             if ((i+iMonth-1) % 12 === 0) {
                                 $(div).find('.sapUiCalItemText')
                                 .addClass('exf-scheduler-head-year')
-                                .text(parseInt(oPCal.getStartDate().getFullYear().toString().substr(-2)) + Math.floor(i/12));
+                                .text(parseInt(oPCal.getStartDate().getFullYear().toString().substr(-2)) + Math.floor(i/12) + 1);
                             }
                         })
                     }
