@@ -7,6 +7,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
+use exface\Core\DataTypes\DateDataType;
 
 /**
  * 
@@ -137,13 +138,18 @@ JS;
     protected function buildJsGanttInit() : string
     {
         $widget = $this->getWidget();
-        $dateFormat = $this->escapeString($this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT'));
         
         $calItem = $widget->getTasksConfig();
         $startCol = $calItem->getStartTimeColumn();
         $startFormatter = $this->getFacade()->getDataTypeFormatter($startCol->getDataType());
         $endCol = $calItem->getEndTimeColumn();
         $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());
+        
+        if ($startCol->getDataType() instanceof DateDataType) {
+            $dateFormat = $startCol->getDataType()->getFormat();
+        } else {
+            $dateFormat = $this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT');
+        }
         
         switch ($widget->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
             case DataTimeline::GRANULARITY_HOURS: $viewMode = 'Quater Day'; break;
@@ -175,7 +181,7 @@ JS;
         arrow_curve: 5,
         padding: 14,
         view_mode: '$viewMode',
-        date_format: $dateFormat,
+        date_format: {$this->escapeString($dateFormat)},
         language: 'en', // or 'es', 'it', 'ru', 'ptBr', 'fr', 'tr', 'zh', 'de', 'hu'
         custom_popup_html: null,
     	on_date_change: function(oTask, dStart, dEnd) {
