@@ -347,7 +347,7 @@ JS;
     protected function buildJsPropertyMinAutoRowCount() : string
     {
         $widget = $this->getWidget();
-        $heightInRows = $widget instanceof DataTable ? $widget->getHeightInRows() : null;
+        $heightInRows = $widget instanceof DataTable ? $widget->getAutoRowHeight() : null;
         
         $height = $widget->getHeight();
         switch (true) {
