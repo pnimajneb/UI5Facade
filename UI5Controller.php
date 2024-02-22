@@ -837,7 +837,7 @@ JS;
     {
         $propertyName = $this->buildJsObjectName($objectName, $ownerElement);
         if (! $this->hasProperty($propertyName)) {
-            throw new OutOfBoundsException('Dependent object "' . $propertyName . ' not found in controller "' . $this->getName() . '"');
+            throw new OutOfBoundsException('Dependent object "' . $propertyName . '" not found in controller "' . $this->getName() . '"');
         }
         
         if ($oControllerJsVar === null) {
