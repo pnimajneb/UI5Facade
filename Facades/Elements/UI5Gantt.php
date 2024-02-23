@@ -8,6 +8,14 @@ use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 use exface\Core\DataTypes\DateDataType;
+use exface\Core\Interfaces\Model\ExpressionInterface;
+use exface\Core\Widgets\Parts\ConditionalProperty;
+use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
+use exface\Core\Widgets\Parts\ConditionalPropertyConditionGroup;
+use exface\Core\DataTypes\ComparatorDataType;
+use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
+use exface\Core\Interfaces\Widgets\iHaveColumns;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * 
@@ -162,6 +170,20 @@ JS;
             default: $viewMode = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
+        /* @var $condProp \exface\Core\Widgets\Parts\ConditionalProperty */
+        /*
+        if (null !== $condProp = $widget->getChildrenMoveWithParentIf()) {
+            $rowMoveFilterJs = <<<JS
+
+                        // see if this particular child is to be moved
+                        if (false === {$this->buildJsConditionalPropertyRowCheck($condProp->getConditionGroup(), 'oChildRow')}) {
+                            return;
+                        }
+JS;
+        } else {
+            $rowMoveFilterJs = '';
+        }*/
+        
         return <<<JS
 (function() {   
     return new Gantt("#{$this->getId()}_gantt", [
@@ -210,6 +232,7 @@ JS;
                 
                 function processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd) {
                     oRow._children.forEach(function(oChildRow, iIdx) {
+                        {$rowMoveFilterJs}
                         // move dates of oChildRow as far as the parent row was moved
                         var startDateChild = moment(new Date(oChildRow['date_start_plan'])).add(moveDiffInHours, 'hours');
                         var endDateChild = moment(new Date(oChildRow['date_end_plan'])).add(moveDiffInHours, 'hours');
@@ -364,5 +387,80 @@ JS;
     protected function buildJsFullscreenContainerGetter() : string
     {
         return $this->isWrappedInDynamicPage() ? "$('#{$this->getId()}').parents('.sapMPanel').first().parent()" : "$('#{$this->getId()}').parents('.sapMPanel').first()";
+    }
+    
+    /**
+     * 
+     * @param ConditionalPropertyConditionGroup $conditionGroup
+     * @param string $oRowJs
+     * @throws FacadeRuntimeError
+     * @return string
+     */
+    protected function buildJsConditionalPropertyRowCheck(ConditionalPropertyConditionGroup $conditionGroup, string $oRowJs) : string
+    {
+        $widget = $this->getWidget();
+        $jsConditions = [];
+        
+        // First evaluate the conditions
+        foreach ($conditionGroup->getConditions() as $condition) {
+            $leftJs = null;
+            $leftExpr = $condition->getValueLeftExpression();
+            if ($leftExpr->isReference() === true) {
+                $leftLink = $leftExpr->getWidgetLink($widget);
+                if ($leftLink->getTargetWidget() === $widget) {
+                    $leftJs = "{$oRowJs}['{$leftLink->getTargetColumnId()}']";
+                }
+            }
+            if ($leftJs === null) {
+                $leftJs = $this->buildJsConditionalPropertyValue($condition->getValueLeftExpression(), $conditionGroup->getConditionalProperty());
+            }
+            
+            $rightJs = null;
+            $rightExpr = $condition->getValueLeftExpression();
+            if ($rightExpr->isReference() === true) {
+                $rightLink = $rightExpr->getWidgetLink($widget);
+                if ($rightLink->getTargetWidget() === $widget) {
+                    $rightJs = "{$oRowJs}['{$rightLink->getTargetColumnId()}']";
+                }
+            }
+            if ($rightJs === null) {
+                $rightJs = $this->buildJsConditionalPropertyValue($condition->getValueRightExpression(), $conditionGroup->getConditionalProperty());
+            }
+            
+            $delim = EXF_LIST_SEPARATOR;
+            // Try to get the possibly customized delimiter from the right side of the
+            // condition if it is an IN-condition
+            if ($condition->getComparator() === ComparatorDataType::IN || $condition->getComparator() === ComparatorDataType::NOT_IN) {
+                $rightExpr = $condition->getValueRightExpression();
+                if ($rightExpr->isReference() === true) {
+                    $targetWidget = $rightExpr->getWidgetLink()->getTargetWidget();
+                    if (($targetWidget instanceof iShowSingleAttribute) && $targetWidget->isBoundToAttribute()) {
+                        $delim = $targetWidget->getAttribute()->getValueListDelimiter();
+                    } elseif ($targetWidget instanceof iHaveColumns && $colName = $rightExpr->getWidgetLink()->getTargetColumnId()) {
+                        $targetCol = $targetWidget->getColumnByDataColumnName($colName);
+                        if ($targetCol->isBoundToAttribute() === true) {
+                            $delim = $targetCol->getAttribute()->getValueListDelimiter();
+                        }
+                    }
+                }
+            }
+            $jsConditions[] = "exfTools.data.compareValues($leftJs, $rightJs, '{$condition->getComparator()}', '$delim')";
+        }
+        
+        // Then just append condition groups evaluated by a recursive call to this method
+        foreach ($conditionGroup->getConditionGroups() as $nestedGrp) {
+            $jsConditions[] = '(' . $this->buildJsConditionalPropertyRowCheck($nestedGrp, $oRowJs) . ')';
+        }
+        
+        // Now glue everything together using the logical operator
+        switch ($conditionGroup->getOperator()) {
+            case EXF_LOGICAL_AND: $op = ' && '; break;
+            case EXF_LOGICAL_OR: $op = ' || '; break;
+            default:
+                throw new FacadeRuntimeError('Unsupported logical operator for conditional property "' . $conditionGroup->getPropertyName() . '" in widget "' . $this->getWidget()->getWidgetType() . ' with id "' . $this->getWidget()->getId() . '"');
+        }
+        
+        // cond1 && cond2 && (grp1cond1 || grp1cond2) && ...
+        return implode($op, $jsConditions);
     }
 }
