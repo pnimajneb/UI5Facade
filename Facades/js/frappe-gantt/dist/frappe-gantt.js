@@ -163,38 +163,8 @@ var Gantt = (function () {
             return date_string + (with_time ? ' ' + time_string : '');
         },
 
-        format(date, format_string = 'YYYY-MM-DD HH:mm:ss.SSS', lang = 'en') {
-            const values = this.get_date_values(date).map((d) => padStart(d, 2, 0));
-            const format_map = {
-                YYYY: values[0],
-                MM: padStart(+values[1] + 1, 2, 0),
-                DD: values[2],
-                HH: values[3],
-                mm: values[4],
-                ss: values[5],
-                SSS: values[6],
-                D: values[2],
-                MMMM: month_names[lang][+values[1]],
-                MMM: month_names[lang][+values[1]],
-            };
-
-            let str = format_string;
-            const formatted_values = [];
-
-            Object.keys(format_map)
-                .sort((a, b) => b.length - a.length) // big string first
-                .forEach((key) => {
-                    if (str.includes(key)) {
-                        str = str.replace(key, `$${formatted_values.length}`);
-                        formatted_values.push(format_map[key]);
-                    }
-                });
-
-            formatted_values.forEach((value, i) => {
-                str = str.replace(`$${i}`, value);
-            });
-
-            return str;
+        format(date, format_string = 'YYYY-MM-DD HH:mm:ss.SSS') {
+            return exfTools.date.format(date, format_string);
         },
 
         diff(date_a, date_b, scale = DAY) {
@@ -656,13 +626,11 @@ var Gantt = (function () {
 
             const start_date = date_utils.format(
                 this.task._start,
-                'MMM D',
-                this.gantt.options.language
+                this.gantt.options.date_format,
             );
             const end_date = date_utils.format(
                 date_utils.add(this.task._end, -1, 'second'),
-                'MMM D',
-                this.gantt.options.language
+                this.gantt.options.date_format,
             );
             const subtitle = start_date + ' - ' + end_date;
 
@@ -737,8 +705,8 @@ var Gantt = (function () {
             setTimeout(() => (this.action_completed = false), 1000);
         }
 
-        compute_start_end_date() {
-            const bar = this.$bar;
+        compute_start_end_date(targetBar = null) {
+            const bar = targetBar || this.$bar;
 
             const x_in_units = bar.getX() / this.gantt.options.column_width;
             let new_start_date = date_utils.add(
@@ -968,8 +936,9 @@ var Gantt = (function () {
     }
 
     class Popup {
-        constructor(parent, custom_html) {
+        constructor(parent, custom_html, gantt) {
             this.parent = parent;
+            this.gantt = gantt;
             this.custom_html = custom_html;
             this.make();
         }
@@ -989,7 +958,7 @@ var Gantt = (function () {
         }
 
         show(options) {
-            if (!options.target_element) {
+            if (!options?.target_element) {
                 throw new Error('target_element is required to show popup');
             }
             if (!options.position) {
@@ -1034,6 +1003,62 @@ var Gantt = (function () {
         hide() {
             this.parent.style.opacity = 0;
             this.parent.style.left = 0;
+        }
+
+        move(options = {}) {
+            const { bar, target_element } = options;
+
+            const { new_start_date, new_end_date } = bar.compute_start_end_date(target_element)
+
+            const start_date = date_utils.format(
+                new_start_date,
+                this.gantt.options.date_format,
+            );
+            const end_date = date_utils.format(
+                date_utils.add(new_end_date, -1, 'day'),
+                this.gantt.options.date_format,
+            );
+
+            this.title.innerHTML = bar?.task?.name;
+            this.subtitle.innerHTML = start_date + ' - ' + end_date;
+            this.parent.style.width = this.parent.clientWidth + 'px';
+
+            if (!options?.target_element) {
+                throw new Error('target_element is required to move popup');
+            }
+            if (!options.position) {
+                options.position = 'left';
+            }
+
+            const { width: wrapper_width} = this.parent.getBoundingClientRect();
+
+            // set position
+            let position_meta;
+            if (target_element instanceof HTMLElement) {
+                position_meta = target_element.getBoundingClientRect();
+            } else if (target_element instanceof SVGElement) {
+                position_meta = options.target_element.getBBox();
+            }
+
+            if (options.position === 'left') {
+                this.parent.style.left =
+                    position_meta.x + (position_meta.width + 10) + 'px';
+                this.parent.style.top = position_meta.y + 'px';
+
+                this.pointer.style.transform = 'rotateZ(90deg)';
+                this.pointer.style.left = '-7px';
+                this.pointer.style.top = '2px';
+            } else if (options.position === 'right') {
+                this.parent.style.left =
+                    position_meta.x + (-1 * (wrapper_width + 7)) + 'px';
+                this.parent.style.top = position_meta.y + 'px';
+
+                this.pointer.style.transform = 'rotateZ(-90deg)';
+                this.pointer.style.left = wrapper_width + 7 + 'px';
+                this.pointer.style.top = '2px';
+            }
+
+            this.parent.style.opacity = 1;
         }
     }
 
@@ -1521,26 +1546,24 @@ var Gantt = (function () {
                 'Quarter Day_lower': date_utils.format(
                     date,
                     'HH',
-                    this.options.language
                 ),
                 'Half Day_lower': date_utils.format(
                     date,
                     'HH',
-                    this.options.language
                 ),
                 Day_lower:
                     date.getDate() !== last_date.getDate()
-                        ? date_utils.format(date, 'D', this.options.language)
+                        ? date_utils.format(date, 'D')
                         : '',
                 Week_lower:
                     date.getMonth() !== last_date.getMonth()
-                        ? date_utils.format(date, 'D MMM', this.options.language)
-                        : date_utils.format(date, 'D', this.options.language),
-                Month_lower: date_utils.format(date, 'MMMM', this.options.language),
-                Year_lower: date_utils.format(date, 'YYYY', this.options.language),
+                        ? date_utils.format(date, 'D MMM')
+                        : date_utils.format(date, 'D'),
+                Month_lower: date_utils.format(date, 'M'),
+                Year_lower: date_utils.format(date, 'YYYY'),
                 'Quarter Day_upper':
                     date.getDate() !== last_date.getDate()
-                        ? date_utils.format(date, 'D MMM', this.options.language)
+                        ? date_utils.format(date, 'D MMM')
                         : '',
                 'Half Day_upper':
                     date.getDate() !== last_date.getDate()
@@ -1548,25 +1571,24 @@ var Gantt = (function () {
                             ? date_utils.format(
                                   date,
                                   'D MMM',
-                                  this.options.language
                               )
-                            : date_utils.format(date, 'D', this.options.language)
+                            : date_utils.format(date, 'D')
                         : '',
                 Day_upper:
                     date.getMonth() !== last_date.getMonth()
-                        ? date_utils.format(date, 'MMMM', this.options.language)
+                        ? date_utils.format(date, 'M')
                         : '',
                 Week_upper:
                     date.getMonth() !== last_date.getMonth()
-                        ? date_utils.format(date, 'MMMM', this.options.language)
+                        ? date_utils.format(date, 'M')
                         : '',
                 Month_upper:
                     date.getFullYear() !== last_date.getFullYear()
-                        ? date_utils.format(date, 'YYYY', this.options.language)
+                        ? date_utils.format(date, 'YYYY')
                         : '',
                 Year_upper:
                     date.getFullYear() !== last_date.getFullYear()
-                        ? date_utils.format(date, 'YYYY', this.options.language)
+                        ? date_utils.format(date, 'YYYY')
                         : '',
             };
 
@@ -1747,8 +1769,9 @@ var Gantt = (function () {
                 bars.forEach((bar) => {
                     const $bar = bar.$bar;
                     $bar.finaldx = this.get_snap_position(dx);
-                    this.hide_popup();
+                    
                     if (is_resizing_left) {
+                        this.move_popup({ target_element: $bar, bar });
                         if (parent_bar_id === bar.task.id) {
                             bar.update_bar_position({
                                 x: $bar.ox + $bar.finaldx,
@@ -1760,6 +1783,7 @@ var Gantt = (function () {
                             });
                         }
                     } else if (is_resizing_right) {
+                        this.move_popup({ target_element: $bar, position: 'right', bar });
                         if (parent_bar_id === bar.task.id) {
                             bar.update_bar_position({
                                 width: $bar.owidth + $bar.finaldx,
@@ -1767,6 +1791,7 @@ var Gantt = (function () {
                         }
                     } else if (is_dragging) {
                         bar.update_bar_position({ x: $bar.ox + $bar.finaldx });
+                        this.move_popup({ target_element: $bar, bar });
                     }
                 });
             });
@@ -1929,7 +1954,8 @@ var Gantt = (function () {
             if (!this.popup) {
                 this.popup = new Popup(
                     this.popup_wrapper,
-                    this.options.custom_popup_html
+                    this.options.custom_popup_html,
+                    this
                 );
             }
             this.popup.show(options);
@@ -1937,6 +1963,17 @@ var Gantt = (function () {
 
         hide_popup() {
             this.popup && this.popup.hide();
+        }
+
+        move_popup(options) {
+            if (!this.popup) {
+                this.popup = new Popup(
+                    this.popup_wrapper,
+                    this.options.custom_popup_html,
+                    this
+                );
+            }
+            this.popup.move(options);
         }
 
         trigger_event(event, args) {

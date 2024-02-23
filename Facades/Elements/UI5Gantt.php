@@ -151,10 +151,10 @@ JS;
         $startCol = $calItem->getStartTimeColumn();
         $startFormatter = $this->getFacade()->getDataTypeFormatter($startCol->getDataType());
         $endCol = $calItem->getEndTimeColumn();
-        $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());
-        
+        $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());       
+                
         if ($startCol->getDataType() instanceof DateDataType) {
-            $dateFormat = $startCol->getDataType()->getFormat();
+            $dateFormat = $startFormatter->getFormat();
         } else {
             $dateFormat = $this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT');
         }
