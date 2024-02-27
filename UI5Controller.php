@@ -13,7 +13,6 @@ use exface\UI5Facade\Facades\Elements\UI5Dialog;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Widgets\Dialog;
-use exface\Core\Interfaces\Widgets\iContainOtherWidgets;
 
 class UI5Controller implements UI5ControllerInterface
 {
@@ -838,7 +837,7 @@ JS;
     {
         $propertyName = $this->buildJsObjectName($objectName, $ownerElement);
         if (! $this->hasProperty($propertyName)) {
-            throw new OutOfBoundsException('Dependent object "' . $propertyName . ' not found in controller "' . $this->getName() . '"');
+            throw new OutOfBoundsException('Dependent object "' . $propertyName . '" not found in controller "' . $this->getName() . '"');
         }
         
         if ($oControllerJsVar === null) {

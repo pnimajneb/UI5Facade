@@ -45,23 +45,17 @@ class UI5InputFormDesigner extends UI5InputForm
             content: "<div id=\"{$this->getIdOfCreatorDiv()}\"></div>",
             afterRendering: function() {
                 var oCreator;
-                SurveyCreator.StylesManager.applyTheme("default");
-                SurveyCreator.localization.currentLocale = "{$this->getSurveyLocale()}";
+                {$this->buildJsCreatorSetup()}
                     
                 // Show Designer, Test Survey, JSON Editor and additionally Logic tabs
                 var oOptions = {};
-                {$this->buildJsCreatorInitOptions('oOptions')}
+                {$this->buildJsCreatorOptions('oOptions')}
                 //create the SurveyJS Creator and render it in div with id equals to "creatorElement"
                 oCreator = new SurveyCreator.SurveyCreator("{$this->getIdOfCreatorDiv()}", oOptions);
 
                 {$this->buildJsCreatorInit('oCreator')}
 
-console.log(oCreator.toolbox);
                 {$this->buildJsCreatorVar()} = oCreator;
-                
-                setTimeout(function(){
-                    $('.svd_commercial_container').attr('style', 'display:none!important');
-                }, 100);
 
                 var oValueBinding = new sap.ui.model.Binding(sap.ui.getCore().byId('{$this->getId()}').getModel(), '{$this->getValueBindingPath()}', sap.ui.getCore().byId('{$this->getId()}').getModel().getContext('{$this->getValueBindingPath()}'));
                 oValueBinding.attachChange(function(oEvent){
@@ -128,44 +122,5 @@ JS;
     {
         // TODO
         return '';
-    }
-    
-    protected function buildJsCreatorInitOptions(string $oOptionsJs = 'oOptions') : string
-    {
-        return <<<JS
-
-
-                $oOptionsJs.showLogicTab = true;
-JS;
-    }
-    
-    protected function buildJsCreatorInit(string $oCreatorJs = 'oCreator') : string
-    {
-        return <<<JS
-
-                //Show toolbox in the right container. It is shown on the left by default
-                $oCreatorJs.showToolbox = "left";
-                //Show property grid in the right container, combined with toolbox
-                $oCreatorJs.showPropertyGrid = "right";
-    
-                $oCreatorJs.onQuestionAdded.add(function(_, options) {
-                    options.question.hideNumber = true
-                    switch (options.question.jsonObj.type) {
-                        case 'text':
-                            options.question.titleLocation = 'left';
-                            break;
-                        case 'dropdown':
-                            options.question.titleLocation = 'left';
-                            break;
-                        case 'boolean':
-                            options.question.titleLocation = 'left';
-                            break;
-                        case 'file':
-                            options.question.titleLocation = 'left';
-                            break;
-                    }
-                });
-    
-JS;
     }
 }

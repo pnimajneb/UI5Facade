@@ -8,6 +8,7 @@ use exface\Core\Widgets\Filter;
 use exface\Core\Widgets\Input;
 use exface\Core\Widgets\InputComboTable;
 use exface\Core\Widgets\DataLookupDialog;
+use exface\Core\Widgets\Parts\ConditionalPropertyCondition;
 
 /**
  * Generates sap.m.Input fow `Input` widgets.
@@ -323,23 +324,50 @@ JS;
         }
     }
     
+    /**
+     * 
+     * @return void
+     */
     protected function registerOnChangeValidation()
     {
         $validator = $this->buildJsValidator();
         if ($validator !== 'true') {#
             $invalidText = json_encode($this->getValidationErrorText());
-            $onChangeValidation = <<<JS
-
-    sap.ui.getCore().byId('{$this->getId()}').setValueStateText($invalidText)           
-    if(! {$this->buildJsValidator()} ) {
-        {$this->buildJsValidationError()};
-    } else {
-        sap.ui.getCore().byId('{$this->getId()}').setValueState('None');
-    }
+            $revalidateJs = <<<JS
+    
+    (function(oCtrl) {
+        if (oCtrl.setValueStateText === undefined) {
+            return;
+        }
+        oCtrl.setValueStateText($invalidText)           
+        if(! {$validator} ) {
+            {$this->buildJsValidationError()};
+        } else {
+            oCtrl.setValueState('None');
+        }
+    })(sap.ui.getCore().byId('{$this->getId()}'))
     
 JS;
-            $this->addOnChangeScript($onChangeValidation);
+            $this->addOnChangeScript($revalidateJs);
             
+        }
+        
+        // If we have an invalid_if, make sure to revalidate this element every time any widgets
+        // used in the conditions change
+        $widget = $this->getWidget();
+        if (null !== $invalidIf = $widget->getInvalidIf()) {
+            $facade = $this->getFacade();
+            foreach ($invalidIf->getConditionGroup()->getConditionsRecursive() as $cond) {
+                /* @var $cond ConditionalPropertyCondition */
+                $expr = $cond->getValueLeftExpression();
+                if ($expr->isReference() && $expr->getWidgetLink($widget)->getTargetWidget() !== $widget) {
+                    $facade->getElement($expr->getWidgetLink($widget)->getTargetWidget())->addOnChangeScript("setTimeout(function(){ {$revalidateJs} }, 0);");
+                }
+                $expr = $cond->getValueRightExpression();
+                if ($expr->isReference() && $expr->getWidgetLink($widget)->getTargetWidget() !== $widget) {
+                    $facade->getElement($expr->getWidgetLink($widget)->getTargetWidget())->addOnChangeScript("setTimeout(function(){ {$revalidateJs} }, 0);");
+                }
+            }
         }
     }
     

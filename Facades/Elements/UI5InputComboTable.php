@@ -892,6 +892,9 @@ JS;
             }
             $js = "{$setValue}setSelectedKey($keyJs)";
         } else {
+            if ($valueJs === '' || $valueJs === null) {
+                $valueJs = 'null';
+            }
             $js = "setSelectedKey($keyJs).addToken(new sap.m.Token({key: $keyJs, text: $valueJs}))";
         }
         

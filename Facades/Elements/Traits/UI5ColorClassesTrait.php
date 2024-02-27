@@ -21,6 +21,13 @@ use exface\Core\DataTypes\StringDataType;
 trait UI5ColorClassesTrait {
     
     /**
+     * Characters to be removed from values and colors if they are to be used in CSS selectors
+     * 
+     * @var string[]
+     */
+    private $cssClassNameRemoveChars = ['#', '.', '+'];
+    
+    /**
      * Makes the controller run a script to add custom CSS styles every time the view is shown.
      * 
      * @return void
@@ -28,7 +35,7 @@ trait UI5ColorClassesTrait {
     protected function registerColorClasses(array $colorScale, string $cssSelectorToColor = '.exf-custom-color.exf-color-[#color#]', string $cssColorProperties = 'background-color: [#color#]', bool $skipSemanticColors = true)
     {
         $css = '';
-        foreach ($colorScale as $color) {
+        foreach ($colorScale as $value => $color) {
             if (substr($color, 0, 1) === '~') {
                 if ($skipSemanticColors === true) {
                     continue;
@@ -36,31 +43,18 @@ trait UI5ColorClassesTrait {
                     $color = $this->getFacade()->getSemanticColors()[$color];
                 }
             }
-            $class = StringDataType::replacePlaceholder($cssSelectorToColor, 'color', trim(trim($color), "#"));
-            $properties = StringDataType::replacePlaceholder($cssColorProperties, 'color', $color);
+            $class = StringDataType::replacePlaceholders($cssSelectorToColor, [
+                'color' => str_replace($this->cssClassNameRemoveChars, '', trim($color)), 
+                'value' => str_replace($this->cssClassNameRemoveChars, '', trim($value))
+            ]);
+            $properties = StringDataType::replacePlaceholders($cssColorProperties, [
+                'color' => $color, 
+                'value' => $value
+            ]);
             $css .= "$class { $properties } ";
         }
         
-        $cssId = $this->getId();
-        if (! $this->getUseWidgetId()) {
-            $this->setUseWidgetId(true);
-            $cssId = $this->getId();
-            $this->setUseWidgetId(false);
-        }
-        $cssId .= '_color_css';
-        
-        $this->getController()->addOnShowViewScript(<<<JS
-            
-(function(){
-    var jqTag = $('#{$cssId}');
-    if (jqTag.length === 0) {
-        $('head').append($('<style type="text/css" id="{$cssId}"></style>').text('$css'));
-    }
-})();
-
-JS, false);
-        
-        $this->getController()->addOnHideViewScript("$('#{$cssId}').remove();");
+        $this->registerCustomCss($css, '_color_css');
         
         return;
     }
@@ -77,25 +71,35 @@ JS, false);
      * 
      * @param string $oControlJs
      * @param string $sColorJs
-     * @param string $cssCustomColorClass
+     * @param string $cssCustomCssClass
      * @param string $cssColorClassPrefix
      * @return string
      */
-    protected function buildJsColorClassSetter(string $oControlJs, string $sColorJs, string $cssCustomColorClass = 'exf-custom-color', $cssColorClassPrefix = 'exf-color-') : string
+    protected function buildJsColorClassSetter(string $oControlJs, string $sColorJs, string $cssCustomCssClass = 'exf-custom-color', $cssColorClassPrefix = 'exf-color-') : string
     {
+        $cssReplaceJSON = json_encode($this->cssClassNameRemoveChars);
+        // Note, the 
         return <<<JS
         
         (function(oCtrl, sColor){
             var fnStyler = function(){
+                var aCssSelectorRemoveChars = $cssReplaceJSON;
+                var sColorClassSuffix = '';
+                var sColorClassPrefix = '{$cssColorClassPrefix}';
+                var sCustomCssClass = '{$cssCustomCssClass}';
                 (oCtrl.$().attr('class') || '').split(/\s+/).forEach(function(sClass) {
-                    if (sClass.startsWith('{$cssColorClassPrefix}')) {
+                    if (sClass.startsWith(sColorClassPrefix)) {
                         oCtrl.removeStyleClass(sClass);
                     }
                 });
                 if (sColor === null) {
-                    oCtrl.removeStyleClass('{$cssCustomColorClass}');
+                    oCtrl.removeStyleClass(sCustomCssClass);
                 } else {
-                    oCtrl.addStyleClass('{$cssCustomColorClass} {$cssColorClassPrefix}' + sColor.replace("#", ""));
+                    sColorClassSuffix = sColor.toString();
+                    aCssSelectorRemoveChars.forEach(function(sChar) {
+                        sColorClassSuffix = sColorClassSuffix.replace(sChar, '');
+                    });
+                    oCtrl.addStyleClass(sCustomCssClass + ' ' + sColorClassPrefix + sColorClassSuffix);
                 }
             };
             var oDelegate = {
@@ -104,7 +108,6 @@ JS, false);
                     oCtrl.removeEventDelegate(oDelegate);
                 }
             };
-            
             fnStyler();
             if (oCtrl.$().length === 0) {
                 oCtrl.addEventDelegate(oDelegate);

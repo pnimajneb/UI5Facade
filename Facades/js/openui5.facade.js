@@ -192,7 +192,7 @@ const exfLauncher = {};
 					// if ($.active == 0 && $('#contextBar .context-bar-spinner').length > 0){
 					//if ($('#contextBar .context-bar-spinner').length > 0){
 						$.ajax({
-							type: 'POST',
+							type: 'GET',
 							url: 'api/ui5/' + _oLauncher.getPageId() + '/context',
 							dataType: 'json',
 							success: function(data, textStatus, jqXHR) {
@@ -305,7 +305,7 @@ const exfLauncher = {};
 				}
 				
 				$.ajax({
-					type: 'POST',
+					type: 'GET',
 					url: 'api/ui5',
 					dataType: 'script',
 					data: {

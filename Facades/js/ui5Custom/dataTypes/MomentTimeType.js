@@ -17,8 +17,13 @@ sap.ui.define([
 		
 		parseValue: function (sTime) {
 			var ICUFormat = undefined;
+			var valueFormat = undefined;
 			if (this.options.dateFormat) {
 				ICUFormat = this.options.dateFormat;
+			}
+			if (this.options.valueFormat) {
+				valueFormat = this.options.valueFormat;
+				return exfTools.time.format(exfTools.time.parse(sTime, ICUFormat), valueFormat);
 			}
 			return exfTools.time.parse(sTime, ICUFormat);
 		},			

@@ -59,6 +59,7 @@ pre.sf-dump .sf-dump-private, pre.sf-dump .sf-dump-public, pre.sf-dump .sf-dump-
 
 /* sap.m.GridList */
 .sapFGridListDefault {padding: 0 0.5rem}
+.sapFGridListDefault > .sapMLIB {max-width: 11rem;}
 
 /* sap.f.DynamicPage */
 .exf-page-heading-btn {margin-right: 0.2rem;}
@@ -158,6 +159,7 @@ table.jexcel td > input,
 table.jexcel td > textarea {font-family: inherit;}
 html.sapUiTheme-sap_fiori_3 table.jexcel td > textarea {padding-top: 10px !important; padding: 2px 4px; margin-bottom: -1px; margin-top: -1px;}
 table.jexcel > tbody > tr > td.jexcel_dropdown { background-image: url("data:image/svg+xml,%0A%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 24 24'%3E%3Cpath fill='none' d='M0 0h24v24H0V0z'/%3E%3Cpath d='M7 10l5 5 5-5H7z' fill='gray'/%3E%3C/svg%3E");}
+table.jexcel > tbody > tr > td.jexcel_dropdown.readonly { background-image: none;}
 .exf-spreadsheet-change {position: relative}
 .exf-spreadsheet-change::before {content: "◤"; color: #89919a; font-size: 12px; position: absolute; left: 0; top: 0; margin-left: -2px; margin-top: -3px}
 .exf-spreadsheet-invalid {background-color: #ffebeb;}
@@ -213,10 +215,18 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .exf-map-popup-table > tbody > tr > td:nth-of-type(2) {font-weight: bold}
 .exf-map .extra-marker > i.fa-map-marker {margin-top: 8px !important;}
 .exf-map .leaflet-marker-icon.selected:not(.exf-map-point)::before {content: ''; display: block; width: 40px; height: 27px; -moz-border-radius: 7.5px; -webkit-border-radius: 7.5px; border-radius: 50%; border: 5px solid gray; position: absolute; top: 23px; left: -7px; z-index: -1;}
-.exf-map .leaflet-marker-icon.selected.exf-map-point > div {border: 5px solid gray; margin-top: -5px; margin-left: -5px}
+.exf-map .leaflet-marker-icon.selected.exf-map-point > div:first-of-type {border: 5px solid gray; margin-top: -5px; margin-left: -5px}
+.exf-map-point-value {position: absolute; transform: translate(-50%, -50%);}
+.exf-map-point-center {top: 50%; left: 50%;}
+.exf-map-point-right {top: 50%; left: calc(100% + 10px);}
+.exf-map-point-left {top: 50%; left: -0.75rem}
+.exf-map-point-bottom {top: calc(100% + 10px); left: 50%}
+.exf-map-point-top {top: -1rem; left: 50%}
 .exf-map .marker-cluster {background-clip: padding-box; border-radius: 20px;}
 .exf-map .marker-cluster div {width: 30px; height: 30px; margin-left: 5px; margin-top: 5px; color: white; text-align: center; border-radius: 15px;}
 .exf-map .marker-cluster i {line-height: 30px;}
+.exf-map-shape-title.leaflet-tooltip {background-color: transparent; border: none; box-shadow: none;}
+.exf-map-shape-selected {fill-opacity: 0.4; stroke-width: 1; stroke: black}
 
 /* Slick carousel: ImageGallery */
 .slick-carousel.horizontal .slick-list {padding: 10px; box-sizing: border-box;}
@@ -281,3 +291,11 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .sapMBtn.exf-scheduler-navleft {left: -8px;}
 .sapMBtn.exf-scheduler-navright {right: 0;}
 .exf-scheduler-head-year {font-weight: bold}
+
+/* SVG icons. Color filters computed via https://isotropic.co/tool/hex-color-to-css-filter/ */
+.sapMBtn.exf-svg-icon > .sapMBtnInner > .sapMImg {height: 18px; margin-top: auto; margin-bottom: auto;}
+.sapMBtn.exf-svg-icon > .sapMBtnInner > .sapMImg {filter:  invert(17%) sepia(90%) saturate(2858%) hue-rotate(198deg) brightness(92%) contrast(94%)}
+.sapMBtn.exf-svg-icon > .sapMBtnInner.sapMBtnActive > .sapMImg {filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(1deg) brightness(107%) contrast(101%);}
+
+.sapUiIcon.exf-svg-icon::before {padding-top: 1px; width: 16px; display: block; margin-left: auto; margin-right: auto;}
+.sapUiTableCellInner > .sapUiIcon::before {padding-top: 2px}

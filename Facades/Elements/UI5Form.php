@@ -102,7 +102,11 @@ JS;
      */
     protected function buildJsFloatingToolbar()
     {
-        return $this->getFacade()->getElement($this->getWidget()->getToolbarMain())->buildJsConstructor();
+        $toolbar = $this->getWidget()->getToolbarMain();
+        if (null !== $caption = $this->getCaption()) {
+            $toolbar->setCaption($caption);
+        }
+        return $this->getFacade()->getElement($toolbar)->buildJsConstructor();
     }
     
     /**

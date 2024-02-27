@@ -284,7 +284,7 @@ JS;
      * 
      * @return string
      */
-    protected function buildJsPanelWrapper(string $contentConstructorsJs, string $oControllerJs = 'oController', string $toolbar = null)  : string
+    protected function buildJsPanelWrapper(string $contentConstructorsJs, string $oControllerJs = 'oController', string $toolbar = null, bool $padding = true)  : string
     {
         $toolbar = $toolbar ?? $this->buildJsToolbar($oControllerJs);
         $hDim = $this->getWidget()->getHeight();
@@ -293,7 +293,13 @@ JS;
         } else {
             $height = $this->buildCssHeightDefaultValue();
         }
+        
+        $panelCssClass = $padding === false ? 'sapUiNoContentPadding' : '';
+        if ($this->isFillingContainer()) {
+            $panelCssClass .= ' exf-panel-no-border';
+        }
         return <<<JS
+
         new sap.m.Panel("{$this->getId()}_panel", {
             height: "$height",
             headerToolbar: [
@@ -303,8 +309,14 @@ JS;
                 {$contentConstructorsJs}
             ]
         })
-        
+        .addStyleClass('{$panelCssClass}')        
 JS;
+    }
+    
+    protected function isFillingContainer() : bool
+    {
+        $widget = $this->getWidget();
+        return $widget->hasParent() && $widget->getParent()->countWidgetsVisible() === 1;
     }
     
     /**
