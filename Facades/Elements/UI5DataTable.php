@@ -298,8 +298,12 @@ JS;
                         dragStart: function(oEvent) {
                             var oDraggedRow = oEvent.getParameter("target");
                             var oModel = oDraggedRow.getModel();
-                            var oData = oModel.getProperty(oDraggedRow.getBindingContext().getPath());
-                            oEvent.getParameter('browserEvent').dataTransfer.setData("row", JSON.stringify(oData));
+                            var oRow = oModel.getProperty(oDraggedRow.getBindingContext().getPath());
+                            var oDataSheet = {
+                                oId: '{$this->getMetaObject()->getId()}',
+                                rows: (oRow ? [oRow] : [])
+                            };
+                            oEvent.getParameter('browserEvent').dataTransfer.setData("dataSheet", JSON.stringify(oDataSheet));
                         }
                     }),
                 ],
