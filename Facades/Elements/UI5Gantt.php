@@ -170,19 +170,20 @@ JS;
             default: $viewMode = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
+        // see if this particular child(oChildRow)is to be moved along with its parent if the parent is moved
+        // check if there is a condition set to adjust which children are to be moved along with its parent
         /* @var $condProp \exface\Core\Widgets\Parts\ConditionalProperty */
-        /*
         if (null !== $condProp = $widget->getChildrenMoveWithParentIf()) {
             $rowMoveFilterJs = <<<JS
-
-                        // see if this particular child is to be moved
-                        if (false === {$this->buildJsConditionalPropertyRowCheck($condProp->getConditionGroup(), 'oChildRow')}) {
+                        // check if the set condition is matching the property of the child. If not, continue with the next item
+                        if (false === Boolean({$this->buildJsConditionalPropertyRowCheck($condProp->getConditionGroup(), 'oChildRow')})) {
                             return;
                         }
 JS;
+            // if the set condition is matching the property of the child, continue with moving the child
         } else {
             $rowMoveFilterJs = '';
-        }*/
+        }
         
         return <<<JS
 (function() {   
@@ -232,6 +233,7 @@ JS;
                 
                 function processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd) {
                     oRow._children.forEach(function(oChildRow, iIdx) {
+                        // check if there is a condition that enables/disables the moving of a child along with its parent
                         {$rowMoveFilterJs}
                         // move dates of oChildRow as far as the parent row was moved
                         var startDateChild = moment(new Date(oChildRow['date_start_plan'])).add(moveDiffInHours, 'hours');
@@ -390,6 +392,8 @@ JS;
     }
     
     /**
+     * This is a modified version of exface\Core\Facades\AbstractAjaxFacade\Elements\buildJsConditionalPropertyIf
+     * for checking the conditions for each row of an object instead of just the conditions for the object itself.
      * 
      * @param ConditionalPropertyConditionGroup $conditionGroup
      * @param string $oRowJs
@@ -402,6 +406,7 @@ JS;
         $jsConditions = [];
         
         // First evaluate the conditions
+        // Make sure that the widget link can be entered in the right or in the left expression
         foreach ($conditionGroup->getConditions() as $condition) {
             $leftJs = null;
             $leftExpr = $condition->getValueLeftExpression();
@@ -416,7 +421,7 @@ JS;
             }
             
             $rightJs = null;
-            $rightExpr = $condition->getValueLeftExpression();
+            $rightExpr = $condition->getValueRightExpression();
             if ($rightExpr->isReference() === true) {
                 $rightLink = $rightExpr->getWidgetLink($widget);
                 if ($rightLink->getTargetWidget() === $widget) {
