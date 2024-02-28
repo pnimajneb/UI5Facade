@@ -8,9 +8,6 @@ use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 use exface\Core\DataTypes\DateDataType;
-use exface\Core\Interfaces\Model\ExpressionInterface;
-use exface\Core\Widgets\Parts\ConditionalProperty;
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Widgets\Parts\ConditionalPropertyConditionGroup;
 use exface\Core\DataTypes\ComparatorDataType;
 use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
@@ -216,40 +213,38 @@ JS;
             var oRow = oTable.getModel().getProperty(oCtxt.sPath);
             var sColNameStart = '{$startCol->getDataColumnName()}';
             var sColNameEnd = '{$endCol->getDataColumnName()}';
-            
-            // move children with parent when parent is dragged along the timeline
-            if (Boolean({$this->getWidget()->getChildrenMoveWithParent()}) === true) {
 
-                var oldStart = new Date(oRow[sColNameStart]);
-                var oldEnd = new Date(oRow[sColNameEnd]);
-                var newStart = new Date({$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
-                var newEnd = new Date({$startFormatter->buildJsFormatDateObjectToInternal('dEnd')});
+            // Move children with parent when parent is dragged along the timeline
+            var oldStart = moment(oGantt.dateUtils.parse(oRow[sColNameStart])); // string '10.04.2024' -> date object 10.04.2024 02:00:00 GMT+2 
+            var oldEnd = moment(oGantt.dateUtils.parse(oRow[sColNameEnd])); // string '11.04.2024' -> date object 11.04.2024 02:00:00 GMT+2 
+            var newStart = moment(dStart);
+            var newEnd = moment(dEnd);
 
-                // Check if the parent has been moved without the duration changing
-                var iDurationOld = oldEnd - oldStart;
-                var iDurationNew = newEnd - newStart;
-            
-                if (iDurationOld ===  iDurationNew) {
-                    var moveDiffInDays = (newStart - oldStart) / 1000 / 60 / 60 / 24;
+            // Check if the parent has been moved without the duration changing
+            var iDurationNewMoment = newEnd.diff(newStart, 'hours');
+            var iDurationOldMoment = oldEnd.diff(oldStart, 'hours');
+
+            // Compare hour difference of old & new task dates, if they are same the children tasks will also be moved
+            if (iDurationNewMoment ===  iDurationOldMoment) {
+                var moveDiffInHours = newStart.diff(oldStart, 'hours');
                 
-                    function processChildrenRecursively(oRow, moveDiffInDays, sColNameStart, sColNameEnd) {
-                        oRow._children.forEach(function(oChildRow, iIdx) {
-                            // move dates of oChildRow as far as the parent row was moved
-                            var startDateChild = new Date(oChildRow['date_start_plan']);
-                            var endDateChild = new Date(oChildRow['date_end_plan']);
-                            startDateChild.setDate(startDateChild.getDate() + moveDiffInDays);
-                            endDateChild.setDate(endDateChild.getDate() + moveDiffInDays);
-                            oRow._children[iIdx][sColNameStart] = {$startFormatter->buildJsFormatDateObjectToInternal('startDateChild')};
-                            oRow._children[iIdx][sColNameEnd] = {$startFormatter->buildJsFormatDateObjectToInternal('endDateChild')};
+                function processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd) {
+                    oRow._children.forEach(function(oChildRow, iIdx) {
+                        // check if there is a condition that enables/disables the moving of a child along with its parent
+                        {$rowMoveFilterJs}
+                        // move dates of oChildRow as far as the parent row was moved
+                        var startDateChild = moment(new Date(oChildRow['date_start_plan'])).add(moveDiffInHours, 'hours');
+                        var endDateChild = moment(new Date(oChildRow['date_end_plan'])).add(moveDiffInHours, 'hours');
+                        oRow._children[iIdx][sColNameStart] = {$startFormatter->buildJsFormatDateObjectToInternal('startDateChild')};
+                        oRow._children[iIdx][sColNameEnd] = {$startFormatter->buildJsFormatDateObjectToInternal('endDateChild')};
 
-                            // if the child row has children too, call the function recursively
-                            if (oChildRow._children && oChildRow._children.length > 0) {
-                                processChildrenRecursively(oChildRow, moveDiffInDays, sColNameStart, sColNameEnd);
-                            }
-                        });
-                    }
-                    processChildrenRecursively(oRow, moveDiffInDays, sColNameStart, sColNameEnd);
-                }           
+                        // if the child row has children too, call the function recursively
+                        if (oChildRow._children && oChildRow._children.length > 0) {
+                            processChildrenRecursively(oChildRow, moveDiffInHours, sColNameStart, sColNameEnd);
+                        }
+                    });
+                }
+                processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd);
             }
             oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('newStart.toDate()')});
             oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('newEnd.toDate()')});
@@ -394,8 +389,12 @@ JS;
     }
     
     /**
-     * This is a modified version of exface\Core\Facades\AbstractAjaxFacade\Elements\buildJsConditionalPropertyIf
+     * Returns a JS snippet, that yields TRUE if the provided JS data row matches the condition group and FALSE otherwise
+     * 
+     * This is a modified version of `JsConditionalPropertyTrait::buildJsConditionalPropertyIf()`
      * for checking the conditions for each row of an object instead of just the conditions for the object itself.
+     * 
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait::buildJsConditionalPropertyIf()
      * 
      * @param ConditionalPropertyConditionGroup $conditionGroup
      * @param string $oRowJs
