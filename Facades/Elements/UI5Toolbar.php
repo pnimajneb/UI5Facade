@@ -29,11 +29,16 @@ class UI5Toolbar extends UI5AbstractElement
     {
         $left_buttons = $this->buildJsConstructorsForLeftButtons();
         $right_buttons = $this->buildJsConstructorsForRightButtons();
+        if (null !== $caption = $this->getCaption()) {
+            $caption = "new sap.m.Label({text: {$this->escapeString($caption)} }),";
+        } else {
+            $caption = '';
+        }
         
         $toolbar = <<<JS
 			new sap.m.OverflowToolbar({
 				content: [
-					{$this->getCaption()}
+					{$caption}
                     {$left_buttons}
                     new sap.m.ToolbarSpacer(),
                     {$right_buttons}

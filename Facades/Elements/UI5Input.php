@@ -334,13 +334,18 @@ JS;
         if ($validator !== 'true') {#
             $invalidText = json_encode($this->getValidationErrorText());
             $revalidateJs = <<<JS
-
-    sap.ui.getCore().byId('{$this->getId()}').setValueStateText($invalidText)           
-    if(! {$validator} ) {
-        {$this->buildJsValidationError()};
-    } else {
-        sap.ui.getCore().byId('{$this->getId()}').setValueState('None');
-    }
+    
+    (function(oCtrl) {
+        if (oCtrl.setValueStateText === undefined) {
+            return;
+        }
+        oCtrl.setValueStateText($invalidText)           
+        if(! {$validator} ) {
+            {$this->buildJsValidationError()};
+        } else {
+            oCtrl.setValueState('None');
+        }
+    })(sap.ui.getCore().byId('{$this->getId()}'))
     
 JS;
             $this->addOnChangeScript($revalidateJs);

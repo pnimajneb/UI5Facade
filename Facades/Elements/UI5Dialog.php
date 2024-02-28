@@ -1085,4 +1085,15 @@ JS;
         }
         return parent::buildJsRegisterOnActionPerformed($scriptJs);
     }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Form::buildJsFloatingToolbar()
+     */
+    protected function buildJsFloatingToolbar()
+    {
+        // The Dialog does not need a caption in the toolbar like the Form does
+        return $this->getFacade()->getElement($this->getWidget()->getToolbarMain())->buildJsConstructor();
+    }
 }

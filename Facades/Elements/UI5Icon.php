@@ -1,18 +1,21 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\Icon;
+use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
+use exface\Core\Interfaces\Widgets\iHaveIcon;
 
 /**
  * Generates sap.m.Text controls for Text widgets
  * 
- * @method Icon getWidget()
+ * @method \exface\Core\Widgets\Icon getWidget()
  *
  * @author Andrej Kabachnik
  *        
  */
 class UI5Icon extends UI5Display
 {
+    use UI5ColorClassesTrait;
+    
     /**
      * 
      * {@inheritDoc}
@@ -92,12 +95,14 @@ JS;
         
         return <<<JS
 
-            new sap.ui.core.Icon({
+            new sap.ui.core.Icon ({
                 {$iconSrc}
                 {$size}
                 {$this->buildJsPropertyWidth()}
                 {$this->buildJsPropertyHeight()}
             })
+            .addStyleClass('{$this->buildCssElementClass()}')
+            {$this->buildJsPseudoEventHandlers()}
 
 JS;
     }
@@ -119,27 +124,75 @@ JS;
 JS;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Display::buildJsValueBindingOptions()
+     */
     public function buildJsValueBindingOptions()
     {
         $widget = $this->getWidget();
+        // SVG icons as data-URLs are not supported here in contrast to sap.m.Button. Instead
+        // we apply the same trick as with custom colors: use an injected CSS class set by a
+        // value formatter. The CSS class will override the icon.
         if ($widget->hasIconScale()) {
-            $valueJs = $this->buildJsScaleResolver('value', $widget->getIconScale(), $widget->isIconScaleRangeBased());
+            if ($widget->getIconSet() === iHaveIcon::ICON_SET_SVG) {
+                $bSvgJs = 'true';
+                // Add the widget id to the CSS class in case there are multiple widgets
+                // with same values (like 1 and 0) but different icons
+                $svgClassPrefix = "exf-svg-" . str_replace($this->cssClassNameRemoveChars, '', $widget->getId()) . "-";
+                $iconScaleEncoded = [];
+                $iconScaleVals = [];
+                foreach ($widget->getIconScale() as $val => $icon) {
+                    $iconScaleEncoded[$val] = rawurlencode($icon);
+                    $iconScaleVals[$val] = str_replace($this->cssClassNameRemoveChars, '', trim($val));
+                }
+                $valueJs = $this->buildJsScaleResolver('value', $iconScaleVals, $widget->isIconScaleRangeBased());
+                $this->registerColorClasses($iconScaleEncoded, ".sapUiIcon.exf-svg-icon.{$svgClassPrefix}[#value#]::before", 'content: url("data:image/svg+xml,[#color#]")');
+            } else {
+                $valueJs = $this->buildJsScaleResolver('value', $widget->getIconScale(), $widget->isIconScaleRangeBased());
+            }
         } else {
             $valueJs = 'value';
+            if ($widget->getIconSet() === iHaveIcon::ICON_SET_SVG) {
+                $this->registerColorClasses(['icon'], "#{$this->getId()}.exf-svg-icon:before", 'content: url("data:image/svg+xml,' . rawurlencode($this->getWidget()->getIcon()) . '")');
+            }
         }
+        $bSvgJs = $bSvgJs ?? 'false';
         return parent::buildJsValueBindingOptions() . <<<JS
         
                 formatter: function(value){
+                    var oCtrl = this;
                     var sIcon = {$valueJs};
-                    if (sIcon === undefined || sIcon === null || sIcon === '') {
-                        return null;
-                    }
-                    if (! sIcon.toString().startsWith('sap-icon://')) {
-                        sIcon = 'sap-icon://font-awesome/' + sIcon;
+                    var bSvg = {$bSvgJs};
+                    switch (true) {
+                        case sIcon === undefined:
+                        case sIcon === null:
+                        case sIcon === '':
+                            return null;
+                        case bSvg:
+                            {$this->buildJsColorClassSetter('oCtrl', 'sIcon', 'exf-svg-icon', $svgClassPrefix)};
+                            return 'sap-icon://circle-task';
+                        case ! sIcon.toString().startsWith('sap-icon://'):
+                            return 'sap-icon://font-awesome/' + sIcon;
                     }
                     return sIcon;
                 },
 JS;
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\AbstractJqueryElement::buildCssElementClass()
+     */
+    public function buildCssElementClass()
+    {
+        $cls = parent::buildCssElementClass();
+        if ($this->getWidget()->getIconSet() === 'svg') {
+            $cls .= ' exf-svg-icon';
+        }
+        return $cls;
     }
     
     /**

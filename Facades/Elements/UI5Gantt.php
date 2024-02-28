@@ -7,6 +7,15 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\JsValueScaleTrait;
 use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
+use exface\Core\DataTypes\DateDataType;
+use exface\Core\Interfaces\Model\ExpressionInterface;
+use exface\Core\Widgets\Parts\ConditionalProperty;
+use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
+use exface\Core\Widgets\Parts\ConditionalPropertyConditionGroup;
+use exface\Core\DataTypes\ComparatorDataType;
+use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
+use exface\Core\Interfaces\Widgets\iHaveColumns;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * 
@@ -15,7 +24,7 @@ use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
  * @author Andrej Kabachnik
  *
  */
-class UI5Gantt extends UI5DataTable
+class UI5Gantt extends UI5DataTree
 {
     use JsValueScaleTrait;
     use UI5ColorClassesTrait;
@@ -31,8 +40,6 @@ class UI5Gantt extends UI5DataTable
      */
     public function buildJsConstructorForControl($oControllerJs = 'oController') : string
     {
-        $controller = $this->getController();
-        $this->initConfiguratorControl($controller);
         $widget = $this->getWidget();
         $calItem = $widget->getTasksConfig();
         
@@ -40,63 +47,11 @@ class UI5Gantt extends UI5DataTable
             $this->registerColorClasses($calItem->getColorScale());
         }
         
-        $selection_mode = $widget->getMultiSelect() ? 'sap.ui.table.SelectionMode.MultiToggle' : 'sap.ui.table.SelectionMode.Single';
-        $selection_behavior = $widget->getMultiSelect() ? 'sap.ui.table.SelectionBehavior.Row' : 'sap.ui.table.SelectionBehavior.RowOnly';
-        
-        if ($widget->getTreeExpandedLevels() !== null) {
-            $numberOfExpandedLevelsJs = "numberOfExpandedLevels: {$widget->getTreeExpandedLevels()},";
-        } else {
-            $numberOfExpandedLevelsJs = "";
-        }
-        
         $gantt = <<<JS
         new sap.ui.layout.Splitter({
+            {$this->buildJsProperties()}
             contentAreas: [
-                new sap.ui.table.TreeTable('{$this->getId()}', {
-                    columnHeaderHeight: 52,
-                    rows: {
-                        path:'/rows', 
-                        parameters: {
-                            arrayNames: [
-                                '_children'
-                            ],
-                            {$numberOfExpandedLevelsJs}
-                        }
-                    },
-                    selectionMode: {$selection_mode},
-    		        selectionBehavior: {$selection_behavior},
-            		columns: [
-            			{$this->buildJsColumnsForUiTable()}
-            		],
-                    noData: [
-                        new sap.m.FlexBox({
-                            height: "100%",
-                            width: "100%",
-                            justifyContent: "Center",
-                            alignItems: "Center",
-                            items: [
-                                new sap.m.Text("{$this->getId()}_noData", {text: "{$this->getWidget()->getEmptyText()}"})
-                            ]
-                        })
-                    ],
-                    toggleOpenState: function(oEvent) {
-                        var oTable = oEvent.getSource();
-                        setTimeout(function(){
-                            {$this->buildJsSyncTreeToGantt('oTable')};
-                        },10);
-                    },
-                    firstVisibleRowChanged: function(oEvent) {
-                        var oTable = oEvent.getSource();
-                        var domGanttContainer = $('#{$this->getId()}_gantt .gantt-container')[0];
-                        var iScrollLeft = domGanttContainer.scrollLeft;
-                        setTimeout(function(){
-                            {$this->buildJsSyncTreeToGantt('oTable')};
-                            domGanttContainer.scrollTo(iScrollLeft, 0);
-                        },10);
-                    }
-                })
-                {$this->buildJsClickHandlers('oController')}
-                {$this->buildJsPseudoEventHandlers()}
+                {$this->buildJsConstructorForTreeTable($oControllerJs)}
                 ,
                 new sap.ui.core.HTML("{$this->getId()}_wrapper", {
                     content: "<div id=\"{$this->getId()}_gantt\" class=\"exf-gantt\" style=\"height:100%; min-height: 100px; overflow: hidden;\"></div>",
@@ -131,21 +86,78 @@ JS;
         return $this->buildJsPanelWrapper($gantt, $oControllerJs) . ".addStyleClass('sapUiNoContentPadding')";
     }
     
+    /**
+     *
+     * @return string
+     */
+    protected function buildJsPropertyColumnHeaderHeight() : string
+    {
+        return 'columnHeaderHeight: 52,';
+    }
+    
+    /**
+     *
+     * @param string $oEventJs
+     * @return string
+     */
+    protected function buildJsOnOpenScript(string $oEventJs) : string
+    {
+        return <<<JS
+
+                var oTable = oEvent.getSource();
+                setTimeout(function(){
+                    {$this->buildJsSyncTreeToGantt('oTable')};
+                },10);
+JS;
+    }
+    
+    /**
+     *
+     * @param string $oEventJs
+     * @return string
+     */
+    protected function buildJsOnCloseScript(string $oEventJs) : string
+    {
+        return <<<JS
+        
+                var oTable = oEvent.getSource();
+                var domGanttContainer = $('#{$this->getId()}_gantt .gantt-container')[0];
+                var iScrollLeft = domGanttContainer.scrollLeft;
+                setTimeout(function(){
+                    {$this->buildJsSyncTreeToGantt('oTable')};
+                    domGanttContainer.scrollTo(iScrollLeft, 0);
+                },10);
+JS;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsGanttGetInstance() : string
     {
         return $this->getController()->buildJsDependentObjectGetter('gantt', $this);
     }
 		
+    /**
+     * 
+     * @return string
+     */
     protected function buildJsGanttInit() : string
     {
         $widget = $this->getWidget();
-        $dateFormat = $this->escapeString($this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT'));
         
         $calItem = $widget->getTasksConfig();
         $startCol = $calItem->getStartTimeColumn();
         $startFormatter = $this->getFacade()->getDataTypeFormatter($startCol->getDataType());
         $endCol = $calItem->getEndTimeColumn();
-        $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());
+        $endFormatter = $this->getFacade()->getDataTypeFormatter($endCol->getDataType());       
+                
+        if ($startCol->getDataType() instanceof DateDataType) {
+            $dateFormat = $startFormatter->getFormat();
+        } else {
+            $dateFormat = $this->getWorkbench()->getCoreApp()->getTranslator()->translate('LOCALIZATION.DATE.DATE_FORMAT');
+        }
         
         switch ($widget->getTimelineConfig()->getGranularity(DataTimeline::GRANULARITY_HOURS)) {
             case DataTimeline::GRANULARITY_HOURS: $viewMode = 'Quater Day'; break;
@@ -156,6 +168,21 @@ JS;
             case DataTimeline::GRANULARITY_WEEKS: $viewMode = 'Week'; break;
             case DataTimeline::GRANULARITY_YEARS: $viewMode = 'Year'; break;
             default: $viewMode = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
+        }
+        
+        // see if this particular child(oChildRow)is to be moved along with its parent if the parent is moved
+        // check if there is a condition set to adjust which children are to be moved along with its parent
+        /* @var $condProp \exface\Core\Widgets\Parts\ConditionalProperty */
+        if (null !== $condProp = $widget->getChildrenMoveWithParentIf()) {
+            $rowMoveFilterJs = <<<JS
+                        // check if the set condition is matching the property of the child. If not, continue with the next item
+                        if (false === Boolean({$this->buildJsConditionalPropertyRowCheck($condProp->getConditionGroup(), 'oChildRow')})) {
+                            return;
+                        }
+JS;
+            // if the set condition is matching the property of the child, continue with moving the child
+        } else {
+            $rowMoveFilterJs = '';
         }
         
         return <<<JS
@@ -177,7 +204,7 @@ JS;
         arrow_curve: 5,
         padding: 14,
         view_mode: '$viewMode',
-        date_format: $dateFormat,
+        date_format: {$this->escapeString($dateFormat)},
         language: 'en', // or 'es', 'it', 'ru', 'ptBr', 'fr', 'tr', 'zh', 'de', 'hu'
         custom_popup_html: null,
     	on_date_change: function(oTask, dStart, dEnd) {
@@ -224,139 +251,11 @@ JS;
                     processChildrenRecursively(oRow, moveDiffInDays, sColNameStart, sColNameEnd);
                 }           
             }
-            oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('dStart')});
-            oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('dEnd')});
+            oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('newStart.toDate()')});
+            oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('newEnd.toDate()')});
     	}
     });
 })();
-
-JS;
-    }
-    
-    /**
-     * 
-     * @param string $oModelJs
-     * @return string
-     */
-    protected function buildJsDataLoaderOnLoaded(string $oModelJs = 'oModel') : string
-    {    
-        if (! $this->getWidget()->getTreeParentRelationAlias()) {
-            $treeModeJs = "sap.ui.getCore().byId('{$this->getId()}').setUseFlatMode(true);";
-        } else {
-            $treeModeJs = '';
-        }
-        return parent::buildJsDataLoaderOnLoaded($oModelJs) . <<<JS
-
-                var oDataTree = {$this->buildJsTransformToTree($oModelJs . '.getData()')};
-                {$oModelJs}.setData(oDataTree);
-                {$treeModeJs}
-
-JS;
-    }
-    
-    /**
-     * 
-     * @param string $oControlJs
-     * @return string
-     */
-    protected function buildJsGetRowsAll(string $oControlJs) : string
-    {
-        // NOTE: oTable.getModel().getData() returns only the top level rows, but .getJSON() yields
-        // all. This is why the JSON parsing became neccessary
-        return "({$this->buildJsTransformFromTree("JSON.parse({$oControlJs}.getModel().getJSON()")}).rows || [])";
-    }
-    
-    /**
-     * 
-     * @param string $oDataJs
-     * @return string
-     */
-    protected function buildJsTransformFromTree(string $oDataJs) : string
-    {
-        return <<<JS
-        
-                (function(oDataTree) {
-                    var oDataFlat = $.extend({}, oDataTree);
-                    var fnFlatten = function(aRows) {
-                        var aFlat = [];
-                        aRows.forEach(function(oRow) {
-                            aFlat.push(oRow);
-                            if (Array.isArray(oRow._children) && oRow._children.length > 0) {
-                                aFlat.push(...fnFlatten(oRow._children));
-                            }
-                            delete oRow._children;
-                        });
-                        return aFlat;
-                    };
-                    oDataFlat.rows = fnFlatten(oDataTree.rows || []);                  
-                    return oDataFlat;
-                })($oDataJs)
-                
-JS;
-    }
-    
-    /**
-     * 
-     * @param string $oDataJs
-     * @return string
-     */
-    protected function buildJsTransformToTree(string $oDataJs) : string
-    {
-        $cleanupJs = '';
-        $widget = $this->getWidget();
-        
-        // remove rows without children in oDataTree.rows if $folderFlagAlias is set to 1
-        if (null !== $folderFlagAlias = $widget->getTreeFolderFlagAttributeAlias()) {
-            $cleanupJs = <<<JS
-
-                    for (let i = oDataTree.rows.length - 1; i >= 0; i--) {
-                        (function(oItem, iIndex, aArr) {
-                            if (oItem['{$folderFlagAlias}'] === 1 && oItem['_children'].length === 0) {
-                                aArr.splice(iIndex, 1);
-                            }
-                         })(oDataTree.rows[i], i, oDataTree.rows);
-                    }  
-JS;
-        }
-        
-        return <<<JS
-
-                (function(oDataFlat) {
-                    var oDataTree = $.extend({}, oDataFlat);
-                    var sParentCol = '{$widget->getTreeParentRelationAlias()}';
-
-                    function list_to_tree(list) {
-                      var map = {}, node, roots = [], i;
-                      
-                      for (i = 0; i < list.length; i += 1) {
-                        map[list[i].id] = i; // initialize the map
-                        list[i]._children = []; // initialize the children
-                      }
-                      
-                      for (i = 0; i < list.length; i += 1) {
-                        node = list[i];
-                        // Check, if parent node exists and place the node in its _children array
-                        // Nodes with non-existent parents will be the roots
-                        if (node[sParentCol] !== '' && node[sParentCol] !== null && map[node[sParentCol]] !== undefined) {
-                            list[map[node[sParentCol]]]._children.push(node);
-                        } else {
-                            roots.push(node);
-                        }
-                      }
-                      return roots;
-                    }
-                    if (sParentCol !== '') {
-                        oDataTree.rows = list_to_tree(oDataFlat.rows);
-                    } else {
-                        for (var i = 0; i < oDataTree.rows.length; i++) {
-                            oDataTree.rows[i]._children = [];
-                        }
-                    }
-
-                    $cleanupJs
-                    
-                    return oDataTree;
-                })($oDataJs)
 
 JS;
     }
@@ -433,7 +332,8 @@ JS;
     
     public function registerExternalModules(UI5ControllerInterface $controller) : UI5AbstractElement
     {
-        // $f = $this->getFacade();
+        $f = $this->getFacade();
+        $controller->addExternalModule('libs.moment.moment', $f->buildUrlToSource("LIBS.MOMENT.JS"), null, 'moment');
         $controller->addExternalModule('libs.exface.gantt.Gantt', 'vendor/exface/UI5Facade/Facades/js/frappe-gantt/dist/frappe-gantt.js', null, 'Gantt');
         $controller->addExternalCss('vendor/exface/UI5Facade/Facades/js/frappe-gantt/dist/frappe-gantt.min.css');
         return $this;
@@ -486,40 +386,88 @@ JS;
     
     /**
      * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isUiTable()
-     */
-    protected function isUiTable() : bool
-    {
-        return true;
-    }
-    
-    /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isMTable()
-     */
-    protected function isMTable() : bool
-    {
-        return false;
-    }
-    
-    /**
-     * TODO For some reason, transforming model data to tree did not work when there was a dirty-column
-     * 
-     * @return bool
-     */
-    protected function hasDirtyColumn() : bool
-    {
-        return false;
-    }
-    
-    /**
-     * 
      * @return string
      */
     protected function buildJsFullscreenContainerGetter() : string
     {
         return $this->isWrappedInDynamicPage() ? "$('#{$this->getId()}').parents('.sapMPanel').first().parent()" : "$('#{$this->getId()}').parents('.sapMPanel').first()";
+    }
+    
+    /**
+     * This is a modified version of exface\Core\Facades\AbstractAjaxFacade\Elements\buildJsConditionalPropertyIf
+     * for checking the conditions for each row of an object instead of just the conditions for the object itself.
+     * 
+     * @param ConditionalPropertyConditionGroup $conditionGroup
+     * @param string $oRowJs
+     * @throws FacadeRuntimeError
+     * @return string
+     */
+    protected function buildJsConditionalPropertyRowCheck(ConditionalPropertyConditionGroup $conditionGroup, string $oRowJs) : string
+    {
+        $widget = $this->getWidget();
+        $jsConditions = [];
+        
+        // First evaluate the conditions
+        // Make sure that the widget link can be entered in the right or in the left expression
+        foreach ($conditionGroup->getConditions() as $condition) {
+            $leftJs = null;
+            $leftExpr = $condition->getValueLeftExpression();
+            if ($leftExpr->isReference() === true) {
+                $leftLink = $leftExpr->getWidgetLink($widget);
+                if ($leftLink->getTargetWidget() === $widget) {
+                    $leftJs = "{$oRowJs}['{$leftLink->getTargetColumnId()}']";
+                }
+            }
+            if ($leftJs === null) {
+                $leftJs = $this->buildJsConditionalPropertyValue($condition->getValueLeftExpression(), $conditionGroup->getConditionalProperty());
+            }
+            
+            $rightJs = null;
+            $rightExpr = $condition->getValueRightExpression();
+            if ($rightExpr->isReference() === true) {
+                $rightLink = $rightExpr->getWidgetLink($widget);
+                if ($rightLink->getTargetWidget() === $widget) {
+                    $rightJs = "{$oRowJs}['{$rightLink->getTargetColumnId()}']";
+                }
+            }
+            if ($rightJs === null) {
+                $rightJs = $this->buildJsConditionalPropertyValue($condition->getValueRightExpression(), $conditionGroup->getConditionalProperty());
+            }
+            
+            $delim = EXF_LIST_SEPARATOR;
+            // Try to get the possibly customized delimiter from the right side of the
+            // condition if it is an IN-condition
+            if ($condition->getComparator() === ComparatorDataType::IN || $condition->getComparator() === ComparatorDataType::NOT_IN) {
+                $rightExpr = $condition->getValueRightExpression();
+                if ($rightExpr->isReference() === true) {
+                    $targetWidget = $rightExpr->getWidgetLink()->getTargetWidget();
+                    if (($targetWidget instanceof iShowSingleAttribute) && $targetWidget->isBoundToAttribute()) {
+                        $delim = $targetWidget->getAttribute()->getValueListDelimiter();
+                    } elseif ($targetWidget instanceof iHaveColumns && $colName = $rightExpr->getWidgetLink()->getTargetColumnId()) {
+                        $targetCol = $targetWidget->getColumnByDataColumnName($colName);
+                        if ($targetCol->isBoundToAttribute() === true) {
+                            $delim = $targetCol->getAttribute()->getValueListDelimiter();
+                        }
+                    }
+                }
+            }
+            $jsConditions[] = "exfTools.data.compareValues($leftJs, $rightJs, '{$condition->getComparator()}', '$delim')";
+        }
+        
+        // Then just append condition groups evaluated by a recursive call to this method
+        foreach ($conditionGroup->getConditionGroups() as $nestedGrp) {
+            $jsConditions[] = '(' . $this->buildJsConditionalPropertyRowCheck($nestedGrp, $oRowJs) . ')';
+        }
+        
+        // Now glue everything together using the logical operator
+        switch ($conditionGroup->getOperator()) {
+            case EXF_LOGICAL_AND: $op = ' && '; break;
+            case EXF_LOGICAL_OR: $op = ' || '; break;
+            default:
+                throw new FacadeRuntimeError('Unsupported logical operator for conditional property "' . $conditionGroup->getPropertyName() . '" in widget "' . $this->getWidget()->getWidgetType() . ' with id "' . $this->getWidget()->getId() . '"');
+        }
+        
+        // cond1 && cond2 && (grp1cond1 || grp1cond2) && ...
+        return implode($op, $jsConditions);
     }
 }

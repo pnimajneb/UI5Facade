@@ -92,11 +92,11 @@ class UI5Panel extends UI5Container
         $panel = <<<JS
 
                 new sap.m.Panel("{$this->getId()}", {
-                    {$this->buildJsPropertyHeight()}
                     content: [
                         {$this->buildJsLayoutConstructor()}
                     ],
                     {$this->buildJsProperties()}
+                    {$this->buildJsPropertyHeight()}
                     {$this->buildJsPropertyWidth()}
                 }).addStyleClass("sapUiNoContentPadding {$this->buildCssElementClass()} {$this->buildCssGridClass()}")
 

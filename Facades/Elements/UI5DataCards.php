@@ -1,8 +1,6 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Widgets\Display;
-
 class UI5DataCards extends UI5DataTable
 {
     /**
@@ -93,16 +91,41 @@ JS;
         return $cells;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::buildJsClickIsTargetRowCheck()
+     */
+    protected function buildJsClickIsTargetRowCheck(string $oTargetDomJs = 'oTargetDom') : string
+    {
+        return "{$oTargetDomJs} !== undefined && $({$oTargetDomJs}).parents('ul.sapFGridListDefault').length > 0";
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isMList()
+     */
     protected function isMList() : bool
     {
         return true;
     }
         
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isMTable()
+     */
     protected function isMTable() : bool
     {
         return false;
     }
     
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::isUiTable()
+     */
     protected function isUiTable() : bool
     {
         return false;

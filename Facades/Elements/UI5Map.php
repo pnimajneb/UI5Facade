@@ -181,7 +181,12 @@ JS;
             if ($src === $mainSrc) {
                 continue;
             }
-            $name = StringDataType::substringAfter($src, '/', $src, false, true);
+            
+            if (stripos($src, 'turf--')) {
+                $name = 'turf_' . StringDataType::substringBefore(StringDataType::substringAfter($src, 'turf--'), '/');
+            } else {
+                $name = StringDataType::substringAfter($src, '/', $src, false, true);
+            }
             $name = str_replace('-', '_', $name);
             
             $name = 'libs.exface.leaflet.' . $name;

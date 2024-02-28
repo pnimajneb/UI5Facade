@@ -182,6 +182,11 @@ JS;
         }
         
         switch (true) {
+            // Icon properties of some controls like sap.m.Button accept data-URLs for SVG
+            case $iconSet === iHaveIcon::ICON_SET_SVG:
+                $path = 'data:image/svg+xml;utf8,';
+                $icon_name = rawurlencode($icon_name);
+                break;
             case Icons::isDefined($icon_name) === true:
             case $iconSet === 'fa':
                 $path = 'sap-icon://font-awesome/';
@@ -814,5 +819,39 @@ JS;
     public function buildJsCheckInitialized() : string
     {
         return "(sap.ui.getCore().byId('{$this->getId()}') !== undefined)";
+    }
+    
+    /**
+     * 
+     * @param string $css
+     * @param string $id
+     * @return UI5AbstractElement
+     */
+    protected function registerCustomCSS(string $css, string $id = '_custom_css') : UI5AbstractElement
+    {
+        $css = $this->escapeString(StringDataType::stripLineBreaks($css));
+        
+        $cssId = $this->getId();
+        if (! $this->getUseWidgetId()) {
+            $this->setUseWidgetId(true);
+            $cssId = $this->getId();
+            $this->setUseWidgetId(false);
+        }
+        $cssId .= $id;
+        
+        $this->getController()->addOnShowViewScript(<<<JS
+            
+(function(){
+    var jqTag = $('#{$cssId}');
+    if (jqTag.length === 0) {
+        $('head').append($('<style type="text/css" id="{$cssId}"></style>').text($css));
+    }
+})();
+
+JS, false);
+        
+        $this->getController()->addOnHideViewScript("$('#{$cssId}').remove();");
+        
+        return $this;
     }
 }

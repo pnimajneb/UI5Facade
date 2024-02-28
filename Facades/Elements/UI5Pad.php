@@ -16,6 +16,10 @@ class UI5Pad extends UI5Container
     {
         $childConstructorsJs = $this->buildJsChildrenConstructors();
         
+        if ($this->getWidget()->hasBackgroundImage()) {
+            $this->registerCustomCSS("#{$this->getId()}_outer {background: url('{$this->getWidget()->getBackgroundImageURL()}')}");
+        }
+        
         $panel = <<<JS
         
                 new sap.m.Panel("{$this->getId()}", {
@@ -41,7 +45,7 @@ JS;
     {
         return <<<JS
         
-                        new sap.m.FlexBox({
+                        new sap.m.FlexBox('{$this->getId()}_outer', {
                             {$this->buildJsPropertyHeight()}
                             {$this->buildJsPropertyVisibile()}
                             justifyContent: "Center",

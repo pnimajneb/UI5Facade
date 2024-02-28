@@ -16,10 +16,19 @@ use exface\Core\Facades\AbstractAjaxFacade\Elements\SurveyJsTrait;
 class UI5InputForm extends UI5Input
 {
     use SurveyJsTrait {
-        buildJsSurveyInitOptions AS buildJsSurveyInitOptionsViaTrait;
+        buildJsSurveyInit AS buildJsSurveyInitViaTrait;
     }
     
     const CONTROLLER_VAR_SURVEY = 'survey';
+    
+    protected function init()
+    {
+        parent::init();
+        
+        // Make sure to register the controller var as early as possible because it is needed in buildJsValidator(),
+        // which is called by the outer Dialog or Form widget
+        $this->getController()->addDependentObject(self::CONTROLLER_VAR_SURVEY, $this, 'null');
+    }
     
     /**
      * 
@@ -29,7 +38,6 @@ class UI5InputForm extends UI5Input
     public function buildJsConstructorForMainControl($oControllerJs = 'oController')
     {
         $controller = $this->getController();
-        $controller->addDependentObject(self::CONTROLLER_VAR_SURVEY, $this, 'null');
         
         $this->registerExternalModules($controller);
         
@@ -61,6 +69,10 @@ JS);
 JS;
     }
     
+    /**
+     * 
+     * @see SurveyJsTrait::buildJsSurveyVar()
+     */
     protected function buildJsSurveyVar() : string
     {
         return $this->getController()->buildJsDependentObjectGetter(self::CONTROLLER_VAR_SURVEY, $this);
@@ -68,7 +80,7 @@ JS;
     
     /**
      * 
-     * @see SurveyJsTrait::buildJsSurveyConfigGetter()
+     * @see SurveyJsTrait::buildJsSurveyModelGetter()
      */
     protected function buildJsSurveyModelGetter() : string
     {
@@ -84,11 +96,12 @@ JS;
     
     /**
      * 
-     * @see SurveyJsTrait::buildJsSurveyInitOptions()
+     * @see SurveyJsTrait::buildJsSurveyInit()
      */
-    protected function buildJsSurveyInitOptions(string $oSurveyJs = 'oSurvey') : string
+    protected function buildJsSurveyInit(string $oSurveyJs = 'oSurvey') : string
     {
-        return $this->buildJsSurveyInitOptionsViaTrait($oSurveyJs) . <<<JS
+        // Make sure the left-aligned titles are the same width as those of UI5 controls
+        return $this->buildJsSurveyInitViaTrait($oSurveyJs) . <<<JS
     
     $oSurveyJs.onUpdateQuestionCssClasses.add(function(_, options) {
         const classes = options.cssClasses;
@@ -98,7 +111,6 @@ JS;
             classes.headerLeft += ' sapUiRespGridSpanXL5 sapUiRespGridSpanL4 sapUiRespGridSpanM4 sapUiRespGridSpanS12';
         }
     });
-    window['{$this->getId()}'] = $oSurveyJs; 
 
 JS;
     }
@@ -110,16 +122,21 @@ JS;
      */
     public function buildJsValidator(?string $valJs = null) : string
     {
-        if (!$this->getWidget()->isRequired())
-            return 'true';
-
-        return <<<JS
-        (function(){
-            const oSurvey = window?.['{$this->getId()}']; 
-            const res = oSurvey?.validate();
-            return res;
-        })()
-        JS;
+        // Always validate the form - even if the widget is not required explicitly. Otherwise required
+        // fields inside the form will not produce validation errors if the InputForm is not explicitly
+        // marked as required
+        return "{$this->buildJsSurveyVar()}.validate()";
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsValidationError()
+     */
+    public function buildJsValidationError()
+    {
+        // No need to do anything here - the .validate() method of Survey.js already shows the errors
+        return '';
     }
     
     /**
