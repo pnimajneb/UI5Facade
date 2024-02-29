@@ -125,7 +125,12 @@
 	"LIBS.LEAFLET.LOCATECONTROL_JS": "npm-asset/leaflet.locatecontrol/dist/L.Control.Locate.min.js",
 	"LIBS.LEAFLET.ESRI.JS": "npm-asset/esri-leaflet/dist/esri-leaflet.js",
 	"LIBS.LEAFLET.PROJ4.PROJ4JS": "npm-asset/proj4/dist/proj4.js",
+	"LIBS.LEAFLET.DRAW.JS": "npm-asset/leaflet-draw/dist/leaflet.draw.js",
+	"LIBS.LEAFLET.DRAW.CSS": "npm-asset/leaflet-draw/dist/leaflet.draw.css",
 	"LIBS.LEAFLET.PROJ4.PROJ4LEAFLETJS": "npm-asset/proj4leaflet/src/proj4leaflet.js",
+	"LIBS.LEAFLET.TRUF.JS": "exface/UI5Facade/Facades/js/turf/turf.min.js",
+	"LIBS.LEAFLET.TRUF.HELPERS": "npm-asset/turf--helpers/dist/js/index.js",
+	"LIBS.LEAFLET.TRUF.BOOLEAN_POINT_IN_POLYGON": "npm-asset/turf--boolean-point-in-polygon/dist/js/index.js",
 	
 	"LIBS.FONT_AWESOME.CSS": "bower-asset/font-awesome/css/font-awesome.min.css",
     "LIBS.FONT_AWESOME.PLUGIN": "bower-asset/font-awesome-openui5/dist/font-awesome-openui5.min",
@@ -188,6 +193,7 @@
 	"WIDGET.ALL.DEFAULT_ALIGNMENT": "left",
 	
 	"WIDGET.CHART.PAGE_SIZE": 20,
+    "WIDGET.CHART.COLORS": ["#5899da","#e8743b","#19a979","#ed4a7b","#945ecf","#13a4b4","#525df4","#bf399e","#6c8893","#ee6868","#2f6497"],
     
 	"WIDGET.DATATABLE.PAGE_SIZE": 30,
 	"WIDGET.DATATABLE.ROWS_SHOWN_BY_DEFAULT": 5,

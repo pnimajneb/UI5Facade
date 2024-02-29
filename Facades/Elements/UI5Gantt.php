@@ -8,9 +8,6 @@ use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 use exface\Core\DataTypes\DateDataType;
-use exface\Core\Interfaces\Model\ExpressionInterface;
-use exface\Core\Widgets\Parts\ConditionalProperty;
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Widgets\Parts\ConditionalPropertyConditionGroup;
 use exface\Core\DataTypes\ComparatorDataType;
 use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
@@ -232,8 +229,7 @@ JS;
 
                 // Compare hour difference of old & new task dates, if they are same the children tasks will also be moved
                 if (iDurationNewMoment ===  iDurationOldMoment) {
-                    var moveDiffInHours = newStart.diff(oldStart, 'hours');
-                
+                    var moveDiffInHours = newStart.diff(oldStart, 'hours')
                     function processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd) {
                         oRow._children.forEach(function(oChildRow, iIdx) {
                             // check if there is a condition that enables/disables the moving of a child along with its parent
@@ -397,8 +393,12 @@ JS;
     }
     
     /**
-     * This is a modified version of exface\Core\Facades\AbstractAjaxFacade\Elements\buildJsConditionalPropertyIf
+     * Returns a JS snippet, that yields TRUE if the provided JS data row matches the condition group and FALSE otherwise
+     * 
+     * This is a modified version of `JsConditionalPropertyTrait::buildJsConditionalPropertyIf()`
      * for checking the conditions for each row of an object instead of just the conditions for the object itself.
+     * 
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait::buildJsConditionalPropertyIf()
      * 
      * @param ConditionalPropertyConditionGroup $conditionGroup
      * @param string $oRowJs
