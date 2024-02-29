@@ -213,22 +213,27 @@ JS;
             var oRow = oTable.getModel().getProperty(oCtxt.sPath);
             var sColNameStart = '{$startCol->getDataColumnName()}';
             var sColNameEnd = '{$endCol->getDataColumnName()}';
+            var bMoveChildrenWithParent = Boolean({$this->getWidget()->getChildrenMoveWithParent()});
+
+            var oldStart = moment(oGantt.dateUtils.parse(oRow[sColNameStart])); // string '10.04.2024' -> date object 10.04.2024 02:00:00 GMT+2 
+            var oldEnd = moment(oGantt.dateUtils.parse(oRow[sColNameEnd])); // string '11.04.2024' -> date object 11.04.2024 02:00:00 GMT+2 
+            var newStart = moment(dStart);
+            var newEnd = moment(dEnd);
+            
+            // Update the table in any case
+            oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('newStart.toDate()')});
+            oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('newEnd.toDate()')});
 
             // Move children with parent when parent is dragged along the timeline
             // Only move children if UXON children_move_with_parent is set to true. True is the default value.
-            if (Boolean({$this->getWidget()->getChildrenMoveWithParent()}) === true) {
+            if (bMoveChildrenWithParent === true) {
             
-                var oldStart = moment(oGantt.dateUtils.parse(oRow[sColNameStart])); // string '10.04.2024' -> date object 10.04.2024 02:00:00 GMT+2 
-                var oldEnd = moment(oGantt.dateUtils.parse(oRow[sColNameEnd])); // string '11.04.2024' -> date object 11.04.2024 02:00:00 GMT+2 
-                var newStart = moment(dStart);
-                var newEnd = moment(dEnd);
-
                 // Check if the parent has been moved without the duration changing
                 var iDurationNewMoment = newEnd.diff(newStart, 'hours');
                 var iDurationOldMoment = oldEnd.diff(oldStart, 'hours');
 
                 // Compare hour difference of old & new task dates, if they are same the children tasks will also be moved
-                if (iDurationNewMoment ===  iDurationOldMoment) {
+                if (iDurationNewMoment === iDurationOldMoment) {
                     var moveDiffInHours = newStart.diff(oldStart, 'hours')
                     function processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd) {
                         oRow._children.forEach(function(oChildRow, iIdx) {
@@ -238,7 +243,7 @@ JS;
                             var startDateChild = moment(new Date(oChildRow['date_start_plan'])).add(moveDiffInHours, 'hours');
                             var endDateChild = moment(new Date(oChildRow['date_end_plan'])).add(moveDiffInHours, 'hours');
                             oRow._children[iIdx][sColNameStart] = {$startFormatter->buildJsFormatDateObjectToInternal('startDateChild')};
-                            oRow._children[iIdx][sColNameEnd] = {$startFormatter->buildJsFormatDateObjectToInternal('endDateChild')};
+                            oRow._children[iIdx][sColNameEnd] = {$endFormatter->buildJsFormatDateObjectToInternal('endDateChild')};
 
                             // if the child row has children too, call the function recursively
                             if (oChildRow._children && oChildRow._children.length > 0) {
@@ -249,9 +254,6 @@ JS;
                     processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd);
                 }
             }
-
-            oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('newStart.toDate()')});
-            oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('newEnd.toDate()')});
     	}
     });
 })();
