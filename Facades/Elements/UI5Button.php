@@ -330,11 +330,13 @@ JS;
             
             $forceLoadFromServerJs = $targetWidget->isCacheable() ? 'false' : 'true';
             $output .= <<<JS
-                        var sViewName = this.getViewName('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$targetWidget->getId()}'); 
-                        var sViewId = this.getViewId(sViewName);
-                        var oComponent = this.getOwnerComponent();
+
+                        var oController = {$this->getController()->buildJsControllerGetter($this)};
+                        var sViewName = oController.getViewName('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$targetWidget->getId()}'); 
+                        var sViewId = oController.getViewId(sViewName);
+                        var oComponent = oController.getOwnerComponent();
                         
-                        var jqXHR = this._loadView(sViewName, function(){ 
+                        var jqXHR = oController._loadView(sViewName, function(){ 
                             var oView = sap.ui.getCore().byId(sViewId);
                             var oParentView = {$this->getController()->getView()->buildJsViewGetter($this)};
                             var oApp = sap.ui.getCore().byId('{$this->getController()->getWebapp()->getName()}');
