@@ -601,10 +601,21 @@ JS;
         return parent::buildJsBusyIconHide(true);
     }
     
+    /**
+     * 
+     * @param ActionInterface $action
+     * @param string $jsRequestData
+     * @param string $jsOnSuccess
+     * @return string
+     */
     protected function buildJsClickCallServerAction(ActionInterface $action, string $jsRequestData, string $jsOnSuccess = '') : string
     {
         $widget = $this->getWidget();
         $input_element = $this->getInputElement();
+        // Before triggering action effects, double check, that the input element is stil there!
+        // This is important because it may be gone after a dialog was closed, which would result
+        // in JS errors. Checking input element and not button element here to make it work with
+        // actions without a rendered button - e.g. drop actions
         $onModelLoadedJs = <<<JS
 
 								
