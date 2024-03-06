@@ -95,6 +95,29 @@ JS;
     }
     
     /**
+     *
+     * @param string $valueJs
+     * @return string
+     */
+    protected function buildJsSurveyModelSetter(string $valueJs) : string
+    {
+        $widget = $this->getWidget();
+        $model = $this->getView()->getModel();
+        if ($model->hasBinding($widget, 'form_config')) {
+            $modelPath = $model->getBindingPath($widget, 'form_config');
+        } else {
+            $modelPath = $this->getValueBindingPrefix() . $this->getWidget()->getFormConfigDataColumnName();
+        }
+        return <<<JS
+(function(oModel) {
+            var oValue = {$this->buildJsValueGetter()};
+            sap.ui.getCore().byId('{$this->getId()}').getModel().setProperty('{$modelPath}', oModel);
+            {$this->buildJsValueSetter('oValue')};
+        })({$valueJs})
+JS;
+    }
+    
+    /**
      * 
      * @see SurveyJsTrait::buildJsSurveyInit()
      */
