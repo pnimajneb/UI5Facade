@@ -609,7 +609,7 @@ JS;
 
 								
 								{$this->buildJsBusyIconHide()}
-                                if (sap.ui.getCore().byId("{$this->getId()}") !== undefined) {
+                                if (sap.ui.getCore().byId("{$input_element->getId()}") !== undefined) {
                                     {$this->buildJsCloseDialog(false)}
 								    {$this->buildJsTriggerActionEffects($action)}
                                 }
