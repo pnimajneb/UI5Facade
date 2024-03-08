@@ -122,10 +122,19 @@ JS;
      */
     public function buildJsValidator(?string $valJs = null) : string
     {
-        // Always validate the form - even if the widget is not required explicitly. Otherwise required
+        // Always validate the form if it can be found in the dialog - even if the widget is not required explicitly. Otherwise required
         // fields inside the form will not produce validation errors if the InputForm is not explicitly
         // marked as required
-        return "{$this->buildJsSurveyVar()}.validate()";
+        //
+        return <<<JS
+(function(){
+    var surveyJsVar = {$this->buildJsSurveyVar()};
+    if (surveyJsVar !== null && surveyJsVar !== undefined) {   
+        return {$this->buildJsSurveyVar()}.validate();
+    }
+    return true;
+}())
+JS;
     }
     
     /**
