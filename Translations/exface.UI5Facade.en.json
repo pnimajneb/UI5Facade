@@ -121,6 +121,7 @@
 	"WIDGET.DATALOOKUPDIALOG.SELECTED_ITEMS": "Selected Items",
 	
 	"WIDGET.DIALOG.TITLE_NEW": "New",
+	"WIDGET.DIALOG.COLLAPSE_HEADER": "Collapse header content",
 	
 	"WIDGET.FILELIST.ERROR_EXTENSION_NOT_ALLOWED": "File type \"%ext%\" not allowed!",
 	"WIDGET.FILELIST.ERROR_MIMETYPE_NOT_ALLOWED": "Content type \"%type%\" not allowed!",

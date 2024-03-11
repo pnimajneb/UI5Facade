@@ -122,6 +122,7 @@
 	"WIDGET.DATALOOKUPDIALOG.SELECTED_ITEMS": "Ausgewählt",
 	
 	"WIDGET.DIALOG.TITLE_NEW": "Neu",
+	"WIDGET.DIALOG.COLLAPSE_HEADER": "Header zusammenklappen",
 	
 	"WIDGET.FILELIST.ERROR_EXTENSION_NOT_ALLOWED": "Dateityp \"%ext%\" nicht erlaubt!",
 	"WIDGET.FILELIST.ERROR_MIMETYPE_NOT_ALLOWED": "Inhaltstyp \"%type%\" nicht erlaubt!",
