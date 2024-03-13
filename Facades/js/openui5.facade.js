@@ -488,13 +488,32 @@ const exfLauncher = {};
 								var oTable = oButton.getParent().getParent();
 								oTable.setBusy(true);
 								_oLauncher.syncOffline(oEvent)
-								.then(function(){
-									_oLauncher.loadPreloadInfo(oTable);
-									oTable.setBusy(false);
-								})
-								.catch(function(){
-									oTable.setBusy(false);
-								})
+									.then(function(){
+										_oLauncher.loadPreloadInfo(oTable);
+										oTable.setBusy(false);
+									})
+									.catch(function(){
+										oTable.setBusy(false);
+									})
+							},
+						}),
+						new sap.m.Button({
+							text: "{i18n>WEBAPP.SHELL.PWA.MENU_RE_SYNC}",
+							tooltip: "{i18n>WEBAPP.SHELL.PWA.MENU_RE_SYNC_TOOLTIP}",
+							icon: "sap-icon://synchronize",
+							enabled: "{/_network/online}",
+							press: function(oEvent) {
+								var oButton = oEvent.getSource();
+								var oTable = oButton.getParent().getParent();
+								oTable.setBusy(true);
+								_oLauncher.reSyncOffline(oEvent)
+									.then(function(){
+										_oLauncher.loadPreloadInfo(oTable);
+										oTable.setBusy(false);
+									})
+									.catch(function(){
+										oTable.setBusy(false);
+									})
 							},
 						}),
 						new sap.m.Button({
@@ -578,7 +597,7 @@ const exfLauncher = {};
 				oRow.addCell(new sap.m.Text({text: element.object_name}));
 				if (element.rows) {
 					oRow.addCell(new sap.m.Text({text: element.rows.length}));
-					oRow.addCell(new sap.m.Text({text: new Date(element.sync_last).toLocaleString()}));
+					oRow.addCell(new sap.m.Text({text: new Date(element.last_sync).toLocaleString()}));
 				} else {
 					oRow.addCell(new sap.m.Text({text: '0'}));
 
@@ -1109,7 +1128,7 @@ const exfLauncher = {};
 	};
 	
 	/**
-	 * Loads all preload data from the server
+	 * Loads all preload data from the server since the last increment
 	 * 
 	 * @param {sap.ui.base.Event} [oEvent]
 	 * 
@@ -1121,14 +1140,37 @@ const exfLauncher = {};
 		var oI18nModel = oButton.getModel('i18n');
 		return exfPWA.syncAll()
 		.then(function(){
-			oButton.setBusy(false)
+			oButton.setBusy(false);
 			exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.NETWORK.SYNC_COMPLETE'));
 		})
 		.catch(error => {
 			console.error(error);
 			exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.NETWORK.SYNC_FAILED'));
-			oButton.setBusy(false)
+			oButton.setBusy(false);
 		});
+	};
+
+	/**
+	 * Loads all preload data from the server
+	 *
+	 * @param {sap.ui.base.Event} [oEvent]
+	 *
+	 * @return Promise
+	 */
+	this.reSyncOffline = function(oEvent){
+		oButton = oEvent.getSource();
+		oButton.setBusyIndicatorDelay(0).setBusy(true);
+		var oI18nModel = oButton.getModel('i18n');
+		return exfPWA.syncAll({doReSync: true})
+			.then(function(){
+				oButton.setBusy(false);
+				exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.NETWORK.SYNC_COMPLETE'));
+			})
+			.catch(error => {
+				console.error(error);
+				exfLauncher.showMessageToast(oI18nModel.getProperty('WEBAPP.SHELL.NETWORK.SYNC_FAILED'));
+				oButton.setBusy(false);
+			});
 	};
 	
 	/**
@@ -1205,6 +1247,13 @@ const exfLauncher = {};
 								icon: "sap-icon://synchronize",
 								type: "{= ${/_network/online} > 0 ? 'Active' : 'Inactive' }",
 								press: _oLauncher.syncOffline,
+							}),
+							new sap.m.StandardListItem({
+								title: "{i18n>WEBAPP.SHELL.PWA.MENU_RE_SYNC}",
+								tooltip: "{i18n>WEBAPP.SHELL.PWA.MENU_SYNC_RE_TOOLTIP}",
+								icon: "sap-icon://synchronize",
+								type: "{= ${/_network/online} > 0 ? 'Active' : 'Inactive' }",
+								press: _oLauncher.reSyncOffline,
 							}),
 							new sap.m.StandardListItem({
 								title: "{i18n>WEBAPP.SHELL.NETWORK.STORAGE_HEADER}",
