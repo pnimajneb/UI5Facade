@@ -86,7 +86,7 @@ JS;
         
         return <<<JS
 
-            new sap.m.StandardListItem({
+            new sap.m.StandardListItem('{$btn_element->getId()}', {
 				title: "{$caption}",
                 tooltip: "{$caption}",
                 iconDensityAware: true,
