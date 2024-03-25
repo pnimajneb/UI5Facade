@@ -2003,7 +2003,7 @@ JS;
         $coreTltr = $this->getWorkbench()->getCoreApp()->getTranslator();
         
         $filterableAliases = [];
-        foreach ($this->getWidget()->getColumns() as $col) {
+        foreach ($this->getDataWidget()->getColumns() as $col) {
             if ($col->isFilterable()) {
                 $filterableAliases[] = $col->getAttributeAlias();
             }
@@ -2038,13 +2038,17 @@ JS;
                             }
                             var aFilterableAliases = $filterableAliasesJs;
                             var oSearchPanel = sap.ui.getCore().byId('{$this->getConfiguratorElement()->getIdOfSearchPanel()}');
-                            var aFilterItems = oSearchPanel.getFilterItems();
+                            var aFilterItems = oSearchPanel ? oSearchPanel.getFilterItems() : [];
                             var sAttrAlias = {$this->buildJsClickGetColumnAttributeAlias('domClicked')};
                             var mCellValue = $(domClicked).text();
                             var bIsAttribute = (sAttrAlias !== undefined && sAttrAlias !== null && sAttrAlias !== '');
                             var bFilterable = bIsAttribute && aFilterableAliases.includes(sAttrAlias) && (mCellValue !== undefined && mCellValue !== '' && mCellValue !== null);
                             var sValueTrunc = bFilterable ? mCellValue.toString() : '';
                             var oFilterItem;
+
+                            if (! oSearchPanel) {
+                                return new sap.ui.unified.MenuItem({visible: false});
+                            }
 
                             aFilterItems.forEach(function(oItem){
                                 if (oItem.getColumnKey() === sAttrAlias) {
