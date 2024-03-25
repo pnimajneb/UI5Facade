@@ -1,15 +1,14 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
-use exface\Core\Interfaces\WidgetInterface;
-use exface\Core\Interfaces\Widgets\iFillEntireContainer;
-use exface\Core\Widgets\DataLookupDialog;
-use exface\Core\Widgets\DataTable;
-use exface\Core\Widgets\DataTableResponsive;
 use exface\Core\Interfaces\Widgets\iHaveHeader;
 use exface\Core\Interfaces\Widgets\iSupportMultiSelect;
 use exface\Core\Factories\ActionFactory;
 use exface\Core\Actions\UpdateData;
+use exface\Core\Interfaces\Model\MetaAttributeInterface;
+use exface\Core\Widgets\Data;
+use exface\Core\Widgets\DataColumn;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * The `DataLookupDialog` is a `ValueHelpDialog` which may be used to search for values from `DataTables`.
@@ -28,6 +27,9 @@ use exface\Core\Actions\UpdateData;
 class UI5DataLookupDialog extends UI5Dialog 
 {
     const EVENT_NAME_TOKEN_UPDATE = 'tokenUpdate';
+    
+    private $tokenNameColumn = null;
+    
     /**
      * 
      * {@inheritDoc}
@@ -52,14 +54,26 @@ class UI5DataLookupDialog extends UI5Dialog
             $labelColExists = false;
             foreach ($table->getColumns() as $col) {
                 if ($col->isBoundToAttribute() && $col->getAttribute()->isLabelForObject()) {
+                    $this->tokenNameColumn = $col;
                     $labelColExists = true;
                     break;
                 }
             }
             if ($labelColExists === false) {
-                $table->addColumn($table->createColumnFromAttribute($table->getMetaObject()->getLabelAttribute()));
+                $labelAttr = $table->getMetaObject()->getLabelAttribute();
+                if (! $table->hasAggregations() || $table->hasAggregationOverAttribute($labelAttr)) {
+                    $this->tokenNameColumn = $table->createColumnFromAttribute();
+                    $table->addColumn($this->tokenNameColumn);
+                } else {
+                    $this->tokenNameColumn = $table->getColumns()[0];
+                }
             }
+        } elseif ($table->hasColumns()) {
+            $this->tokenNameColumn = $table->getColumns()[0];
+        } else {
+            throw new FacadeRuntimeError('Cannot render lookup dialog "' . $this->getWidget()->getId() . '" - no columns found!');
         }
+        
         return;
     }
 
@@ -386,16 +400,7 @@ JS;
         $tableElement = $this->getFacade()->getElement($table);
         
         $idAttributeAlias = $table->getMetaObject()->getUidAttributeAlias();
-        
-        if ($table->getMetaObject()->hasLabelAttribute() === true){
-            if ($labelCol = $table->getColumnByAttributeAlias($table->getMetaObject()->getLabelAttributeAlias())) {
-                $labelColName = $labelCol->getDataColumnName();
-            } else {
-                $labelColName = $table->getMetaObject()->getLabelAttributeAlias();
-            }
-        } else {
-            $labelColName = $idAttributeAlias;
-        }
+        $labelColName = $this->getTokenNameColumn()->getDataColumnName();
         
         $dataGetterJs = $tableElement->buildJsDataGetter(ActionFactory::createFromString($this->getWorkbench(), UpdateData::class));
         
@@ -433,5 +438,10 @@ JS;
             // add the tokens
             aNewTokens.forEach(function(oToken) {oMultiInput.addToken(oToken);});
 JS;
+    }
+    
+    protected function getTokenNameColumn() : DataColumn
+    {
+        return $this->tokenNameColumn;
     }
 }
