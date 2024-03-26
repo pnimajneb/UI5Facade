@@ -94,6 +94,8 @@ class UI5Button extends UI5AbstractElement
         buildJsRequestDataCollector as buildJsRequestDataCollectorViaTrait;
     }
     
+    private $button_type = null;
+    
     /**
      * 
      * {@inheritDoc}
@@ -153,31 +155,6 @@ JS;
     public function buildJsProperties()
     {
         $widget = $this->getWidget();
-        switch ($widget->getVisibility()) {
-            case EXF_WIDGET_VISIBILITY_PROMOTED: 
-                $type = 'type: "Emphasized",';
-                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "High"}),'; break;
-            case EXF_WIDGET_VISIBILITY_OPTIONAL: 
-                $type = 'type: "Default",';
-                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "AlwaysOverflow"}),'; break;
-            case EXF_WIDGET_VISIBILITY_NORMAL: 
-            default: 
-                if ($color = $widget->getColor()) {
-                    if (Colors::isSemantic($color) === true) {
-                        if ($semType = $this->getColorSemanticMap()[$color]) {
-                            $type = 'type: "' . $semType . '",';
-                        } else {
-                            $err = new FacadeUnsupportedWidgetPropertyWarning('Color "' . $color . '" not supported for button widget in UI5 - only semantic colors usable!');
-                            $this->getWorkbench()->getLogger()->logException($err);
-                            $type = 'type: "Default"';
-                        }
-                    }
-                } else {
-                    $type = 'type: "Default",';
-                }
-            
-        }
-        
         $handler = $this->buildJsClickViewEventHandlerCall();
         $press = $handler !== '' ? 'press: ' . $handler . ',' : '';
         if ($widget->getShowIcon(true) && null !== $icon = $widget->getIcon()) {
@@ -190,14 +167,49 @@ JS;
 
     text: "{$this->getCaption()}",
     {$icon}
-    {$type}
-    {$layoutData}
+    {$this->buildJsPropertyButtonType()}
     {$press}
     {$this->buildJsPropertyTooltip()}
     {$this->buildJsPropertyVisibile()}
 
 JS;
         return $options;
+    }
+    
+    protected function buildJsPropertyButtonType() : string
+    {
+        $widget = $this->getWidget();
+        $type = '';
+        $layoutData = '';
+        $defaultButtonType = 'Default';
+        if ($this->button_type !== null) {
+            return "type: '{$this->button_type}',";
+        }
+        switch ($widget->getVisibility()) {
+            case EXF_WIDGET_VISIBILITY_PROMOTED:
+                $type = 'type: "Emphasized",';
+                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "High"}),'; break;
+            case EXF_WIDGET_VISIBILITY_OPTIONAL:
+                $type = "type: '{$defaultButtonType}',";
+                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "AlwaysOverflow"}),'; break;
+            case EXF_WIDGET_VISIBILITY_NORMAL:
+            default:
+                if ($color = $widget->getColor()) {
+                    if (Colors::isSemantic($color) === true) {
+                        if ($semType = $this->getColorSemanticMap()[$color]) {
+                            $type = 'type: "' . $semType . '",';
+                        } else {
+                            $err = new FacadeUnsupportedWidgetPropertyWarning('Color "' . $color . '" not supported for button widget in UI5 - only semantic colors usable!');
+                            $this->getWorkbench()->getLogger()->logException($err);
+                            $type = "type: '{$defaultButtonType}',";
+                        }
+                    }
+                } else {
+                    $type = "type: '{$defaultButtonType}',";
+                }
+                
+        }
+        return $type . $layoutData;
     }
     
     /**
@@ -775,5 +787,11 @@ JS;
             $cls .= ' exf-svg-icon';
         }
         return $cls;
+    }
+    
+    public function setUI5ButtonType(string $button_type) : UI5Button
+    {
+        $this->button_type = $button_type;
+        return $this;
     }
 }

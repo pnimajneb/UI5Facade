@@ -1169,12 +1169,21 @@ JS;
         $top_buttons = '';
         
         // Add the search-button
-        foreach ($this->getWidget()->getToolbarMain()->getButtonGroupForSearchActions()->getButtons() as $btn) {
+        $searchButtons = $this->getWidget()->getToolbarMain()->getButtonGroupForSearchActions()->getButtons();
+        $searchButtons = array_reverse($searchButtons);
+        foreach ($searchButtons as $btn) {
             if ($btn->getAction() && $btn->getAction()->isExactly('exface.Core.RefreshWidget')){
                 $btn->setShowIcon(false);
                 $btn->setHint($btn->getCaption());
                 $btn->setCaption($this->translate('WIDGET.DATATABLE.GO_BUTTON_TEXT'));
                 $btn->setVisibility(WidgetVisibilityDataType::PROMOTED);
+            }
+            
+            if ($btn->getAction() && $btn->getAction()->isExactly('exface.Core.ResetWidget')){
+                $btn->setShowIcon(false);
+                $btn->setHint($btn->getCaption());
+                $btn->setCaption($this->translate('WIDGET.DATATABLE.RESET_BUTTON_TEXT'));
+                $this->getFacade()->getElement($btn)->setUI5ButtonType('Transparent');
             }
             $top_buttons .= $this->getFacade()->getElement($btn)->buildJsConstructor() . ',';
         }
