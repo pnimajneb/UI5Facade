@@ -305,4 +305,14 @@ HTML;
         }())
 JS;
     }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5DataTable::buildJsClickIsTargetRowCheck()
+     */
+    protected function buildJsClickIsTargetRowCheck(string $oTargetDomJs = 'oTargetDom') : string
+    {
+        return "{$oTargetDomJs} !== undefined && $({$oTargetDomJs}).parents('.slick-track').length > 0";
+    }
 }

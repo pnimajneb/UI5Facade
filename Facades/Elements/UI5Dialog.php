@@ -168,31 +168,8 @@ JS
             return $this->buildJsDialog();
         } else {
             // Controller method to apply height-fix for inner controls with virtual scrolling
-            // This piece of JS code will calculate the available vertical space (by subtracting
-            // any header height from the total page height) and apply it to the section marked
-            // with the CSS class exf-section-fullheight (see buildJsObjectPageSection()).
-            // Unfortunately some widgets in the header (like progress bars) make the height
-            // change a little, so we use setTimeout() to adjust the height again
             if ($this->isObjectPageLayout()) {
-                $controller->addMethod(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', <<<JS
-                    
-                    var oPage = sap.ui.getCore().byId('{$this->getid()}');
-                    var jqPageCont = $('#{$this->getid()}-cont');
-                    var iHeightContent = jqPageCont.outerHeight();
-                    var iHeightHeader = 0;
-                    iHeightHeader = jqPageCont.find('.sapUxAPObjectPageHeaderDetails').toArray().reduce(function(iSum, oEl) {
-                        return iSum + $(oEl).outerHeight();
-                    }, 0);
-                    jqPageCont.find('.exf-section-fullheight').each(function(){
-                        var sId = $(this).attr('id');
-                        var oPanel;
-                        if (! sId) return;
-                        oPanel = sap.ui.getCore().byId(sId);
-                        if (! oPanel) return;
-                        oPanel.setHeight((iHeightContent - iHeightHeader) + 'px');
-                    });
-JS
-                );
+                $controller->addMethod(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', $this->buildJsObjectPageLayouHeightFix());
                 $fixInnerPanelHeightJs = $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_FIX_HEIGHT, $this, '', $oControllerJs);
                 // Adjust the height every time the view is shown
                 $this->getController()->addOnShowViewScript($fixInnerPanelHeightJs, false);
@@ -207,7 +184,7 @@ JS
                             {$fixInnerPanelHeightJs}
                         });
 JS
-                            );
+                );
             }
             
             if ($this->isObjectPageLayout()) {
@@ -354,7 +331,15 @@ JS;
 					]
 				}),
 			headerContent:[
-				{$header_content}
+                {$header_content}
+                new sap.m.Button({
+                    icon: "sap-icon://slim-arrow-up", 
+                    type: "Transparent",
+                    tooltip: "{i18n>WIDGET.DIALOG.COLLAPSE_HEADER}",
+                    press: function(){
+                        sap.ui.getCore().byId('{$this->getIdOfObjectPageLayout()}')._snapHeader()
+                    }
+                }).addStyleClass('exf-dialog-btn-header-collapse'),
 			]
 JS;
     }
@@ -1002,6 +987,47 @@ JS;
     {
         $checkChangesJs = $checkChanges ? 'true' : 'false';
         return $this->getController()->buildJsMethodCallFromController(self::CONTROLLER_METHOD_CLOSE_DIALOG, $this, "(new sap.ui.base.Event('navButtonPress', sap.ui.getCore().byId('{$this->getId()}'), {bCheckChanges: {$checkChangesJs}}))") . ';';
+    }
+    
+    /**
+     * Set the content height of the ObjectPageLayout to maximum if inner control has virtual scrolling
+     * 
+     * E.g. for Splits or any other control with `exf-section-fullheight` CSS class
+     * 
+     * This piece of JS code will calculate the available vertical space (by subtracting
+     * any header height from the total page height) and apply it to the section marked
+     * with the CSS class `exf-section-fullheight` (see buildJsObjectPageSection()).   
+     * 
+     * @return string
+     */
+    protected function buildJsObjectPageLayouHeightFix() : string
+    {
+        return <<<JS
+        
+                    var oPage = sap.ui.getCore().byId('{$this->getid()}');
+                    var jqPageCont = $('#{$this->getid()}-cont');
+                    var iHeightContent = jqPageCont.outerHeight();
+                    var iHeightHeaderTitle = 0;
+                    var iHeightHeaderDetails = 0;
+                    iHeightHeaderTitle = jqPageCont.find('.sapUxAPObjectPageHeaderTitle:visible').toArray().reduce(function(iSum, oEl) {
+                        return iSum + $(oEl).outerHeight();
+                    }, 0);
+                    iHeightHeaderDetails = jqPageCont.find('.sapUxAPObjectPageHeaderDetails:visible').toArray().reduce(function(iSum, oEl) {
+                        return iSum + $(oEl).outerHeight();
+                    }, 0);
+                    jqPageCont.find('.exf-section-fullheight').each(function(){
+                        var sId = $(this).attr('id');
+                        var oPanel;
+                        if (! sId) return;
+                        oPanel = sap.ui.getCore().byId(sId);
+                        if (! oPanel) return;
+                        // After collapsing and expanding the header again both keep their height for some reason
+                        if (iHeightHeaderDetails === iHeightHeaderTitle) {
+                            iHeightHeaderTitle = 0;
+                        }
+                        oPanel.setHeight((iHeightContent - iHeightHeaderTitle - iHeightHeaderDetails) + 'px');
+                    });
+JS;
     }
     
     /**

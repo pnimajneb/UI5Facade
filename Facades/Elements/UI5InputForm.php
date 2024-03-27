@@ -95,6 +95,29 @@ JS;
     }
     
     /**
+     *
+     * @param string $valueJs
+     * @return string
+     */
+    protected function buildJsSurveyModelSetter(string $valueJs) : string
+    {
+        $widget = $this->getWidget();
+        $model = $this->getView()->getModel();
+        if ($model->hasBinding($widget, 'form_config')) {
+            $modelPath = $model->getBindingPath($widget, 'form_config');
+        } else {
+            $modelPath = $this->getValueBindingPrefix() . $this->getWidget()->getFormConfigDataColumnName();
+        }
+        return <<<JS
+(function(oModel) {
+            var oValue = {$this->buildJsValueGetter()};
+            sap.ui.getCore().byId('{$this->getId()}').getModel().setProperty('{$modelPath}', oModel);
+            {$this->buildJsValueSetter('oValue')};
+        })({$valueJs})
+JS;
+    }
+    
+    /**
      * 
      * @see SurveyJsTrait::buildJsSurveyInit()
      */
@@ -122,10 +145,19 @@ JS;
      */
     public function buildJsValidator(?string $valJs = null) : string
     {
-        // Always validate the form - even if the widget is not required explicitly. Otherwise required
+        // Always validate the form if it can be found in the dialog - even if the widget is not required explicitly. Otherwise required
         // fields inside the form will not produce validation errors if the InputForm is not explicitly
         // marked as required
-        return "{$this->buildJsSurveyVar()}.validate()";
+        //
+        return <<<JS
+(function(){
+    var surveyJsVar = {$this->buildJsSurveyVar()};
+    if (surveyJsVar !== null && surveyJsVar !== undefined) {   
+        return {$this->buildJsSurveyVar()}.validate();
+    }
+    return true;
+}())
+JS;
     }
     
     /**

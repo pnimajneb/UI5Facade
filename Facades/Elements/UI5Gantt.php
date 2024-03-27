@@ -8,9 +8,6 @@ use exface\Core\Widgets\Parts\DataCalendarItem;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
 use exface\Core\DataTypes\DateDataType;
-use exface\Core\Interfaces\Model\ExpressionInterface;
-use exface\Core\Widgets\Parts\ConditionalProperty;
-use exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait;
 use exface\Core\Widgets\Parts\ConditionalPropertyConditionGroup;
 use exface\Core\DataTypes\ComparatorDataType;
 use exface\Core\Interfaces\Widgets\iShowSingleAttribute;
@@ -170,19 +167,20 @@ JS;
             default: $viewMode = 'sap.ui.unified.CalendarIntervalType.Hour'; break;
         }
         
+        // see if this particular child(oChildRow)is to be moved along with its parent if the parent is moved
+        // check if there is a condition set to adjust which children are to be moved along with its parent
         /* @var $condProp \exface\Core\Widgets\Parts\ConditionalProperty */
-        /*
         if (null !== $condProp = $widget->getChildrenMoveWithParentIf()) {
             $rowMoveFilterJs = <<<JS
-
-                        // see if this particular child is to be moved
-                        if (false === {$this->buildJsConditionalPropertyRowCheck($condProp->getConditionGroup(), 'oChildRow')}) {
+                        // check if the set condition is matching the property of the child. If not, continue with the next item
+                        if (false === Boolean({$this->buildJsConditionalPropertyRowCheck($condProp->getConditionGroup(), 'oChildRow')})) {
                             return;
                         }
 JS;
+            // if the set condition is matching the property of the child, continue with moving the child
         } else {
             $rowMoveFilterJs = '';
-        }*/
+        }
         
         return <<<JS
 (function() {   
@@ -215,40 +213,47 @@ JS;
             var oRow = oTable.getModel().getProperty(oCtxt.sPath);
             var sColNameStart = '{$startCol->getDataColumnName()}';
             var sColNameEnd = '{$endCol->getDataColumnName()}';
+            var bMoveChildrenWithParent = Boolean({$this->getWidget()->getChildrenMoveWithParent()});
 
-            // Move children with parent when parent is dragged along the timeline
             var oldStart = moment(oGantt.dateUtils.parse(oRow[sColNameStart])); // string '10.04.2024' -> date object 10.04.2024 02:00:00 GMT+2 
             var oldEnd = moment(oGantt.dateUtils.parse(oRow[sColNameEnd])); // string '11.04.2024' -> date object 11.04.2024 02:00:00 GMT+2 
             var newStart = moment(dStart);
             var newEnd = moment(dEnd);
-
-            // Check if the parent has been moved without the duration changing
-            var iDurationNewMoment = newEnd.diff(newStart, 'hours');
-            var iDurationOldMoment = oldEnd.diff(oldStart, 'hours');
-
-            // Compare hour difference of old & new task dates, if they are same the children tasks will also be moved
-            if (iDurationNewMoment ===  iDurationOldMoment) {
-                var moveDiffInHours = newStart.diff(oldStart, 'hours');
-                
-                function processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd) {
-                    oRow._children.forEach(function(oChildRow, iIdx) {
-                        {$rowMoveFilterJs}
-                        // move dates of oChildRow as far as the parent row was moved
-                        var startDateChild = moment(new Date(oChildRow['date_start_plan'])).add(moveDiffInHours, 'hours');
-                        var endDateChild = moment(new Date(oChildRow['date_end_plan'])).add(moveDiffInHours, 'hours');
-                        oRow._children[iIdx][sColNameStart] = {$startFormatter->buildJsFormatDateObjectToInternal('startDateChild')};
-                        oRow._children[iIdx][sColNameEnd] = {$startFormatter->buildJsFormatDateObjectToInternal('endDateChild')};
-
-                        // if the child row has children too, call the function recursively
-                        if (oChildRow._children && oChildRow._children.length > 0) {
-                            processChildrenRecursively(oChildRow, moveDiffInHours, sColNameStart, sColNameEnd);
-                        }
-                    });
-                }
-                processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd);
-            }
+            
+            // Update the table in any case
             oModel.setProperty(oCtxt.sPath + '/' + sColNameStart, {$startFormatter->buildJsFormatDateObjectToInternal('newStart.toDate()')});
             oModel.setProperty(oCtxt.sPath + '/' + sColNameEnd, {$endFormatter->buildJsFormatDateObjectToInternal('newEnd.toDate()')});
+
+            // Move children with parent when parent is dragged along the timeline
+            // Only move children if UXON children_move_with_parent is set to true. True is the default value.
+            if (bMoveChildrenWithParent === true) {
+            
+                // Check if the parent has been moved without the duration changing
+                var iDurationNewMoment = newEnd.diff(newStart, 'hours');
+                var iDurationOldMoment = oldEnd.diff(oldStart, 'hours');
+
+                // Compare hour difference of old & new task dates, if they are same the children tasks will also be moved
+                if (iDurationNewMoment === iDurationOldMoment) {
+                    var moveDiffInHours = newStart.diff(oldStart, 'hours')
+                    function processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd) {
+                        oRow._children.forEach(function(oChildRow, iIdx) {
+                            // check if there is a condition that enables/disables the moving of a child along with its parent
+                            {$rowMoveFilterJs}
+                            // move dates of oChildRow as far as the parent row was moved
+                            var startDateChild = moment(new Date(oChildRow['date_start_plan'])).add(moveDiffInHours, 'hours');
+                            var endDateChild = moment(new Date(oChildRow['date_end_plan'])).add(moveDiffInHours, 'hours');
+                            oRow._children[iIdx][sColNameStart] = {$startFormatter->buildJsFormatDateObjectToInternal('startDateChild')};
+                            oRow._children[iIdx][sColNameEnd] = {$endFormatter->buildJsFormatDateObjectToInternal('endDateChild')};
+
+                            // if the child row has children too, call the function recursively
+                            if (oChildRow._children && oChildRow._children.length > 0) {
+                                processChildrenRecursively(oChildRow, moveDiffInHours, sColNameStart, sColNameEnd);
+                            }
+                        });
+                    }
+                    processChildrenRecursively(oRow, moveDiffInHours, sColNameStart, sColNameEnd);
+                }
+            }
     	}
     });
 })();
@@ -390,6 +395,12 @@ JS;
     }
     
     /**
+     * Returns a JS snippet, that yields TRUE if the provided JS data row matches the condition group and FALSE otherwise
+     * 
+     * This is a modified version of `JsConditionalPropertyTrait::buildJsConditionalPropertyIf()`
+     * for checking the conditions for each row of an object instead of just the conditions for the object itself.
+     * 
+     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\JsConditionalPropertyTrait::buildJsConditionalPropertyIf()
      * 
      * @param ConditionalPropertyConditionGroup $conditionGroup
      * @param string $oRowJs
@@ -402,6 +413,7 @@ JS;
         $jsConditions = [];
         
         // First evaluate the conditions
+        // Make sure that the widget link can be entered in the right or in the left expression
         foreach ($conditionGroup->getConditions() as $condition) {
             $leftJs = null;
             $leftExpr = $condition->getValueLeftExpression();
@@ -416,7 +428,7 @@ JS;
             }
             
             $rightJs = null;
-            $rightExpr = $condition->getValueLeftExpression();
+            $rightExpr = $condition->getValueRightExpression();
             if ($rightExpr->isReference() === true) {
                 $rightLink = $rightExpr->getWidgetLink($widget);
                 if ($rightLink->getTargetWidget() === $widget) {

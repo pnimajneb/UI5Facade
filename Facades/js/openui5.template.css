@@ -185,6 +185,7 @@ table.jexcel > tbody > tr > td.jexcel_dropdown.readonly { background-image: none
 .sapUxAPObjectPageHeaderContent .exf-label-horizontal > .sapUiHLayoutChildWrapper > .sapMLabel {padding-right: 0.25rem;}
 .sapUxAPObjectPageHeaderContent .exf-label-horizontal > .sapUiHLayoutChildWrapper > .sapMPI {margin-bottom: 0rem;}
 .sapUxAPObjectPageHeaderContent .exf-label-horizontal > .sapUiHLayoutChildWrapper > .sapUiIcon  {vertical-align: inherit;}
+.exf-dialog-btn-header-collapse {position: absolute; right: 0; top: 0; margin-top: 0.75rem;}
 /* Dialog (non-max) */
 html.sap-phone .sapMDialog {min-width: 20rem !important}
 html.sap-tablet .sapMDialog, html.sap-desktop .sapMDialog {min-width: 25rem !important}
@@ -225,7 +226,7 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .exf-map .marker-cluster {background-clip: padding-box; border-radius: 20px;}
 .exf-map .marker-cluster div {width: 30px; height: 30px; margin-left: 5px; margin-top: 5px; color: white; text-align: center; border-radius: 15px;}
 .exf-map .marker-cluster i {line-height: 30px;}
-.exf-map-shape-title.leaflet-tooltip {background-color: transparent; border: none; box-shadow: none;}
+.exf-map-shape-title.leaflet-tooltip {background-color: transparent; border: none; box-shadow: none; font-weight: 600; text-shadow: 0 0 3px white;}
 .exf-map-shape-selected {fill-opacity: 0.4; stroke-width: 1; stroke: black}
 
 /* Slick carousel: ImageGallery */

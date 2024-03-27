@@ -330,11 +330,13 @@ JS;
             
             $forceLoadFromServerJs = $targetWidget->isCacheable() ? 'false' : 'true';
             $output .= <<<JS
-                        var sViewName = this.getViewName('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$targetWidget->getId()}'); 
-                        var sViewId = this.getViewId(sViewName);
-                        var oComponent = this.getOwnerComponent();
+
+                        var oController = {$this->getController()->buildJsControllerGetter($this)};
+                        var sViewName = oController.getViewName('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$targetWidget->getId()}'); 
+                        var sViewId = oController.getViewId(sViewName);
+                        var oComponent = oController.getOwnerComponent();
                         
-                        var jqXHR = this._loadView(sViewName, function(){ 
+                        var jqXHR = oController._loadView(sViewName, function(){ 
                             var oView = sap.ui.getCore().byId(sViewId);
                             var oParentView = {$this->getController()->getView()->buildJsViewGetter($this)};
                             var oApp = sap.ui.getCore().byId('{$this->getController()->getWebapp()->getName()}');
@@ -599,15 +601,26 @@ JS;
         return parent::buildJsBusyIconHide(true);
     }
     
+    /**
+     * 
+     * @param ActionInterface $action
+     * @param string $jsRequestData
+     * @param string $jsOnSuccess
+     * @return string
+     */
     protected function buildJsClickCallServerAction(ActionInterface $action, string $jsRequestData, string $jsOnSuccess = '') : string
     {
         $widget = $this->getWidget();
         $input_element = $this->getInputElement();
+        // Before triggering action effects, double check, that the input element is stil there!
+        // This is important because it may be gone after a dialog was closed, which would result
+        // in JS errors. Checking input element and not button element here to make it work with
+        // actions without a rendered button - e.g. drop actions
         $onModelLoadedJs = <<<JS
 
 								
 								{$this->buildJsBusyIconHide()}
-                                if (sap.ui.getCore().byId("{$this->getId()}") !== undefined) {
+                                if (sap.ui.getCore().byId("{$input_element->getId()}") !== undefined) {
                                     {$this->buildJsCloseDialog(false)}
 								    {$this->buildJsTriggerActionEffects($action)}
                                 }

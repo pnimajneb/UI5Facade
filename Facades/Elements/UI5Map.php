@@ -181,6 +181,7 @@ JS;
             if ($src === $mainSrc) {
                 continue;
             }
+            
             $name = StringDataType::substringAfter($src, '/', $src, false, true);
             $name = str_replace('-', '_', $name);
             

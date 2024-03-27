@@ -289,6 +289,29 @@ JS;
         }
         $enableGrouping = $widget->hasRowGroups() ? 'enableGrouping: true,' : '';
         
+        if ($widget->getDragToOtherWidgets() === true) {
+            $initDnDJs = <<<JS
+
+                dragDropConfig: [
+                    new sap.ui.core.dnd.DragInfo({
+                        sourceAggregation: "rows",
+                        dragStart: function(oEvent) {
+                            var oDraggedRow = oEvent.getParameter("target");
+                            var oModel = oDraggedRow.getModel();
+                            var oRow = oModel.getProperty(oDraggedRow.getBindingContext().getPath());
+                            var oDataSheet = {
+                                oId: '{$this->getMetaObject()->getId()}',
+                                rows: (oRow ? [oRow] : [])
+                            };
+                            oEvent.getParameter('browserEvent').dataTransfer.setData("dataSheet", JSON.stringify(oDataSheet));
+                        }
+                    }),
+                ],
+JS;
+        } else {
+            $initDnDJs = '';
+        }
+        
         $js = <<<JS
             new sap.ui.table.Table("{$this->getId()}", {
                 width: "{$this->getWidth()}",
@@ -305,6 +328,7 @@ JS;
                 rowSelectionChange: {$controller->buildJsEventHandler($this, self::EVENT_NAME_CHANGE, true)},
                 firstVisibleRowChanged: {$controller->buildJsEventHandler($this, self::EVENT_NAME_FIRST_VISIBLE_ROW_CHANGED, true)},
         		{$this->buildJsPropertyVisibile()}
+                {$initDnDJs}
                 toolbar: [
         			{$toolbar}
         		],
