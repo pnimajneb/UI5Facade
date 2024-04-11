@@ -120,11 +120,13 @@ JS;
     				title: {$title},
     				type: 'Message',
     				state: 'Error',
+                    contentWidth: '400px',
     				content: new sap.m.Text({
     					text: {$message_body_js}
     				}),
     				beginButton: new sap.m.Button({
     					text: 'OK',
+                        type: 'Emphasized',
     					press: function () {
     						dialog.close();
     					}
