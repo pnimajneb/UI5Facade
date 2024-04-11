@@ -93,7 +93,7 @@ JS;
         if ($global) {
             return 'sap.ui.core.BusyIndicator.show(0);';
         } else {
-            return 'sap.ui.getCore().byId("' . $this->getId() . '").setBusyIndicatorDelay(0).setBusy(true);';
+            return 'sap.ui.getCore().byId("' . $this->getId() . '")?.setBusyIndicatorDelay(0).setBusy(true);';
         }
     }
 
@@ -102,7 +102,7 @@ JS;
         if ($global) {
             return 'sap.ui.core.BusyIndicator.hide();';
         } else {
-            return 'sap.ui.getCore().byId("' . $this->getId() . '").setBusy(false);';
+            return 'sap.ui.getCore().byId("' . $this->getId() . '")?.setBusy(false);';
         }
     }
 

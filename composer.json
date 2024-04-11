@@ -23,6 +23,7 @@
 		"bower-asset/ui5-qrcode" : "~0.9",
 		"npm-asset/dexie" : "^2.0.4",
 		"npm-asset/echarts" : "^5",
+		"npm-asset/geoman-io--leaflet-geoman-free": "^2.16",
 		"npm-asset/moment" : "^2.24.0",
 		"npm-asset/leaflet" : "^1.7",
 		"npm-asset/leaflet-extra-markers" : "^1.2",
