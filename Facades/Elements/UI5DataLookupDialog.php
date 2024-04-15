@@ -62,8 +62,10 @@ class UI5DataLookupDialog extends UI5Dialog
             if ($labelColExists === false) {
                 $labelAttr = $table->getMetaObject()->getLabelAttribute();
                 if (! $table->hasAggregations() || $table->hasAggregationOverAttribute($labelAttr)) {
-                    $this->tokenNameColumn = $table->createColumnFromAttribute();
+                    $this->tokenNameColumn = $table->createColumnFromAttribute($labelAttr);
                     $table->addColumn($this->tokenNameColumn);
+                    //TODO data for added Label Column might be not loaded by the datasheet because column not part of the widget
+                    //Shouldn't we use the attribute defined as label in the Widget calling the Lookup Dialog?
                 } else {
                     $this->tokenNameColumn = $table->getColumns()[0];
                 }
