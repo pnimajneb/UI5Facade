@@ -685,6 +685,7 @@ JS;
                             
                 var fnRequest = function() {
                     if ({$input_element->buildJsValidator()}) {
+                        {$this->buildJsCheckRequestDataSize($jsRequestData, $this->getAjaxPostSizeMax())}
                         {$this->buildJsBusyIconShow()}
                         var oResultModel = new sap.ui.model.json.JSONModel();
                         var params = {
