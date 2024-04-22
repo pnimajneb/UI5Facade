@@ -49,7 +49,7 @@ class UI5Tabs extends UI5Container
     new sap.m.IconTabBar("{$this->getId()}", {
         showOverflowSelectList: true,
         expandable: false,
-        stretchContentHeight: true, // FIXME makes header of ObjectPage sometimes inivsible if set
+        {$this->buildJsPropertyStretchContent()}
         $options
         items: [
             {$this->buildJsChildrenConstructors()}
@@ -60,6 +60,35 @@ class UI5Tabs extends UI5Container
     })
     {$this->buildJsPseudoEventHandlers()}
 JS;
+    }
+    
+    /**
+     * 
+     * @return string
+     */
+    protected function buildJsPropertyStretchContent() : string
+    {
+        $widget = $this->getWidget();
+        if ($widget->hasParent()) {
+            $parentWidget = $widget->getParent();
+            $parentEl = $this->getFacade()->getElement($parentWidget);
+        }
+        switch (true) {
+            /* If the tabs are inside a non-maximized dialog with an ObjectPageLayout and a header,
+             * using `stretchContentHeight:true` in this case makes the header disappear behind
+             * the content. 
+             * @var \exface\Core\Widgets\Dialog $parentWidget 
+             */
+            case ($parentEl instanceof UI5Dialog) 
+            && $parentEl->isMaximized() === false 
+            && $parentEl->isObjectPageLayout() 
+            && $parentEl->hasHeader():
+                $valJs = 'false';
+                break;
+            default:
+                $valJs = 'true';
+        }
+        return "stretchContentHeight: {$valJs},";
     }
     
     /**
