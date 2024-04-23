@@ -26,6 +26,7 @@ use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
 use exface\Core\Widgets\DataButton;
 use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
+use exface\Core\Interfaces\Widgets\iHaveQuickSearch;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -611,7 +612,7 @@ JS;
      */
     protected function hasQuickSearch() : bool
     {
-        return $this->getWidget() instanceof DataTable && $this->getWidget()->getQuickSearchEnabled() !== false;
+        return ($this->getWidget() instanceof iHaveQuickSearch) && $this->getWidget()->getQuickSearchEnabled() !== false;
     }
     
     /**
