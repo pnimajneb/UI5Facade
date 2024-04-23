@@ -4,12 +4,12 @@ namespace exface\UI5Facade\Facades\Elements;
 use exface\UI5Facade\Facades\Interfaces\UI5ValueBindingInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 use exface\Core\Widgets\DataTable;
-use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\DataTypes\StringDataType;
 use exface\Core\Widgets\DataColumnResponsive;
 use exface\Core\Interfaces\Widgets\iCanWrapText;
 use exface\Core\Facades\AbstractAjaxFacade\Formatters\JsEnumFormatter;
+use exface\Core\Widgets\Text;
 
 /**
  *
@@ -147,6 +147,12 @@ JS;
         if ($tpl instanceof UI5Display) {
             if (($widget->getDataWidget() instanceof DataTable) && $widget->getNowrap() === false) {
                 $tpl->setWrapping(true);
+                if ($cellWidget instanceof Text) {
+                    $maxLines = $cellWidget->getMultiLineMaxLines();
+                } else {
+                    $maxLines = null;
+                }
+                $tpl->setPropertyMaxLines($maxLines ?? $this->getWrapLinesMax());
             }
             $tpl->setValueBindingPrefix($modelPrefix);
             $tpl->setAlignment($this->buildJsAlignment());
@@ -323,5 +329,13 @@ JS;
         $this->getFacade()->getElement($this->getWidget()->getCellWidget())->registerExternalModules($controller);
         return $this;
     }
+    
+    /**
+     * 
+     * @return int
+     */
+    protected function getWrapLinesMax() : int
+    {
+        return $this->getFacade()->getConfig()->getOption('WIDGET.DATATABLE.MAX_TEXT_LINES_PER_CELL');
+    }
 }
-?>

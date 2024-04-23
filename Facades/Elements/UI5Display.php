@@ -33,6 +33,8 @@ class UI5Display extends UI5Value
     
     private $wrap = null;
     
+    private $wrapMaxLines = null;
+    
     /**
      *
      * {@inheritDoc}
@@ -176,13 +178,53 @@ JS;
     }
             
     /**
-     * Returns "wrapping: false/true," with tailing comma.
+     * Returns `wrapping: false/true,` with tailing comma and supporting properties like `maxLines` if needed
      * 
      * @return string
      */
     protected function buildJsPropertyWrapping()
     {
-        return 'wrapping: ' . ($this->getWrapping() === true ? 'true' : 'false'). ',';
+        return 'wrapping: ' . ($this->getWrapping() === true ? 'true' : 'false'). ',' . $this->buildJsPropertyMaxLines();
+    }
+    
+    /**
+     *
+     * @return string
+     */
+    protected function buildJsPropertyMaxLines() : string
+    {
+        if ($this->getPropertyMaxLines() === null) {
+            return '';
+        }
+        return "maxLines: {$this->getPropertyMaxLines()},";
+    }
+    
+    /**
+     *
+     * @return int|NULL
+     */
+    protected function getPropertyMaxLines() : ?int
+    {
+        return $this->wrapMaxLines;
+    }
+    
+    /**
+     * Explicitly sets the property maxLines of UI5 controls based on sap.m.Text.
+     * 
+     * MUST be called before the control has been rendered!
+     * 
+     * Set to `0` to remove the max lines limit.
+     * 
+     * @param int $value
+     * @return UI5Value
+     */
+    public function setPropertyMaxLines(int $value) : UI5Value
+    {
+        if ($value === 0) {
+            $value = null;
+        }
+        $this->wrapMaxLines = $value;
+        return $this;
     }
     
     /**

@@ -1287,6 +1287,10 @@ JS;
                         });
                     }, 0);
                 }
+
+                setTimeout(function(){
+                    {$this->buildJsFixRowHeight($oTableJs)}
+                }, 0);
 JS;
     }
     
@@ -1881,5 +1885,68 @@ JS;
             }   
 JS;
         return $resetUiTable . $this->buildJsDataResetterViaTrait();
+    }
+    
+    protected function buildJsFixRowHeight(string $oTableJs) : string
+    {
+        if ($this->hasFixedRowHeight() === true) {
+            return '';
+        }
+        
+        return <<<JS
+
+                    var jqTable = $('#{$this->getId()}');
+                    var iRowCntOrig = jqTable.data('_exfMinRows');
+                    var iHeaderHeight = jqTable.find('.sapUiTableHeaderRow').height() - 1;
+                    var iRowHeightMax = iHeaderHeight;
+                    var fnCalcRowHeight = function() {
+                        var iNewVisibleRowCount;
+                        var iRowCntCur = $oTableJs.getMinAutoRowCount();
+                        // On first run, just remember the curent min row count
+                        // On subsequent runs, check if min row count was decreased. If so, restore
+                        // it, wait for rerender and repeat the optimization
+                        if (iRowCntOrig === undefined) {
+                            iRowCntOrig = iRowCntCur;
+                            jqTable.data('_exfMinRows', iRowCntOrig);
+                        } else if (iRowCntCur < iRowCntOrig) {
+                            $oTableJs.setMinAutoRowCount(iRowCntOrig);
+                            setTimeout(fnCalcRowHeight, 0);
+                            return;
+                        }
+                        // Find the maximum height of immediate children of table cells
+                        iRowHeightMax = Math.max.apply(null, jqTable.find('.sapUiTableRow > td > *').map(
+                                function () {
+                                    return $(this).height();
+                                }
+                            ).get()
+                        );
+                        // If the maximum height is greater, than the default height, increase row
+                        // row height and decrease the minimum number of rows shown
+                        if (iRowHeightMax > iHeaderHeight) {
+                            iNewVisibleRowCount = Math.round(iRowCntOrig / (iRowHeightMax / iHeaderHeight));
+                            $oTableJs
+                                .setColumnHeaderHeight(iHeaderHeight)
+                                .setMinAutoRowCount(iNewVisibleRowCount)
+                                .setRowHeight(iRowHeightMax);
+                        }
+                    };
+                    $oTableJs.setRowHeight(0);
+                    fnCalcRowHeight();
+JS;
+    }
+    
+    protected function hasFixedRowHeight() : bool
+    {
+        foreach ($this->getWidget()->getColumns() as $col) {
+            switch (true) {
+                case $col->isHidden() === true:
+                    continue 2;
+                case $col->getCellWidget()->getHeight()->isUndefined() === false:
+                    continue 2;
+                case $col->getNowrap() === false:
+                    return false;
+            }
+        }
+        return true;
     }
 }
