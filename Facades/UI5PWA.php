@@ -27,6 +27,7 @@ use exface\Core\Widgets\KPI;
 use exface\Core\Widgets\Filter;
 use exface\Core\Widgets\DataLookupDialog;
 use exface\Core\Interfaces\Actions\iRefreshInputWidget;
+use exface\Core\Interfaces\Actions\iResetWidgets;
 
 /**
  * 
@@ -179,6 +180,8 @@ class UI5PWA extends AbstractPWA
         switch (true) {
             // Ignore refresh, reload and search-buttons as they behave exactly like their target widget
             case $action instanceof iRefreshInputWidget:
+                return true;
+            case $action instanceof iResetWidgets:
                 return true;
         }
         return false;

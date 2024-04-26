@@ -46,6 +46,7 @@
 	"WIDGET.DATATABLE.OFFLINE_HINT": "The requested data is only available online!",
 	"WIDGET.DATATABLE.OFFLINE_ERROR": "The requested data is only available online.",
 	"WIDGET.DATATABLE.OFFLINE_ERROR_TITLE": "Your are offline...",
+	"WIDGET.DATATABLE.RESET_BUTTON_TEXT": "перезагрузка",
 	"WIDGET.DATATABLE.SETTINGS_DIALOG.TITLE": "Настройки таблицы",
 	"WIDGET.DATATABLE.SETTINGS_DIALOG.FILTERS": "Фильтры",
 	"WIDGET.DATATABLE.SETTINGS_DIALOG.COLUMNS": "Столбцы",

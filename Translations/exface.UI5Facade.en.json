@@ -115,6 +115,7 @@
 	"WIDGET.DATATABLE.OFFLINE_HINT": "The requested data is only available online!",
 	"WIDGET.DATATABLE.OFFLINE_ERROR": "The requested data is only available online.",
 	"WIDGET.DATATABLE.OFFLINE_ERROR_TITLE": "Your are offline...",
+	"WIDGET.DATATABLE.RESET_BUTTON_TEXT": "Reset",
 	"WIDGET.DATATABLE.SETTINGS_DIALOG.TITLE": "Table Settings",
 	"WIDGET.DATATABLE.SETTINGS_DIALOG.FILTERS": "Filters",
 	"WIDGET.DATATABLE.SETTINGS_DIALOG.COLUMNS": "Columns",
@@ -147,9 +148,5 @@
 	"WIDGET.PAGINATOR.NEXT_PAGE": "Next Page",
 	"WIDGET.PAGINATOR.PREVIOUS_PAGE": "Previous Page",
 	
-	"WIDGET.UPLOADER.ERROR_EXTENSION_NOT_ALLOWED": "Only the following file types allowed: %extensions%!",
-	"WIDGET.UPLOADER.ERROR_MIMETYPE_NOT_ALLOWED": "Only the following content types allowed: %mimetypes%!",
-	"WIDGET.UPLOADER.ERROR_FILE_TOO_BIG": "File too large: max. %mb% MB allowed!",
-	"WIDGET.UPLOADER.ERROR_FILENAME_TOO_LONG": "File name too long: max. %length% characters allowed!",
 	"WIDGET.UPLOADER.BROWSE": "Browse"
 }
