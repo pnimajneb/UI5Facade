@@ -392,6 +392,7 @@ JS
                 oController.{$this->getController()->buildJsObjectName('editorPopup', $this)} 
                     = oPopover 
                     = {$popoverEl->buildJsConstructor($oControllerJs)};
+                oController.getView().addDependent(oPopover);
             }
             jqCarousel.data('_exfUploadIdx', iPendingIdx);
             {$popoverEl->buildJsDataSetter("{rows: [oRow]}")}
