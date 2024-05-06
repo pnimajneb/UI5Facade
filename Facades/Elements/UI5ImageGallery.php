@@ -83,6 +83,10 @@ JS;
         return $this->buildJsPanelWrapper($chart, $oControllerJs);
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function getHint() : string
     {
         $hint = $this->getHintForSlick();
@@ -90,7 +94,7 @@ JS;
             $translator = $this->getWorkbench()->getCoreApp()->getTranslator();
             $hint .= PHP_EOL . '- ' . $translator->translate('WIDGET.BUTTON.HINT_DATA_MAX_SIZE', ['%size_formatted%' => ByteSizeDataType::formatWithScale($this->getAjaxPostSizeMax())]);
         }
-        return $hint;
+        return $hint ?? '';
     }
     
     /**
