@@ -561,7 +561,7 @@ JS;
     {
         $widget = $this->getWidget();
         if (($widget instanceof DialogButton) && $widget->getCloseDialogAfterActionSucceeds()) {
-            if ($checkChanges === null) {
+            if ($checkChanges === null && $widget->hasAction() === true) {
                 $checkChanges = $this->isActionToCheckForUnsavedChanges($widget->getAction());
             }
             return $this->getFacade()->getElement($widget->getDialog())->buildJsCloseDialog($checkChanges);
