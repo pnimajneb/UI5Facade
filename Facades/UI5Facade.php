@@ -42,6 +42,7 @@ use exface\Core\Interfaces\Selectors\PWASelectorInterface;
 use exface\Core\CommonLogic\Selectors\PWASelector;
 use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
 use exface\Core\Interfaces\Facades\PWAFacadeInterface;
+use exface\Core\DataTypes\HtmlDataType;
 
 /**
  * Renders SAP Fiori apps using OpenUI5 or SAP UI5.
@@ -463,7 +464,7 @@ JS;
      */
     protected function buildHtmlFromError(\Throwable $exception, ServerRequestInterface $request = null, UiPageInterface $page = null) : string
     {
-        return $exception->getMessage();
+        return htmlspecialchars($exception->getMessage());
     }
     
     /**
