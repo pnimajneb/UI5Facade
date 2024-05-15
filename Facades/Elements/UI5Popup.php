@@ -40,6 +40,10 @@ class UI5Popup extends UI5Form
         
         
         // Finally, instantiate the dialog
+        // Make sure to reset the contents of the popup every time it closes.
+        // Otherwise values, that had bee inserted would be there again when
+        // the popup is opened the next time - in particular if opened in another 
+        // context, where not all widgets of the popup explicitly receive values.
         $icon = $widget->getIcon() ? 'icon: "' . $this->getIconSrc($widget->getIcon()) . '",' : '';
         return <<<JS
 
@@ -49,7 +53,10 @@ class UI5Popup extends UI5Form
             {$this->buildJsPropertyContentWidth()}
             title: {$this->escapeString($this->getCaption())},
 			content : [ {$this->buildJsLayoutConstructor()} ],
-            footer: {$this->buildJsFloatingToolbar()}
+            footer: {$this->buildJsFloatingToolbar()},
+            afterClose: function(oEvent) {
+                {$this->buildJsResetter()};
+            }
 		}).addStyleClass('{$this->buildCssElementClass()}')
         {$this->buildJsPseudoEventHandlers()}
 JS;
@@ -122,42 +129,6 @@ JS;
     }
     
     /**
-     * Returns the JS constructor for the sap.m.Page used as the top-level control when rendering
-     * the dialog as an object page layout. 
-     * 
-     * The page will have a floating toolbar with all dialog buttons and a header with a title and
-     * the close/back button.
-     * 
-     * @param string $content_js
-     * @return string
-     */
-    protected function buildJsPage($content_js, string $oControllerJs = 'oController')
-    {
-        $this->getController()->addOnRouteMatchedScript($this->buildJsRefresh(false), 'loadPrefill');
-        if ($this->getWidget()->isCacheable() === false) {
-            $this->getController()->addOnHideViewScript("sap.ui.getCore().byId('{$this->getId()}').destroy()");
-        }
-        
-        return <<<JS
-        
-        new sap.m.Page("{$this->getId()}", {
-            title: "{$this->getCaption()}",
-            showNavButton: true,
-            navButtonPress: {$this->getController()->buildJsMethodCallFromView(UI5Popup::CONTROLLER_METHOD_CLOSE_DIALOG, $this, $oControllerJs)},
-            content: [
-                {$content_js}
-            ],
-            headerContent: [
-                {$this->buildJsPageHeaderContent($oControllerJs)}
-            ],
-            footer: {$this->buildJsFloatingToolbar()}
-        }).addStyleClass('{$this->buildCssElementClass()}')
-        {$this->buildJsPseudoEventHandlers()}
-
-JS;
-    }
-    
-    /**
      * 
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Form::buildCssElementClass()
@@ -181,25 +152,6 @@ JS;
         }
         $js .= $toolbarEl->buildJsConstructorsForRightButtons();
         return $js;
-    }
-    
-    /**
-     *
-     * @return string
-     */
-    protected function buildJsLayoutFormFixes() : string
-    {
-        $fixContainerQueryJs = <<<JS
-        
-                    var oGrid = sap.ui.getCore().byId($("#{$this->getId()}-scrollCont > .sapUiForm > .sapUiFormResGrid > .sapUiRGLContainer > .sapUiRGLContainerCont > .sapUiRespGrid").attr("id"));
-                    if (oGrid !== undefined) {
-                        oGrid.setContainerQuery(false);
-                    }
-                    
-JS;
-        $this->addPseudoEventHandler('onAfterRendering', $fixContainerQueryJs);
-        
-        return '';
     }
     
     /**
