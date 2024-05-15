@@ -464,7 +464,17 @@ JS;
      */
     protected function buildHtmlFromError(\Throwable $exception, ServerRequestInterface $request = null, UiPageInterface $page = null) : string
     {
-        return htmlspecialchars($exception->getMessage());
+        // Only show exception messages to users, that normally would see error details
+        // Ask the parent for error details as the UI5Facade does not have a real detail
+        // mode.
+        if (parent::isShowingErrorDetails() === false) {
+            return '';
+        }
+        if ($request !== null && $this->isRequestFrontend($request)) {
+            return $this->getWorkbench()->getDebugger()->printException($exception);
+        } else {
+            return htmlspecialchars($exception->getMessage());
+        }
     }
     
     /**
