@@ -42,7 +42,6 @@ use exface\Core\Interfaces\Selectors\PWASelectorInterface;
 use exface\Core\CommonLogic\Selectors\PWASelector;
 use exface\Core\Interfaces\Exceptions\AuthorizationExceptionInterface;
 use exface\Core\Interfaces\Facades\PWAFacadeInterface;
-use exface\Core\DataTypes\HtmlDataType;
 
 /**
  * Renders SAP Fiori apps using OpenUI5 or SAP UI5.
@@ -454,7 +453,11 @@ JS;
      */
     public function buildResponseDataError(\Throwable $exception, bool $forceHtmlEntities = false)
     {
-        return parent::buildResponseDataError($exception, $forceHtmlEntities);
+        $data = parent::buildResponseDataError($exception, $forceHtmlEntities);
+        if ($this->isShowingErrorMessage($exception)) {
+            $data['error']['message'] = $forceHtmlEntities ? htmlspecialchars($exception->getMessage()) : $exception->getMessage();
+        }
+        return $data;
     }
     
     /**
@@ -482,9 +485,19 @@ JS;
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::isShowingErrorDetails()
      */
-    protected function isShowingErrorDetails() : bool
+    public function isShowingErrorDetails() : bool
     {
         return false;
+    }
+    
+    /**
+     * Returns TRUE if error detail widgets are to be shown.
+     *
+     * @return bool
+     */
+    public function isShowingErrorMessage(\Throwable $e) : bool
+    {
+        return parent::isShowingErrorDetails();
     }
     
     /**
