@@ -158,6 +158,7 @@
 	"LIBS.SURVEY.SURVEY_JS_I18N": "npm-asset/survey-core/survey.i18n.min.js",
 	"LIBS.SURVEY.SURVEY_CSS": "npm-asset/survey-knockout/survey.min.css",
 	"LIBS.SURVEY.THEME_CSS": "exface/UI5Facade/Facades/js/survey-js/openui5-survey.css",
+	"LIBS.SURVEY.THEME_SCRIPT": "exface/UI5Facade/Facades/js/survey-js/openui5-survey.js",
 	"LIBS.SURVEY.CREATOR_JS": "npm-asset/survey-creator/survey-creator.min.js",
 	"LIBS.SURVEY.CREATOR_CSS": "npm-asset/survey-creator/survey-creator.min.css",
 	"LIBS.SURVEY.CREATOR_ACE_JS": [
