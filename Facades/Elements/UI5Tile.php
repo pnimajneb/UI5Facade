@@ -68,7 +68,7 @@ class UI5Tile extends UI5Button
                 $tileContentConstructor = <<<JS
     
                     new sap.m.FeedContent({
-    					contentText: "{$subtitle}"
+    					contentText: "{$this->escapeJsTextValue($subtitle)}"
     				}),
     
 JS;
@@ -83,7 +83,7 @@ JS;
             $visible = 'visible: false,';
         }
         
-        $footerText = $widget->getFooterText() !== null ? $this->escapeJsTextValue($widget->getFooterText()) : '';
+        $footerText = $widget->getFooterText() !== null ? $widget->getFooterText() : '';
         
         return <<<JS
 
@@ -94,7 +94,7 @@ new sap.m.GenericTile("{$this->getId()}", {
     {$visible}
     tileContent: [
         new sap.m.TileContent({
-            footer: "{$footerText}",
+            footer: "{$this->escapeJsTextValue($footerText)}",
             content: [
                 {$tileContentConstructor}
             ]

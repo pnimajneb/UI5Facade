@@ -148,5 +148,10 @@
 	"WIDGET.PAGINATOR.NEXT_PAGE": "Next Page",
 	"WIDGET.PAGINATOR.PREVIOUS_PAGE": "Previous Page",
 	
+	"WIDGET.REDIRECT.TITLE": "Redirect",	
+	"WIDGET.REDIRECT.CAPTION": "Redirecting to an external resource...",	
+	"WIDGET.REDIRECT.FALLBACK": "If you are not redirected within a few seconds, please",
+	"WIDGET.REDIRECT.FALLBACK_LINK_TEXT": "click here.",
+	
 	"WIDGET.UPLOADER.BROWSE": "Browse"
 }

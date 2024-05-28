@@ -83,6 +83,10 @@ JS;
         return $this->buildJsPanelWrapper($chart, $oControllerJs);
     }
     
+    /**
+     * 
+     * @return string
+     */
     protected function getHint() : string
     {
         $hint = $this->getHintForSlick();
@@ -90,7 +94,7 @@ JS;
             $translator = $this->getWorkbench()->getCoreApp()->getTranslator();
             $hint .= PHP_EOL . '- ' . $translator->translate('WIDGET.BUTTON.HINT_DATA_MAX_SIZE', ['%size_formatted%' => ByteSizeDataType::formatWithScale($this->getAjaxPostSizeMax())]);
         }
-        return $hint;
+        return $hint ?? '';
     }
     
     /**
@@ -369,9 +373,9 @@ JS;
 
                     var jqCarousel = $('#{$this->getIdOfSlick()}');
                     var oDataPopover = {$popoverEl->buildJsDataGetter()};
-                    var oDataPending = jqCarousel.data('_exfData');
-                    $.extend(oDataPending.rows[jqCarousel.data('_exfUploadIdx')], oDataPopover.rows[0]);
-                    jqCarousel.data(oDataPending);
+                    var oDataSlick = jqCarousel.data('_exfData');
+                    $.extend(oDataSlick.rows[jqCarousel.data('_exfUploadIdx')], oDataPopover.rows[0]);
+                    jqCarousel.data(oDataSlick);
                     {$popoverEl->buildJsCloseDialog()}
 JS
             ]
@@ -383,18 +387,21 @@ JS
         $(document).off('click', sButtonsSelector);
         $(document).on('click', sButtonsSelector, function(oEvent){
             var jqCarousel = $('#{$this->getIdOfSlick()}');
-            var oPopover = oController.{$this->getController()->buildJsObjectName('editorPopup', $this)};
-            var jqSlide = $(oEvent.target).closest('button');
-            var jqPendingSlides = $(sButtonsSelector);
-            var iPendingIdx = jqPendingSlides.index(jqSlide);
-            var oRow = jqCarousel.data('_exfData').rows[iPendingIdx];
-            if (oPopover === undefined) {
-                oController.{$this->getController()->buildJsObjectName('editorPopup', $this)} 
-                    = oPopover 
-                    = {$popoverEl->buildJsConstructor($oControllerJs)};
-                oController.getView().addDependent(oPopover);
-            }
-            jqCarousel.data('_exfUploadIdx', iPendingIdx);
+            var oPopover = function() {
+                var oPopover = oController.{$this->getController()->buildJsObjectName('editorPopup', $this)};
+                if (oPopover === undefined) {
+                    oController.{$this->getController()->buildJsObjectName('editorPopup', $this)} 
+                        = oPopover 
+                        = {$popoverEl->buildJsConstructor($oControllerJs)};
+                    oController.getView().addDependent(oPopover);
+                }
+                return oPopover;
+            }();
+            var jqSlide = $(oEvent.target).closest('.slick-slide');
+            var jqSlides = $('#{$this->getId()} .slick-slide');
+            var iClickedSlideIdx = jqSlides.index(jqSlide);
+            var oRow = jqCarousel.data('_exfData').rows[iClickedSlideIdx];
+            jqCarousel.data('_exfUploadIdx', iClickedSlideIdx);
             {$popoverEl->buildJsDataSetter("{rows: [oRow]}")}
             oPopover.openBy(oEvent.target);
         });

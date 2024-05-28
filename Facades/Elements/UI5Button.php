@@ -16,9 +16,6 @@ use exface\Core\Actions\SendToWidget;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\Factories\UiPageFactory;
 use exface\UI5Facade\Facades\UI5Facade;
-use exface\Core\Interfaces\Actions\iCallWidgetFunction;
-use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
-use exface\Core\Interfaces\Widgets\iHaveIcon;
 
 /**
  * Generates sap.m.Button for Button widgets.
@@ -564,22 +561,10 @@ JS;
     {
         $widget = $this->getWidget();
         if (($widget instanceof DialogButton) && $widget->getCloseDialogAfterActionSucceeds()) {
-            if ($checkChanges === null) {
-                $action = $widget->getAction();
-                switch (true) {
-                    case $action instanceof SendToWidget:
-                    case $action instanceof iCallWidgetFunction:
-                    case $action instanceof iRunFacadeScript: 
-                        $checkChanges = false; 
-                        break;
-                    default: 
-                        $checkChanges = true; 
-                        break;
-                }
-            }
+            $checkChanges = $checkChanges ?? $this->isCheckForUnsavedChangesRequired();
             return $this->getFacade()->getElement($widget->getDialog())->buildJsCloseDialog($checkChanges);
         }
-        return "";
+        return '';
     }
     
     protected function opensDialogPage()

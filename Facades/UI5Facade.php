@@ -453,7 +453,11 @@ JS;
      */
     public function buildResponseDataError(\Throwable $exception, bool $forceHtmlEntities = false)
     {
-        return parent::buildResponseDataError($exception, $forceHtmlEntities);
+        $data = parent::buildResponseDataError($exception, $forceHtmlEntities);
+        if ($this->isShowingErrorMessage($exception)) {
+            $data['error']['message'] = $forceHtmlEntities ? htmlspecialchars($exception->getMessage()) : $exception->getMessage();
+        }
+        return $data;
     }
     
     /**
@@ -463,7 +467,17 @@ JS;
      */
     protected function buildHtmlFromError(\Throwable $exception, ServerRequestInterface $request = null, UiPageInterface $page = null) : string
     {
-        return $exception->getMessage();
+        // Only show exception messages to users, that normally would see error details
+        // Ask the parent for error details as the UI5Facade does not have a real detail
+        // mode.
+        if (parent::isShowingErrorDetails() === false) {
+            return '';
+        }
+        if ($request !== null && $this->isRequestFrontend($request)) {
+            return $this->getWorkbench()->getDebugger()->printException($exception);
+        } else {
+            return htmlspecialchars($exception->getMessage());
+        }
     }
     
     /**
@@ -471,9 +485,19 @@ JS;
      * {@inheritDoc}
      * @see \exface\Core\Facades\AbstractAjaxFacade\AbstractAjaxFacade::isShowingErrorDetails()
      */
-    protected function isShowingErrorDetails() : bool
+    public function isShowingErrorDetails() : bool
     {
         return false;
+    }
+    
+    /**
+     * Returns TRUE if error detail widgets are to be shown.
+     *
+     * @return bool
+     */
+    public function isShowingErrorMessage(\Throwable $e) : bool
+    {
+        return parent::isShowingErrorDetails();
     }
     
     /**

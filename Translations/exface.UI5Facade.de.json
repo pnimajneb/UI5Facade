@@ -149,6 +149,11 @@
 	"WIDGET.PAGINATOR.NEXT_PAGE": "Nächste Seite",
 	"WIDGET.PAGINATOR.PREVIOUS_PAGE": "Vorherige Seite",
 	
+	"WIDGET.REDIRECT.TITLE": "Weiterleitung",	
+	"WIDGET.REDIRECT.CAPTION": "Sie werden an eine externe Seite weitergeleitet...",	
+	"WIDGET.REDIRECT.FALLBACK": "Wenn diese Nachricht nicht verschwindet,",
+	"WIDGET.REDIRECT.FALLBACK_LINK_TEXT": "klicken Sie hier.",
+	
 	"WIDGET.UPLOADER.BROWSE": "Durchsuchen"
 	
 }
