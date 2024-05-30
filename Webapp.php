@@ -834,8 +834,13 @@ class Webapp implements WorkbenchDependantInterface
             $title = json_encode($title);
         } else {
             $title = '"{i18n>MESSAGE.ERROR.SERVER_ERROR_TITLE}"';
-            $text = $this->facade->isShowingErrorDetails() ? json_encode($exception->getMessage()) : '""';
-            $description = '""';
+            if ($this->facade->isShowingErrorMessage($exception) === true) {
+                $text = json_encode($exception->getMessage());
+                $description = '"Please view logs for details"';
+            } else {
+                $text = '"{i18n>MESSAGE.ERROR.UNKNOWN_TITLE}"';
+                $description = '"{i18n>MESSAGE.ERROR.UNKNOWN_DESCRIPTION}"';
+            }
         }
         $placeholders = [
             'error_view_name' => ($originalViewPath ?? 'Error'),

@@ -18,6 +18,8 @@
 	
 	"MESSAGE.ERROR_TITLE": "Fehler",	
 	"MESSAGE.ERROR.SERVER_ERROR_TITLE": "Fehler im Server",
+	"MESSAGE.ERROR.UNKNOWN_TITLE": "Unbekannter fehler",
+	"MESSAGE.ERROR.UNKNOWN_DESCRIPTION": "Bitte wenden Sie sich an den Support",
 	"MESSAGE.SUCCESS_TITLE": "",
 	"MESSAGE.TYPE.ERROR": "Fehler",
 	"MESSAGE.TYPE.WARNING": "Warnung",
