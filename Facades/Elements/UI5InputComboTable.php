@@ -336,10 +336,24 @@ JS;
 JS;
         }
         
-        
+        // Render a function to initialize the control. Need to wrap the initialization in
+        // a function because the extra value-init stuff gets executed to early if a non-model
+        // value is used. In that case, a lookup needs to be done to load all additional data
+        // like the value text, other columns, etc. That lookup is triggered by firing a change
+        // event. Thus, if a lookup is needed, the change event is fired right upon initialization
+        // of this control and while other controls may not have been initialized yet. This causes
+        // JS errors if other controls listen to changes of this one. Thus, we use setTimeout() to
+        // make sure the value-init logic gets only executed at the end of the current call stack
+        // - when all other controls were already initialized.
+        // FIXME firing setValue() to trigger initial lookup seems to produce too many server requests.
+        // Probably because parsing the result triggers another change event? Need further testing.
+        // Test setup: InputComboTable with a static value (key) and at least one other InputComboTable 
+        // with a widget link to a column of this InputComboTable other than the key. Ideally, the
+        // dependent combo should only load once. It appears to load twice though.
+        // IDEA perhaps anohter way to initialize the value would be addOnShowView() on the controller
         return <<<JS
-
-	   new {$control}("{$this->getId()}", {
+    (function() {
+	   var oCombo = new {$control}("{$this->getId()}", {
 			{$this->buildJsProperties()}
             {$this->buildJsPropertyType()}
 			textFormatMode: "ValueKey",
@@ -366,10 +380,16 @@ JS;
             {$vhpOptions}
         })
         .setModel(new sap.ui.model.json.JSONModel(), "{$this->getModelNameForAutosuggest()}")
-        {$value_init_js}
-        {$tokenUpdateJs}
-        {$this->buildJsPseudoEventHandlers()}
+        {$this->buildJsPseudoEventHandlers()};
 
+        setTimeout(function(){
+            oCombo
+            {$value_init_js}
+            {$tokenUpdateJs}
+        }, 0);
+
+        return oCombo;
+    })()
 JS;
     }
              
