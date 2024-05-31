@@ -330,7 +330,6 @@ JS;
      * can react to visibility changes. UI5 itself does not seem to provide a hide/show event.
      * 
      * @param bool $hidden
-     * @param bool $resetWidget
      * @param string $elementId
      * @return string
      */
@@ -339,7 +338,7 @@ JS;
         $bVisibleJs = ($hidden ? 'false' : 'true');
         $elementId = $elementId ?? $this->getId();
         return <<<JS
-(function(bVisible, oCtrl, bReset){
+(function(bVisible, oCtrl){
     if (! oCtrl || bVisible === oCtrl.getVisible()) return;
     oCtrl.setVisible(bVisible).$()?.trigger('visibleChange', [{visible: bVisible}]);
 })($bVisibleJs, sap.ui.getCore().byId('{$elementId}'))
