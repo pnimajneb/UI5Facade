@@ -14,7 +14,7 @@ class UI5PivotTable extends UI5AbstractElement
 	/**
      *
      * {@inheritDoc}
-     * @see \exface\JEasyUIFacade\Facades\Elements\EuiDataTable::buildJs()
+     * @see \exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait::buildJsConstructorForControl()
      */
     protected function buildJsConstructorForControl($oControllerJs = 'oController') : string
     {
@@ -29,7 +29,11 @@ JS;
 
 	}
 
-
+	/**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait::registerExternalModules()
+     */
 	public function registerExternalModules(UI5ControllerInterface $controller): UI5AbstractElement
     {
     	$f = $this->getFacade();
@@ -49,6 +53,11 @@ JS;
     
 
 
+	/**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\Traits\UI5DataElementTrait::buildJsDataLoaderOnLoaded()
+     */
 	protected function buildJsDataLoaderOnLoaded(string $dataJs): string
     {
 		$columnNames = array();
@@ -90,7 +99,10 @@ JS;
 JS;
 	}
 
-
+	/**
+     * 
+     * @see UI5DataElementTrait::isEditable()
+     */
 	public function isEditable() : bool
 	{
 		return true;
