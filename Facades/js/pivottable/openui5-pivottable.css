@@ -1,0 +1,47 @@
+/* Filter box */
+.pvtFilterBox {
+    box-shadow: 0 0 0 .0625rem rgba(0, 0, 0, 0.42), 0 .625rem 1.875rem 0 rgba(0, 0, 0, 0.3);
+    border-radius: 0.25rem;
+    border: none!important;
+}
+
+/* Filter box button*/
+.pvtFilterBox button {
+    height: calc(2rem - 6px);
+    font-size: 0.875rem;
+    min-width: 2.5rem;
+    font-weight: normal;
+    margin-top: 4px;
+    margin-left: 5px;
+    margin-right: 5px;
+    background-color: white !important;
+    border: 0.0625rem solid #0854a0;
+    border-radius: 0.2rem;
+    color: #0854a0 !important;
+}
+.pvtFilterBox button:hover { background-color: #eee!important; cursor: pointer; }
+
+/* Dropdown */
+.pvtUi select{
+    border: .0625rem solid #89919a!important;
+    border-radius: .125rem!important;
+    height: 24px;
+    font-size: .75rem;
+    color: rgb(50, 54, 58)!important;
+    font-family: "72", "72full", Arial, Helvetica, sans-serif!important;
+    margin-right: 3px;
+}
+.pvtAttr {
+    border: .0625rem solid #89919a!important;
+    border-radius: .125rem!important;
+    height: 24px!important;
+    font-size: .75rem;
+    color: rgb(50, 54, 58)!important;
+    font-family: "72", "72full", Arial, Helvetica, sans-serif!important;
+}
+.pvtTriangle {color: #0854a0!important;}
+
+/* Containers and cells */
+.pvtVals a {color: #0854a0!important;}
+.pvtVals {border: solid .0625rem #89919a!important;}
+.pvtAxisContainer {border: solid .0625rem #89919a!important;}
