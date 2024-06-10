@@ -943,10 +943,16 @@ JS;
             $validJs .=<<<JS
 var oInput = sap.ui.getCore().byId('{$this->getId()}');
 var oModel, aRows, aSelectedKeys;
+
 if(oInput !== undefined && oInput.getValueState() == sap.ui.core.ValueState.Error && oInput._invalidKey === true
     && $valueJs !== undefined && $valueJs !== null && $valueJs !== '') {
     oModel = oInput.getModel('{$this->getModelNameForAutosuggest()}');
     aRows = oModel.getData().rows || [];
+    
+    //if the current autosuggest model has no rows at all the value can't be valid
+    if (aRows.length === 0 ) {
+            {$onFailJs}
+    }
     aSelectedKeys = $valueJs.split('{$delim}');    
     aSelectedKeys.forEach(function(sKey) {
         aRows.forEach(function(oRow) {
