@@ -63,7 +63,7 @@ JS;
 		$columnNames = array();
 		$columns = $this->getWidget()->getColumns();
 		foreach ($columns as $column) {
-			$columnNames[$column->getAttributeAlias()] = $column->getCaption();
+			$columnNames[$column->getDataColumnName()] = $column->getCaption();
 		}
 
 		$labelJs = json_encode($columnNames);
