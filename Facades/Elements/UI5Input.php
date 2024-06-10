@@ -9,6 +9,7 @@ use exface\Core\Widgets\Input;
 use exface\Core\Widgets\InputComboTable;
 use exface\Core\Widgets\DataLookupDialog;
 use exface\Core\Widgets\Parts\ConditionalPropertyCondition;
+use exface\Core\Widgets\KPI;
 
 /**
  * Generates sap.m.Input fow `Input` widgets.
@@ -563,7 +564,11 @@ JS;
      */
     protected function isUnrendered() : bool
     {
-        if ($this->getWidget()->getParentByClass(InputComboTable::class) !== null && $this->getWidget()->getParentByClass(DataLookupDialog::class) === null) {
+        $widget = $this->getWidget();
+        if ($widget->getParentByClass(KPI::class) !== null) {
+            return true;
+        }
+        if ($widget->getParentByClass(InputComboTable::class) !== null && $widget->getParentByClass(DataLookupDialog::class) === null) {
             return true;
         }
         return parent::isUnrendered();
