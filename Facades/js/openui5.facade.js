@@ -66,7 +66,7 @@ const exfLauncher = {};
 	this.initFastNetworkPoller = function() {
 		_oNetworkSpeedPoller = setInterval(function(){
 			if(!['2g', 'slow-2g', 'offline'].includes(navigator?.connection?.effectiveType) && _bLowSpeed) {
-				exfLauncher.showMessageToast('{i18n>WEBAPP.SHELL.PWA.ONLINE_TOGGLED_BACK_DUE_SPEED}');
+				exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.ONLINE_TOGGLED_BACK_DUE_SPEED"));
 				exfLauncher.toggleOnlineIndicator();
 				exfLauncher.revertMockNetworkError();
 				_bLowSpeed = false;
@@ -82,7 +82,7 @@ const exfLauncher = {};
 		}
 		_oNetworkSpeedPoller = setInterval(function(){
 			if(['2g', 'slow-2g'].includes(navigator?.connection?.effectiveType)) {
-				exfLauncher.showMessageToast('{i18n>WEBAPP.SHELL.PWA.OFFLINE_TOGGLED_DUE_LOW_SPEED}');
+				exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.OFFLINE_TOGGLED_DUE_LOW_SPEED"));
 				exfLauncher.toggleOnlineIndicator({ lowSpeed: true});
 				exfLauncher.mockNetworkError();
 				_bLowSpeed = true;
