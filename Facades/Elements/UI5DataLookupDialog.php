@@ -268,7 +268,7 @@ JS;
      */
     protected function getDialogContentPanelId() : string
     {
-        return $this->getWidget()->getID() . '_' . 'SelectedItemsPanel';
+        return $this->getId() . '_' . 'SelectedItemsPanel';
     }
     
     /**
