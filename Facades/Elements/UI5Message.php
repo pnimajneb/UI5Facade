@@ -101,6 +101,8 @@ JS, false);
     protected function buildJsPropertyType() : string
     {
         $widget = $this->getWidget();
+        $customIcon = $widget->getIcon();
+        
         switch ($widget->getType()) {
             case MessageTypeDataType::ERROR:
                 $type = 'sap.ui.core.MessageType.Error';
@@ -112,19 +114,24 @@ JS, false);
                 $type = 'sap.ui.core.MessageType.Success';
                 break;
             case MessageTypeDataType::HINT:
-                $type = 'sap.ui.core.MessageType.Information, customIcon: "sap-icon://lightbulb"';
+                $type = 'sap.ui.core.MessageType.Information';
+                $customIcon = $customIcon ? $customIcon : 'sap-icon://lightbulb';
                 break;
             case MessageTypeDataType::INFO:
                 $type = 'sap.ui.core.MessageType.Information';
                 break;
             case MessageTypeDataType::QUESTION:
-                $type = 'sap.ui.core.MessageType.Information, customIcon: "sap-icon://question-mark"';
+                $type = 'sap.ui.core.MessageType.Information';
+                $customIcon = $customIcon ? $customIcon : 'sap-icon://lightbulb';
                 break;
             default:
                 $type = 'sap.ui.core.MessageType.None';
         }
-        
-        return "type: $type,";
+        if ($customIcon !== null) {
+            $customIcon = $this->getIconSrc($customIcon);
+        }
+        $customIconString = $customIcon ? "customIcon: '{$customIcon}'," : '';
+        return "type: $type, {$customIconString}";
     }
     
     /**

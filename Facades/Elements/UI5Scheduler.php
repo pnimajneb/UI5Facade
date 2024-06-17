@@ -551,15 +551,6 @@ JS;
         return $js;
     }
     
-    /**
-     *
-     * @return bool
-     */
-    protected function hasQuickSearch() : bool
-    {
-        return true;
-    }
-    
     protected function buildJsValueBindingForWidget(WidgetInterface $tplWidget, string $modelName = null) : string
     {
         $tpl = $this->getFacade()->getElement($tplWidget);

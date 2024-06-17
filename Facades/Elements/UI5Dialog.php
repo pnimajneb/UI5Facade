@@ -215,7 +215,16 @@ JS
      * 
      * @return bool
      */
-    public function isObjectPageLayout () : bool
+    public function hasHeader() : bool
+    {
+        return $this->getWidget()->hasHeader();
+    }
+    
+    /**
+     * 
+     * @return bool
+     */
+    public function isObjectPageLayout() : bool
     {
         $widget = $this->getWidget();
         $visibleChildren = $widget->getWidgets(function(WidgetInterface $widget) {

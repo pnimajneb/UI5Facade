@@ -107,6 +107,18 @@ JS;
         // Remove the precalculated var name after init scripts were generated (see above).
         $this->leafletVarTemp = null;
         
+        // Add listeners for mouse events and pseudo events
+        // IMPORTANT: add common listeners AFTER removing the leafletVarTemp! This is important because
+        // otherwise code generated for data getters inside these handlers will include the final
+        // leaflet getter and not the temporary one!
+        $controller->addOnInitScript(<<<JS
+            
+                sap.ui.getCore().byId("{$this->getId()}")
+                {$this->buildJsClickHandlers($oControllerJs)}
+                {$this->buildJsPseudoEventHandlers()}
+
+JS);
+        
         foreach ($this->getWidget()->getLayers() as $layer) {
             if ($layer instanceof LatLngWidgetLinkMapLayerInterface) {
                 if (($linkLat = $layer->getLatitudeWidgetLink()) && ($linkLng = $layer->getLongitudeWidgetLink())) {

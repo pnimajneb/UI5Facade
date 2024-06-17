@@ -818,16 +818,11 @@ class Webapp implements WorkbenchDependantInterface
             $logId = $exception->getId();
             $alias =  $exception->getAlias();
             $text = $exception->getMessageModel($this->getWorkbench())->getTitle();
-            $description = $exception->getMessage();
+            $description = $this->facade->isShowingErrorMessage($exception) ? $exception->getMessage() : '';
             if ($logId) {
                 $title = "{i18n>MESSAGE.ERROR.SERVER_ERROR_TITLE}: Log ID $logId";
             } else {
                 $title = "{i18n>MESSAGE.ERROR.SERVER_ERROR_TITLE}";
-            }
-            
-            if (! $text) {
-                $text = $exception->getMessage();
-                $description = '';
             }
             if ($alias) {
                 $text = "{i18n>MESSAGE.TYPE.{$exception->getMessageModel($this->getWorkbench())->getType(MessageTypeDataType::ERROR)}} $alias: $text";
@@ -839,7 +834,7 @@ class Webapp implements WorkbenchDependantInterface
             $title = json_encode($title);
         } else {
             $title = '"{i18n>MESSAGE.ERROR.SERVER_ERROR_TITLE}"';
-            $text = json_encode($exception->getMessage());
+            $text = $this->facade->isShowingErrorDetails() ? json_encode($exception->getMessage()) : '""';
             $description = '""';
         }
         $placeholders = [

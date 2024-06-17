@@ -26,6 +26,7 @@ use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface;
 use exface\Core\Widgets\DataButton;
 use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
+use exface\Core\Interfaces\Widgets\iHaveQuickSearch;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -611,7 +612,7 @@ JS;
      */
     protected function hasQuickSearch() : bool
     {
-        return $this->getWidget() instanceof DataTable && $this->getWidget()->getQuickSearchEnabled() !== false;
+        return ($this->getWidget() instanceof iHaveQuickSearch) && $this->getWidget()->getQuickSearchEnabled() !== false;
     }
     
     /**
@@ -1169,12 +1170,21 @@ JS;
         $top_buttons = '';
         
         // Add the search-button
-        foreach ($this->getWidget()->getToolbarMain()->getButtonGroupForSearchActions()->getButtons() as $btn) {
+        $searchButtons = $this->getWidget()->getToolbarMain()->getButtonGroupForSearchActions()->getButtons();
+        $searchButtons = array_reverse($searchButtons);
+        foreach ($searchButtons as $btn) {
             if ($btn->getAction() && $btn->getAction()->isExactly('exface.Core.RefreshWidget')){
                 $btn->setShowIcon(false);
                 $btn->setHint($btn->getCaption());
                 $btn->setCaption($this->translate('WIDGET.DATATABLE.GO_BUTTON_TEXT'));
                 $btn->setVisibility(WidgetVisibilityDataType::PROMOTED);
+            }
+            
+            if ($btn->getAction() && $btn->getAction()->isExactly('exface.Core.ResetWidget')){
+                $btn->setShowIcon(false);
+                $btn->setHint($btn->getCaption());
+                $btn->setCaption($this->translate('WIDGET.DATATABLE.RESET_BUTTON_TEXT'));
+                $this->getFacade()->getElement($btn)->setUI5ButtonType('Transparent');
             }
             $top_buttons .= $this->getFacade()->getElement($btn)->buildJsConstructor() . ',';
         }
@@ -2003,7 +2013,7 @@ JS;
         $coreTltr = $this->getWorkbench()->getCoreApp()->getTranslator();
         
         $filterableAliases = [];
-        foreach ($this->getWidget()->getColumns() as $col) {
+        foreach ($this->getDataWidget()->getColumns() as $col) {
             if ($col->isFilterable()) {
                 $filterableAliases[] = $col->getAttributeAlias();
             }
@@ -2038,13 +2048,17 @@ JS;
                             }
                             var aFilterableAliases = $filterableAliasesJs;
                             var oSearchPanel = sap.ui.getCore().byId('{$this->getConfiguratorElement()->getIdOfSearchPanel()}');
-                            var aFilterItems = oSearchPanel.getFilterItems();
+                            var aFilterItems = oSearchPanel ? oSearchPanel.getFilterItems() : [];
                             var sAttrAlias = {$this->buildJsClickGetColumnAttributeAlias('domClicked')};
                             var mCellValue = $(domClicked).text();
                             var bIsAttribute = (sAttrAlias !== undefined && sAttrAlias !== null && sAttrAlias !== '');
                             var bFilterable = bIsAttribute && aFilterableAliases.includes(sAttrAlias) && (mCellValue !== undefined && mCellValue !== '' && mCellValue !== null);
                             var sValueTrunc = bFilterable ? mCellValue.toString() : '';
                             var oFilterItem;
+
+                            if (! oSearchPanel) {
+                                return new sap.ui.unified.MenuItem({visible: false});
+                            }
 
                             aFilterItems.forEach(function(oItem){
                                 if (oItem.getColumnKey() === sAttrAlias) {

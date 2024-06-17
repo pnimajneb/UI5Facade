@@ -16,9 +16,6 @@ use exface\Core\Actions\SendToWidget;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
 use exface\Core\Factories\UiPageFactory;
 use exface\UI5Facade\Facades\UI5Facade;
-use exface\Core\Interfaces\Actions\iCallWidgetFunction;
-use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
-use exface\Core\Interfaces\Widgets\iHaveIcon;
 
 /**
  * Generates sap.m.Button for Button widgets.
@@ -94,6 +91,8 @@ class UI5Button extends UI5AbstractElement
         buildJsRequestDataCollector as buildJsRequestDataCollectorViaTrait;
     }
     
+    private $button_type = null;
+    
     /**
      * 
      * {@inheritDoc}
@@ -153,31 +152,6 @@ JS;
     public function buildJsProperties()
     {
         $widget = $this->getWidget();
-        switch ($widget->getVisibility()) {
-            case EXF_WIDGET_VISIBILITY_PROMOTED: 
-                $type = 'type: "Emphasized",';
-                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "High"}),'; break;
-            case EXF_WIDGET_VISIBILITY_OPTIONAL: 
-                $type = 'type: "Default",';
-                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "AlwaysOverflow"}),'; break;
-            case EXF_WIDGET_VISIBILITY_NORMAL: 
-            default: 
-                if ($color = $widget->getColor()) {
-                    if (Colors::isSemantic($color) === true) {
-                        if ($semType = $this->getColorSemanticMap()[$color]) {
-                            $type = 'type: "' . $semType . '",';
-                        } else {
-                            $err = new FacadeUnsupportedWidgetPropertyWarning('Color "' . $color . '" not supported for button widget in UI5 - only semantic colors usable!');
-                            $this->getWorkbench()->getLogger()->logException($err);
-                            $type = 'type: "Default"';
-                        }
-                    }
-                } else {
-                    $type = 'type: "Default",';
-                }
-            
-        }
-        
         $handler = $this->buildJsClickViewEventHandlerCall();
         $press = $handler !== '' ? 'press: ' . $handler . ',' : '';
         if ($widget->getShowIcon(true) && null !== $icon = $widget->getIcon()) {
@@ -190,14 +164,49 @@ JS;
 
     text: "{$this->getCaption()}",
     {$icon}
-    {$type}
-    {$layoutData}
+    {$this->buildJsPropertyButtonType()}
     {$press}
     {$this->buildJsPropertyTooltip()}
     {$this->buildJsPropertyVisibile()}
 
 JS;
         return $options;
+    }
+    
+    protected function buildJsPropertyButtonType() : string
+    {
+        $widget = $this->getWidget();
+        $type = '';
+        $layoutData = '';
+        $defaultButtonType = 'Default';
+        if ($this->button_type !== null) {
+            return "type: '{$this->button_type}',";
+        }
+        switch ($widget->getVisibility()) {
+            case EXF_WIDGET_VISIBILITY_PROMOTED:
+                $type = 'type: "Emphasized",';
+                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "High"}),'; break;
+            case EXF_WIDGET_VISIBILITY_OPTIONAL:
+                $type = "type: '{$defaultButtonType}',";
+                $layoutData = 'layoutData: new sap.m.OverflowToolbarLayoutData({priority: "AlwaysOverflow"}),'; break;
+            case EXF_WIDGET_VISIBILITY_NORMAL:
+            default:
+                if ($color = $widget->getColor()) {
+                    if (Colors::isSemantic($color) === true) {
+                        if ($semType = $this->getColorSemanticMap()[$color]) {
+                            $type = 'type: "' . $semType . '",';
+                        } else {
+                            $err = new FacadeUnsupportedWidgetPropertyWarning('Color "' . $color . '" not supported for button widget in UI5 - only semantic colors usable!');
+                            $this->getWorkbench()->getLogger()->logException($err);
+                            $type = "type: '{$defaultButtonType}',";
+                        }
+                    }
+                } else {
+                    $type = "type: '{$defaultButtonType}',";
+                }
+                
+        }
+        return $type . $layoutData;
     }
     
     /**
@@ -552,22 +561,10 @@ JS;
     {
         $widget = $this->getWidget();
         if (($widget instanceof DialogButton) && $widget->getCloseDialogAfterActionSucceeds()) {
-            if ($checkChanges === null) {
-                $action = $widget->getAction();
-                switch (true) {
-                    case $action instanceof SendToWidget:
-                    case $action instanceof iCallWidgetFunction:
-                    case $action instanceof iRunFacadeScript: 
-                        $checkChanges = false; 
-                        break;
-                    default: 
-                        $checkChanges = true; 
-                        break;
-                }
-            }
+            $checkChanges = $checkChanges ?? $this->isCheckForUnsavedChangesRequired();
             return $this->getFacade()->getElement($widget->getDialog())->buildJsCloseDialog($checkChanges);
         }
-        return "";
+        return '';
     }
     
     protected function opensDialogPage()
@@ -673,6 +670,7 @@ JS;
                             
                 var fnRequest = function() {
                     if ({$input_element->buildJsValidator()}) {
+                        {$this->buildJsCheckRequestDataSize($jsRequestData, $this->getAjaxPostSizeMax())}
                         {$this->buildJsBusyIconShow()}
                         var oResultModel = new sap.ui.model.json.JSONModel();
                         var params = {
@@ -775,5 +773,11 @@ JS;
             $cls .= ' exf-svg-icon';
         }
         return $cls;
+    }
+    
+    public function setUI5ButtonType(string $button_type) : UI5Button
+    {
+        $this->button_type = $button_type;
+        return $this;
     }
 }
