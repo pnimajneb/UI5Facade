@@ -27,6 +27,7 @@ use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface
 use exface\Core\Widgets\DataButton;
 use exface\Core\Interfaces\DataTypes\EnumDataTypeInterface;
 use exface\Core\Interfaces\Widgets\iHaveQuickSearch;
+use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 
 /**
  * This trait helps wrap thrid-party data widgets (like charts, image galleries, etc.) in 
@@ -2289,13 +2290,23 @@ JS;
             }
         }
         
-        // If we are looking for a specific row, get all data and select that row
-        if ($rowNr !== null) {
-            return "(function(aAllRows){ return ! aAllRows || aAllRows.length === 0 ? '' : (aAllRows[0]['{$dataColumnName}'] || '') })({$this->buildJsDataGetter(null)}.rows)";
-        }
-        // Otherwise get the selected rows and proceed
+        switch (true) {
+            // If we are looking for a specific row, get all data and select that row
+            case is_int($rowNr):
+                return "(function(aAllRows){ return ! aAllRows || aAllRows.length === 0 ? '' : (aAllRows[0]['{$dataColumnName}'] || '') })({$this->buildJsDataGetter(null)}.rows)";
+            // IDEA allow to explicitly request all values of a column as a list
+            //case $rowNr !== null && strcasecmp($rowNr, 'list') === 0:
+            //    $rows = $this->buildJsGetRowsAll('oTable');
+            //    break;
+            
+            // Otherwise get the selected rows and proceed
+            case $rowNr === null:
+                $rows = $this->buildJsGetRowsSelected('oTable');
+                break;
+            default:
+                throw new FacadeRuntimeError('Data row reference "' . $rowNr . '" not supported in UI5 facades!');
+        } 
         
-        $rows = $this->buildJsGetRowsSelected('oTable');
         if ($dataColumnName !== null) {
             if (mb_strtolower($dataColumnName) === '~rowcount') {
                 return "(sap.ui.getCore().byId('{$this->getId()}').getModel().getData().rows || []).length";
