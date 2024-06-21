@@ -135,6 +135,22 @@ JS;
         }
     });
 
+    // Move the dropdown popups to the end of the body to avoid z-index issues
+    $oSurveyJs.onAfterRenderSurvey.add(function(_, options) {
+        setTimeout(function() {
+            const popupElements = document.querySelectorAll('.sv-popup.sv-dropdown-popup');
+            let customContainer = document.querySelector('.sv-popup-custom-container');
+            if (!customContainer) {
+                customContainer = document.createElement('div');
+                customContainer.className = 'sv-popup-custom-container';
+                document.body.appendChild(customContainer);
+            }
+            popupElements.forEach(element => {
+                customContainer.appendChild(element);
+            });
+        }, 100);
+    });
+
 JS;
     }
     
