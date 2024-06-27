@@ -229,6 +229,8 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .exf-map-shape-title.leaflet-tooltip {background-color: transparent; border: none; box-shadow: none; font-weight: 600; text-shadow: 0 0 3px white;}
 .exf-map-shape-selected {fill-opacity: 0.4; stroke-width: 2; stroke: rgb(8, 84, 160)}
 .exf-map-shape-hover {fill-opacity: 0.4; stroke-width: 1; stroke: black}
+.blinking-shape { animation: blinker 2s linear infinite; }
+@keyframes blinker { 50% { opacity: 0; } }
 
 /* Slick carousel: ImageGallery */
 .slick-carousel.horizontal .slick-list {padding: 10px; box-sizing: border-box;}
