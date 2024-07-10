@@ -16,6 +16,9 @@ use exface\Core\Facades\AbstractAjaxFacade\Interfaces\AjaxFacadeElementInterface
 use exface\UI5Facade\Facades\Elements\ServerAdapters\OfflineServerAdapter;
 use exface\Core\Exceptions\Facades\FacadeRuntimeError;
 use exface\UI5Facade\Events\OnControllerSetEvent;
+use exface\Core\DataTypes\SvgDataType;
+use exface\Core\Exceptions\DataTypes\DataTypeCastingError;
+use exface\Core\Exceptions\Widgets\WidgetPropertyInvalidValueError;
 
 /**
  *
@@ -187,7 +190,12 @@ JS;
             // Icon properties of some controls like sap.m.Button accept data-URLs for SVG
             case $iconSet === iHaveIcon::ICON_SET_SVG:
                 $path = 'data:image/svg+xml;utf8,';
-                $icon_name = rawurlencode($icon_name);
+                try {
+                    $xml = SvgDataType::cast($icon_name);
+                } catch (DataTypeCastingError $e) {
+                    throw new WidgetPropertyInvalidValueError($widget, 'Invalid SVG icon for widget "' . $widget->getWidgetType() . '"!', null, $e);
+                }
+                $icon_name = rawurlencode($xml);
                 break;
             case Icons::isDefined($icon_name) === true:
             case $iconSet === 'fa':
@@ -330,7 +338,6 @@ JS;
      * can react to visibility changes. UI5 itself does not seem to provide a hide/show event.
      * 
      * @param bool $hidden
-     * @param bool $resetWidget
      * @param string $elementId
      * @return string
      */
@@ -339,7 +346,7 @@ JS;
         $bVisibleJs = ($hidden ? 'false' : 'true');
         $elementId = $elementId ?? $this->getId();
         return <<<JS
-(function(bVisible, oCtrl, bReset){
+(function(bVisible, oCtrl){
     if (! oCtrl || bVisible === oCtrl.getVisible()) return;
     oCtrl.setVisible(bVisible).$()?.trigger('visibleChange', [{visible: bVisible}]);
 })($bVisibleJs, sap.ui.getCore().byId('{$elementId}'))

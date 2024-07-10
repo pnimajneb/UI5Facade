@@ -17,6 +17,8 @@
 	
 	"MESSAGE.ERROR_TITLE": "Error",
 	"MESSAGE.ERROR.SERVER_ERROR_TITLE": "Server error",
+	"MESSAGE.ERROR.UNKNOWN_TITLE": "Unknown error",
+	"MESSAGE.ERROR.UNKNOWN_DESCRIPTION": "Please contact the support",
 	"MESSAGE.SUCCESS_TITLE": "",
 	"MESSAGE.TYPE.ERROR": "Error",
 	"MESSAGE.TYPE.WARNING": "Warning",
