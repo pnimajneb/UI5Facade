@@ -780,6 +780,7 @@ JS;
         var aSelectedIndices = oTable.getSelectedIndices();
         var oModel = oTable.getModel();
         var oCxt;
+        var row;
         var iFixedRowsCnt = oTable.getFixedBottomRowCount();
         for (var i in aSelectedIndices) {
             if (iFixedRowsCnt > 0 && aSelectedIndices[i] >= (oModel.getData().rows.length - iFixedRowsCnt)) {
@@ -787,7 +788,10 @@ JS;
             }
             oCxt = oTable.getContextByIndex(aSelectedIndices[i]);
             if (oCxt) {
-                aRows.push(oModel.getProperty(oCxt.sPath));
+                row = oModel.getProperty(oCxt.sPath);
+                if (row !== undefined && row !== '') {
+                    aRows.push(row);
+                }
             }
         }
         
