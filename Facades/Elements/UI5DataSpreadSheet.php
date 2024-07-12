@@ -37,7 +37,7 @@ class UI5DataSpreadSheet extends UI5AbstractElement implements UI5DataElementInt
         $table = <<<JS
         
                 new sap.ui.core.HTML("{$this->getId()}", {
-                    content: "<div id=\"{$this->getId()}\"><div id=\"{$this->getId()}_jexcel\" class=\"{$this->buildCssElementClass()} sapUiTable\"></div></div>",
+                    content: "<div id=\"{$this->getId()}\"><div id=\"{$this->getId()}_jexcel\" class=\"{$this->buildCssElementClass()} exf-spreadsheet-container sapUiTable\"></div></div>",
                     afterRendering: function(oEvent) {
                         {$this->buildJsDestroy()};
                         {$this->buildJsJExcelInit()};
