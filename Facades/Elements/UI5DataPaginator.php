@@ -21,6 +21,11 @@ class UI5DataPaginator extends UI5AbstractElement
     public function buildJsConstructor($oControllerJs = 'oController') : string
     {
         $buttonVisibility = $this->getWidget()->getDataWidget()->isPaged() ? '' : 'visible: false,';
+        $pageButtonsPriority = 'Low';
+        
+        if ($this->getFacade()->getConfig()->hasOption('WIDGET.DATA.PAGE_BUTTON_PRIORITY')) {
+            $pageButtonsPriority = $this->getFacade()->getConfig()->getOption('WIDGET.DATA.PAGE_BUTTON_PRIORITY');
+        }
         
         return <<<JS
 
@@ -30,7 +35,7 @@ class UI5DataPaginator extends UI5AbstractElement
         new sap.m.OverflowToolbarButton("{$this->getId()}_prev", {
             type: sap.m.ButtonType.Transparent,
             icon: "sap-icon://navigation-left-arrow",
-            layoutData: new sap.m.OverflowToolbarLayoutData({priority: "Low"}),
+            layoutData: new sap.m.OverflowToolbarLayoutData({priority: "{$pageButtonsPriority}"}),
             text: "{$this->translate('WIDGET.PAGINATOR.PREVIOUS_PAGE')}",
             {$buttonVisibility}
             enabled: false,
@@ -42,7 +47,7 @@ class UI5DataPaginator extends UI5AbstractElement
         new sap.m.OverflowToolbarButton("{$this->getId()}_next", {
             type: sap.m.ButtonType.Transparent,
             icon: "sap-icon://navigation-right-arrow",
-            layoutData: new sap.m.OverflowToolbarLayoutData({priority: "Low"}),
+            layoutData: new sap.m.OverflowToolbarLayoutData({priority: "{$pageButtonsPriority}"}),
             text: "{$this->translate('WIDGET.PAGINATOR.NEXT_PAGE')}",
 			{$buttonVisibility}
             enabled: false,
