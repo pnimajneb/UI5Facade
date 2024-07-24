@@ -488,7 +488,7 @@ JS;
                 var oToolbar = oDialog._getToolbar();
                 var aContent = oToolbar.getContent();
                 var bCacheable = $cacheableJs;
-                if (bCacheable) {
+                if (bCacheable && aContent.length && aContent.length > 0) {
                     aContent.forEach(function(oElem) {
                         oElem.destroy();
                     });
