@@ -711,7 +711,7 @@ JS;
         // would also close the actual error dialog.
         if ($this->isMaximized() === false) {
             $onErrorJs .=  <<<JS
-                // Before closing the dialog in prefill state, we should wait and guarantee that afterClose lifcycle
+                // Before closing the dialog in prefill state, we should wait and guarantee that afterOpen lifcycle
                 // method was executed completely.
                 const DIALOG_CLOSE_DELAY_ON_ERROR = 100;
                 setTimeout(function(){ {$this->buildJsCloseDialog()}}, DIALOG_CLOSE_DELAY_ON_ERROR);
