@@ -84,11 +84,9 @@ class UI5DialogHeader extends UI5Container
             $content .= $this->buildJsConstructorForChild($w, $oControllerJs) . ",\n";
         }
 
-        $id = "'{$this->getFacade()->getElement($widget)->getId()}',";
-
         return <<<JS
         
-            new sap.ui.layout.VerticalLayout({$id}{
+            new sap.ui.layout.VerticalLayout('{$this->getFacade()->getElement($widget)->getId()}',{
                 content: [
                     {$title}
                     {$content}
