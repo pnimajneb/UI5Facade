@@ -710,7 +710,12 @@ JS;
         // Close the dialog on error, but only if it is not a view. Closing the view
         // would also close the actual error dialog.
         if ($this->isMaximized() === false) {
-            $onErrorJs .=  $this->buildJsCloseDialog();
+            $onErrorJs .=  <<<JS
+                // Before closing the dialog in prefill state, we should wait and guarantee that afterOpen lifcycle
+                // method was executed completely.
+                const DIALOG_CLOSE_DELAY_ON_ERROR = 100;
+                setTimeout(function(){ {$this->buildJsCloseDialog()}}, DIALOG_CLOSE_DELAY_ON_ERROR);
+JS;
         }
         
         // FIXME use buildJsPrefillLoaderSuccess here somewere?
