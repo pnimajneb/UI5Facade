@@ -687,7 +687,7 @@ JS;
      *
      * @return string
      */
-    private function buildDisableContainerJs() : string
+    private function buildJsShowHideContainer() : string
     {
         $widgetType = $this->getWidget()->getParent()->getWidgetType();
         switch ($widgetType) {
