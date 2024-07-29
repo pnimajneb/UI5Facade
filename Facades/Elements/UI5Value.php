@@ -1,6 +1,7 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
+use exface\Core\Widgets\Filter;
 use exface\UI5Facade\Facades\Interfaces\UI5ValueBindingInterface;
 use exface\UI5Facade\Facades\Interfaces\UI5CompoundControlInterface;
 use exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryLiveReferenceTrait;
@@ -643,7 +644,7 @@ JS;
         
         $bVisibleJs = ($hidden ? 'false' : 'true');
         $elementId = $elementId ?? $this->getId();
-        $disableContainerJs = $this->buildDisableContainerJs();
+        $disableContainerJs = $this->buildJsShowHideContainer();
 
         return <<<JS
 (function(bVisible, oCtrl){
@@ -689,9 +690,9 @@ JS;
      */
     private function buildJsShowHideContainer() : string
     {
-        $widgetType = $this->getWidget()->getParent()->getWidgetType();
-        switch ($widgetType) {
-            case 'Filter':
+        $parent = $this->getWidget()->getParent();
+        switch (true) {
+            case $parent instanceof Filter:
                 return  <<<JS
         let container = document.getElementById(oCtrl.getParent().getId()).parentElement; // Hardcoded DOM structure :(
 
