@@ -46,6 +46,8 @@ class UI5Dialog extends UI5Form
     const PREFILL_WITH_CONTEXT = 'context';
     const PREFILL_WITH_ANY = 'any';
     
+    const PREFILL_ERROR_CLOSE_DELAY = 100;
+    
     const CONTROLLER_METHOD_FIX_HEIGHT = 'fixHeight';
     const CONTROLLER_METHOD_CLOSE_DIALOG = 'closeDialog';
     const CONTROLLER_METHOD_PREFILL = 'prefill';
@@ -710,11 +712,11 @@ JS;
         // Close the dialog on error, but only if it is not a view. Closing the view
         // would also close the actual error dialog.
         if ($this->isMaximized() === false) {
+            $closeDelay = self::PREFILL_ERROR_CLOSE_DELAY;
             $onErrorJs .=  <<<JS
                 // Before closing the dialog in prefill state, we should wait and guarantee that afterOpen lifcycle
                 // method was executed completely.
-                const DIALOG_CLOSE_DELAY_ON_ERROR = 100;
-                setTimeout(function(){ {$this->buildJsCloseDialog()}}, DIALOG_CLOSE_DELAY_ON_ERROR);
+                setTimeout(function(){ {$this->buildJsCloseDialog()}}, {$closeDelay});
 JS;
         }
         

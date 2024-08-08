@@ -63,7 +63,7 @@ JS;
         }
         
         if (! $this->isValueBoundToModel()) {
-            $value = $widget->getText($widget->getValue());
+            $value = $widget->getTextForValue($widget->getValue());
         } else {
             $textAttribute = $widget->getTextAttribute();
             $value = <<<JS
