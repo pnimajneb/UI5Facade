@@ -697,9 +697,9 @@ JS;
     public function buildJsSetDisabled(bool $trueOrFalse) : string
     {
         if ($trueOrFalse === true) {
-            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(false);";
+            return "sap.ui.getCore().byId('{$this->getId()}')?.setEnabled(false);";
         } else {
-            return "sap.ui.getCore().byId('{$this->getId()}').setEnabled(true);";
+            return "sap.ui.getCore().byId('{$this->getId()}')?.setEnabled(true);";
         }
     }
     

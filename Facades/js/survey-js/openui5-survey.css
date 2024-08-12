@@ -96,6 +96,7 @@
 
 /* Dropdown overlay mobile */
 @media only screen and (max-width: 600px)  {
+    .sv_main { padding: 0 10px; }
     .sapMPage>section.sapMPageEnableScrolling { z-index: 3; }
     .sapUxAPObjectPageWrapperTransform {
         transform: none!important;
