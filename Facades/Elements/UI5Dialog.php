@@ -159,7 +159,7 @@ JS, false));
                         }
                     }
                 } catch (e) {
-                    console.error('Error while closing dialog: ' + e);
+                    console.error('Error while closing dialog: ', e);
                 }
                 fnClose();
 JS
@@ -780,7 +780,14 @@ JS,
 			
 JS;
     }
-                        
+       
+    /**
+     * 
+     * @param string $responseJs
+     * @param string $oViewJs
+     * @param string $oViewModelJs
+     * @return string
+     */
     protected function buildJsPrefillLoaderSuccess(string $responseJs = 'response', string $oViewJs = 'oView', string $oViewModelJs = 'oViewModel') : string
     {
         // IMPORTANT: We must ensure, ther is no model data before replacing it with the prefill! 
@@ -1137,5 +1144,15 @@ JS;
     {
         // The Dialog does not need a caption in the toolbar like the Form does
         return $this->getFacade()->getElement($this->getWidget()->getToolbarMain())->buildJsConstructor();
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::buildJsResetter()
+     */
+    public function buildJsResetter() : string
+    {
+        return $this->getController()->getView()->buildJsViewGetter($this) . ".setData({});";
     }
 }
