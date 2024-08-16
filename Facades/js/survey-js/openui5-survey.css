@@ -191,6 +191,12 @@
     pointer-events: none;
 }
 
+/* Checkbox Items on disabled state */
+.sv_q--disabled .sv_q_checkbox {
+    opacity: 70%;
+    pointer-events: none;
+}
+
 /* Booleans, sliders */
 .sv_q_text_root[aria-invalid="true"] {border: 0.125rem solid #b00!important;}
 .sv_main.sv_main .sv-boolean__switch {background-color: #ebf5fe; border: 1px solid #89919a; padding-top: 1px}
