@@ -1,6 +1,8 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements;
 
+use exface\Core\Widgets\InputCheckBox;
+
 /**
  * Generates OpenUI5 inputs
  *
@@ -8,8 +10,7 @@ namespace exface\UI5Facade\Facades\Elements;
  *        
  */
 class UI5InputCheckBox extends UI5Input
-{
-    
+{    
     /**
      * 
      * {@inheritDoc}
@@ -155,6 +156,22 @@ function() {
     return {$this->getFacade()->getDataTypeFormatter($this->getWidget()->getValueDataType())->buildJsFormatParser($rawValueGetter)};
 }()
 JS;
+    }
+    
+    /**
+     * 
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsCallFunction()
+     */
+    public function buildJsCallFunction(string $functionName = null, array $parameters = []) : string
+    {
+        switch (true) {
+            case $functionName === InputCheckBox::FUNCTION_CHECK:
+                return "setTimeout(function(){ {$this->buildJsValueSetter(1)} }, 0);";
+            case $functionName === InputCheckBox::FUNCTION_UNCHECK:
+                return "setTimeout(function(){ {$this->buildJsValueSetter(0)} }, 0);";
+        }
+        return parent::buildJsCallFunction($functionName, $parameters);
     }
 }
 ?>
