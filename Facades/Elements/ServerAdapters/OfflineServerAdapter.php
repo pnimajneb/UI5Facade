@@ -115,7 +115,7 @@ JS;
                     {$fallBackRequest};
                 };
 
-                if (!exfLauncher.isOnline()) {
+                if (exfLauncher.isOnline()) {
                     return fnFallback();
                 };
 
