@@ -256,10 +256,10 @@ JS;
     {
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
-                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setRequired(" . ($required ? 'true' : 'false') . ");";
+                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}')?.setRequired(" . ($required ? 'true' : 'false') . ");";
             }
         }
-        return "sap.ui.getCore().byId('{$this->getId()}').setRequired(" . ($required ? 'true' : 'false') . "); $requireLabelJs";
+        return "sap.ui.getCore().byId('{$this->getId()}')?.setRequired(" . ($required ? 'true' : 'false') . "); $requireLabelJs";
     }
     
     /**

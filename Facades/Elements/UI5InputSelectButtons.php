@@ -100,7 +100,7 @@ JS;
     }
     
     /**
-     * 
+     *
      * {@inheritDoc}
      * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsSetRequired()
      */
@@ -109,16 +109,24 @@ JS;
         $val = $required ? 'true' : 'false';
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
-                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setRequired($val);";
+                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}')?.setRequired($val);";
             }
         }
-        return "sap.ui.getCore().byId('{$this->getId()}')._exfRequired = {$val}; $requireLabelJs";
+        return <<<JS
+        
+var oElem = sap.ui.getCore().byId('{$this->getId()}');
+if (oElem !== undefined && oElem !== null) {
+    sap.ui.getCore().byId('{$this->getId()}')._exfRequired = {$val};
+}
+$requireLabelJs
+
+JS;
     }
     
     protected function buildJsRequiredGetter() : string
     {
         $val = $this->getWidget()->isRequired() ? 'true' : 'false';
-        return "sap.ui.getCore().byId('{$this->getId()}')._exfRequired || {$val}";
+        return "sap.ui.getCore().byId('{$this->getId()}')?._exfRequired || {$val}";
     }
     
     /**

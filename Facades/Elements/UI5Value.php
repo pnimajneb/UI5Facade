@@ -694,12 +694,12 @@ JS;
         switch (true) {
             case $parent instanceof Filter:
                 return  <<<JS
-        let container = document.getElementById(oCtrl.getParent().getId()).parentElement; // Hardcoded DOM structure :(
+        let container = document.getElementById(oCtrl.getParent().getId())?.parentElement || undefined; // Hardcoded DOM structure :(
 
         if(bVisible) {
-            container.classList.remove('sapUiHiddenPlaceholder');
+            container?.classList.remove('sapUiHiddenPlaceholder');
         } else {
-            container.classList.add('sapUiHiddenPlaceholder');
+            container?.classList.add('sapUiHiddenPlaceholder');
         }
         JS;
             default:
