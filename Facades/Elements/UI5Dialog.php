@@ -458,7 +458,7 @@ JS;
         }
         
         $cacheableJs = $this->getWidget()->isCacheable() ? 'true' : 'false';
-        
+        $toolbarEl = $this->getFacade()->getElement($this->getWidget()->getToolbarMain());
         // Finally, instantiate the dialog
         return <<<JS
 
@@ -478,6 +478,11 @@ JS;
                 var oView = {$this->getController()->getView()->buildJsViewGetter($this)};
                 var oDialog = oEvent.getSource();
                 var oToolbar = oDialog._getToolbar();
+                ids = {$toolbarEl->buildJsButtonsIdArray()};
+                ids.forEach(function(id) {
+                    const control = sap.ui.getCore().byId(id);
+                    if (control) control.destroy();
+                });
                 var aContent = [{$this->buildJsDialogButtons()}];
                 oToolbar.removeAllContent();
                 aContent.forEach(function(oElem) {                
