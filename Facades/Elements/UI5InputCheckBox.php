@@ -134,13 +134,31 @@ JS;
     }
     
     /**
-     * 
-     * {@inheritDoc}
-     * @see \exface\Core\Facades\AbstractAjaxFacade\Elements\JqueryInputValidationTrait::buildJsValidator()
+     * Returns JS code, that performs $onFailJs if the widget is required and has not value.
+     *
+     * @param string $valueJs
+     * @param string $onFailJs
+     *
+     * @return string
      */
-    public function buildJsValidator(?string $valJs = null) : string
+    protected function buildJsValidatorCheckRequired(string $valueJs, string $onFailJs) : string
     {
-        return 'true';
+        // required_if check does not work for inTable widgets
+        if ($this->getWidget()->isInTable()) {
+            if ($this->getWidget()->isRequired() === true) {
+                return <<<JS
+                
+                        if ($valueJs === undefined || $valueJs === null || $valueJs === '' || || $valueJs === 0) { $onFailJs }
+JS;
+            }
+        }
+        if ($this->getWidget()->isRequired() === true || $this->getWidget()->getRequiredIf()) {
+            return <<<JS
+            
+                        if ({$this->buildJsRequiredGetter()} == true) { if ($valueJs === undefined || $valueJs === null || $valueJs === '' || $valueJs === 0) { $onFailJs } }
+JS;
+        }
+        return '';
     }
     
     /**
@@ -172,6 +190,36 @@ JS;
                 return "setTimeout(function(){ {$this->buildJsValueSetter(0)} }, 0);";
         }
         return parent::buildJsCallFunction($functionName, $parameters);
+    }
+    
+    /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5Input::buildJsSetRequired()
+     */
+    protected function buildJsSetRequired(bool $required) : string
+    {
+        $val = $required ? 'true' : 'false';
+        if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
+            if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
+                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}')?.setRequired($val);";
+            }
+        }
+        return <<<JS
+        
+var oElem = sap.ui.getCore().byId('{$this->getId()}');
+if (oElem !== undefined && oElem !== null) {
+    sap.ui.getCore().byId('{$this->getId()}')._exfRequired = {$val};
+}
+$requireLabelJs
+
+JS;
+    }
+    
+    protected function buildJsRequiredGetter() : string
+    {
+        $val = $this->getWidget()->isRequired() ? 'true' : 'false';
+        return "sap.ui.getCore().byId('{$this->getId()}')?._exfRequired || {$val}";
     }
 }
 ?>
