@@ -16,19 +16,21 @@ class UI5DiffHtml extends UI5Value
         $id = "{$this->getId()}";
         $bindingPathOld = $this->getValueBindingPath(Value::VALUE_ALIAS);
         $bindingPathNew = $this->getValueBindingPath(DiffText::VALUE_TO_COMPARE_ALIAS);
-        $setterJs = $this->buildJsValueSetter();
-        $setterJs = str_replace("setText", "setContent", $setterJs);
         $widget->setHideCaption(true);
         $initPropsJs = <<<JS
 
+            var oCtrl = sap.ui.getCore().byId('{$id}');
+            var oModel = oCtrl.getModel();
             var oValueBinding = new sap.ui.model.Binding(
-                sap.ui.getCore().byId('{$id}').getModel(), 
-                '{$bindingPathOld}', sap.ui.getCore().byId('{$id}').getModel().getContext('{$bindingPathOld}'));
+                oModel, 
+                '{$bindingPathOld}', 
+                oModel.getContext('{$bindingPathOld}')
+            );
             oValueBinding.attachChange(function(oEvent){
                 let htmlOld = sap.ui.getCore().byId('{$id}').getModel().getProperty('{$bindingPathOld}');
                 let htmlNew = sap.ui.getCore().byId('{$id}').getModel().getProperty('{$bindingPathNew}');
                 let htmlDiff = htmldiff(htmlOld, htmlNew);
-                {$setterJs}
+                {$this->buildJsRefreshDiff('htmlOld', "htmlDiff")}
                 console.log("SET");
             });
 
@@ -43,46 +45,70 @@ JS;
         })
 JS;
     }
-
-    public function buildJsValueSetter($variableName = "htmlDiff") : string
+    
+    public function buildJsValueSetter($variableName) : string
     {
-        $setterJs = parent::buildJsValueSetter($variableName);
+        
+    }
 
+    public function buildJsRefreshDiff(string $leftValJs, string $rightValJs) : string
+    {
         $js = <<<JS
             console.log("HI");
-            if({$variableName} !== undefined && {$variableName} !== null) {
+            var fnConstructor = function(mVal, sId){
+                if(mVal === undefined || mVal === null) {
+                    return '';
+                }
                 // Apply styling.
-                {$variableName} = "".concat(
+                var sHtml = "".concat(
                     // Injecting CSS into the iFrame. TODO: Find a prettier way.
                     '<style> .difftext-container {border: 1px solid #c3d9e0;} .difftext-diff del {text-decoration: line-through; color: white; background-color: red;} .difftext-diff ins {text-decoration: none; color: white; background-color: green;} </style>',
-                    '<div id="{$variableName}_shell" class="difftext-diff">', 
-                    {$variableName},
-                    '</div>');
+                    '<div id="' + sId + '_shell" class="difftext-diff">', 
+                    mVal,
+                    '</div>'
+                );
                 // Escape HTML.            
-                {$variableName} = {$variableName}
+                sHtml = sHtml
                   .replace(/&/g, "&amp;")
                   .replace(/</g, "&lt;")
                   .replace(/>/g, "&gt;")
                   .replace(/"/g, "&quot;")
                   .replace(/'/g, "&#039;");
+console.log(mVal, sHtml);
                 // Enclose in iFrame.
-                {$variableName} = "".concat('<iframe ' +
-                    'id="IFRAME"  ' +
-                    'sandbox="allow-same-origin" ' + // Required for iFrame resizing. TODO: Is this a security risk?
-                    'title="HTML RENDERER" ' +
-                    'onload="this.style.height=(this.contentWindow.document.body.scrollHeight+20)+\'px\';"' + // Resizing iFrame to fit entire document. 
-                    '{$this->buildCssElementStyle()} ' +
-                    'srcdoc="', {$variableName}, '"></iframe>');
-            }
-            {$setterJs}
+                return  '   <iframe ' +
+                        '       id="IFRAME"  ' +
+                        '       sandbox="allow-same-origin" ' + // Required for iFrame resizing. TODO: Is this a security risk?
+                        '       title="HTML RENDERER" ' +
+                        '       onload="this.style.height=(this.contentWindow.document.body.scrollHeight+20)+\'px\';"' + // Resizing iFrame to fit entire document.
+                        '       {$this->buildCssElementStyle()} ' +
+                        '       srcdoc="' + sHtml + '"' +
+                        '   ></iframe>'
+            };
+            var sDiv = '<table style="width: calc(100% - 14px)"><tr>';
+            sDiv += '<td width="50%" style="vertical-align: top;">' + fnConstructor({$leftValJs}, '{$this->getId()}_oldval') + '</td>';
+            sDiv += '<td width="50%" style="vertical-align: top;">' + fnConstructor({$rightValJs}, '{$this->getId()}_diff') + '</td>';
+            sDiv += '</table>';
+
+            sap.ui.getCore().byId('{$this->getId()}').setContent(sDiv);
 JS;
         return $js;
+    }
+    
+    protected function buildJsConstructorForIFrame() : string
+    {
+        return <<<JS
+                
+                    
+JS;
     }
 
     public function buildCssElementStyle() : string
     {
+        // TODO do not use padding in percent - use rem instead
+        // TODO improved widht calculation. Why 25px? Where do they come from!
         return <<< HTML
-style="width:80%; height:800px; padding:.5%; border:5px solid lightgrey;"
+style="width: 100%; padding:.5%; border:5px solid lightgrey; background: white;"
 HTML;
     }
 
