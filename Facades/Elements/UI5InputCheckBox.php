@@ -148,7 +148,7 @@ JS;
             if ($this->getWidget()->isRequired() === true) {
                 return <<<JS
                 
-                        if ($valueJs === undefined || $valueJs === null || $valueJs === '' || || $valueJs === 0) { $onFailJs }
+                        if ($valueJs === undefined || $valueJs === null || $valueJs === '' || $valueJs === 0) { $onFailJs }
 JS;
             }
         }
