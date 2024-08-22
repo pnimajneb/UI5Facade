@@ -97,6 +97,16 @@ JS;
         }
         return $right_buttons;
     }
+
+
+    public function buildJsButtonsIdArray() {
+        $buttons = $this->getWidget()->getButtons();
+        $ids = [];
+        foreach ($buttons as $button) {
+            $ids[] = $this->getFacade()->getElement($button)->getId();
+        }
+        return json_encode($ids);
+    }
     
     /**
      * 
