@@ -136,7 +136,7 @@ sap.ui.define([
 				return $.ajax(params);
 			} else {
 				if(! bViewPreloaded && ! sap.ui.getCore().byId(sViewId)) {
-					if (!exfLauncher.isOnline()) {
+					if (!navigator.onLine) {
 						oController.getRouter().getTargets().display("offline");
 					} 
 				}
