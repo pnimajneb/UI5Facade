@@ -1675,7 +1675,7 @@ JS;
     
     protected function buildJsEditableChangesGetter(string $oTableJs = null) : string
     {
-        return $this->buildJsEditableChangesModelGetter($oTableJs) . ".getProperty('/changes')";
+        return $this->buildJsEditableChangesModelGetter($oTableJs) . "?.getProperty('/changes')";
     }
     
     /**
@@ -2488,7 +2488,7 @@ JS;
         return <<<JS
 (function(oTable){
                 var oDataChanges = {$this->buildJsEditableChangesGetter('oTable')};
-                if (oDataChanges.length === 0) {
+                if (oDataChanges === undefined || oDataChanges.length === 0) {
                     return [];
                 }
                 return [

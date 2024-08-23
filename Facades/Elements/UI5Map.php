@@ -319,10 +319,8 @@ JS;
         $showLoading = $this->getWidget()->getShowLoadingIndicator();
         if (!$showLoading) {
             return '';
-        } else if ($global) {
-            return 'sap.ui.core.BusyIndicator.show(0);';
-        } else {
-            return 'sap.ui.getCore().byId("' . $this->getId() . '")?.setBusyIndicatorDelay(0).setBusy(true);';
+        } else  {
+            return parent::buildJsBusyIconShow($global);
         }
     }
     
