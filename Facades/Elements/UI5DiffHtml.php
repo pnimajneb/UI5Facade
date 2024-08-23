@@ -33,7 +33,6 @@ class UI5DiffHtml extends UI5Value
 
         $widget = $this->getWidget();
         $widget->setHideCaption(true);
-        $layout = $this->configureLayout($widget);
 
         $id = "{$this->getId()}";
         $bindingPathOld = $this->getValueBindingPath(Value::VALUE_ALIAS);
@@ -52,7 +51,7 @@ class UI5DiffHtml extends UI5Value
                 let {$varOld} = sap.ui.getCore().byId('{$id}').getModel().getProperty('{$bindingPathOld}');
                 let {$varNew} = sap.ui.getCore().byId('{$id}').getModel().getProperty('{$bindingPathNew}');
                 let {$varDif} = htmldiff({$varOld}, {$varNew});
-                {$this->buildJsRefreshDiff($layout["left"], $layout["right"])}
+                {$this->buildJsRefreshDiff($this->getVarName($widget->getRenderedVersion("left")), $this->getVarName($widget->getRenderedVersion("right")), $widget)}
             });
 
 JS;
@@ -70,20 +69,11 @@ JS;
     /**
      * Generates a title card depending on the corresponding layout.
      *
-     * @param string $varName
+     * @param string $color
      * @return string
      */
-    public function buildHtmlVersionTitle(string $varName) : string
+    public function buildHtmlTitle(string $color, string $title) : string
     {
-        $varName = strtolower($varName);
-        $color = str_contains($varName, 'diff') ? '#00a65a' : 'darkgrey';
-        $title = match (true) {
-            str_contains($varName, 'diff') => "Review Changes",
-            str_contains($varName, 'new') => "Revision",
-            str_contains($varName, 'old') => "Original",
-            default => "",
-        };
-
         return  '<div style="text-align:center; background-color:'.$color.'; margin-bottom: 30px; padding:.2rem; color:white;">'.
                 '    <h1>'.$title.'</h1>'.
                 '</div>';
@@ -96,8 +86,10 @@ JS;
      * @param string $rightValName
      * @return string
      */
-    public function buildJsRefreshDiff(string $leftValName, string $rightValName) : string
+    public function buildJsRefreshDiff(string $leftValName, string $rightValName, DiffHtml $widget) : string
     {
+        $titleLeft = $this->buildHtmlTitle($widget->getTitleColor("left"), $widget->getTitle("left"));
+        $titleRight = $this->buildHtmlTitle($widget->getTitleColor("right"), $widget->getTitle("right"));
         return <<<JS
             var fnConstructor = function(mVal, sId, sTitle){
                 if(mVal === undefined || mVal === null) {
@@ -120,33 +112,18 @@ JS;
                         '       sandbox="allow-same-origin" ' + // Required for iFrame resizing. TODO: Is this a security risk?
                         '       title="HTML RENDERER" ' +
                         '       onload="this.style.height=(this.contentWindow.document.body.scrollHeight+20)+\'px\';"' + // Resizing iFrame to fit entire document.
-                        '       {$this->buildCssIFrameStyle()} ' +
+                        '       class ="exf-diffHtml-iFrame" ' +
                         '       srcdoc="' + sHtml + '"' +
                         '   ></iframe>'
             };
             var sDiv = '<table style="width: calc(100% - 14px)"><tr>';
-            sDiv += '<td width="50%" style="vertical-align: top;">' + fnConstructor({$leftValName}, '{$this->getId()}_left', '{$this->buildHtmlVersionTitle($leftValName)}') + '</td>';
-            sDiv += '<td width="50%" style="vertical-align: top;">' + fnConstructor({$rightValName}, '{$this->getId()}_right', '{$this->buildHtmlVersionTitle($rightValName)}') + '</td>';
+            sDiv += '<td width="50%" style="vertical-align: top;">' + fnConstructor({$leftValName}, '{$this->getId()}_left', '{$titleLeft}') + '</td>';
+            sDiv += '<td width="50%" style="vertical-align: top;">' + fnConstructor({$rightValName}, '{$this->getId()}_right', '{$titleRight}') + '</td>';
             sDiv += '</table>';
 
             sap.ui.getCore().byId('{$this->getId()}').setContent(sDiv);
 JS;
     }
-
-    /**
-     * Generates CSS styling for the iFrame.
-     *
-     * @return string
-     */
-    public function buildCssIFrameStyle() : string
-    {
-        // TODO do not use padding in percent - use rem instead
-        // TODO improved width calculation. Why 25px? Where do they come from!
-        return <<< HTML
-style="width: 97%; padding:.5%; border:5px solid lightgrey; background: white;"
-HTML;
-    }
-
     /**
      * Generates the binding path for the given property name.
      *
@@ -171,32 +148,22 @@ HTML;
     public function registerExternalModules(\exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface $controller) : UI5AbstractElement
     {
         $controller->addExternalModule('libs.exface.custom.htmlDiff', $this->getFacade()->buildUrlToSource('LIBS.HTMLDIFF.JS'));
+        $controller->addExternalCss('vendor/exface/UI5Facade/Facades/js/HtmlDiff/HtmlDiff.css');
         return $this;
     }
 
     /**
-     * Gets the desired layout and injects it with local variable names.
+     * Extracts the corresponding variable name and converts it to the local nomenclature.
      *
-     * @param DiffHtml $widget
-     * @return array
+     * @param string $version
+     * @return string
      */
-    private function configureLayout(Value $widget) : array
+    private function getVarName(string $version) : string
     {
-        $layout = $widget->getLayoutArray();
-        foreach ($layout as $key => $value) {
-            switch ($value) {
-                case "old":
-                    $layout[$key] = self::VAR_OLD;
-                    break;
-                case "new":
-                    $layout[$key] = self::VAR_NEW;
-                    break;
-                case "diff":
-                    $layout[$key] = self::VAR_DIF;
-                    break;
-            }
-        }
-
-        return $layout;
+        return match ($version) {
+            "old" => self::VAR_OLD,
+            "new" => self::VAR_NEW,
+            default => self::VAR_DIF,
+        };
     }
 }
