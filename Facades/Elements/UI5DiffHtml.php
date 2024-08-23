@@ -19,6 +19,18 @@ class UI5DiffHtml extends UI5Value
     const VAR_DIF = 'htmlDiff';
 
     /**
+     *
+     * {@inheritDoc}
+     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerExternalModules()
+     */
+    public function registerExternalModules(\exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface $controller) : UI5AbstractElement
+    {
+        $controller->addExternalModule('libs.exface.custom.htmlDiff', $this->getFacade()->buildUrlToSource('LIBS.HTMLDIFF.JS'));
+        $controller->addExternalCss('vendor/exface/UI5Facade/Facades/js/HtmlDiff/HtmlDiff.css');
+        return $this;
+    }
+
+    /**
      * {@inheritDoc}
      * @return string
      */
@@ -138,18 +150,6 @@ JS;
             return $model->getBindingPath($widget, $propertyName);
         }
         return $this->getValueBindingPrefix() . $this->getWidget()->getDataColumnName();
-    }
-
-    /**
-     *
-     * {@inheritDoc}
-     * @see \exface\UI5Facade\Facades\Elements\UI5AbstractElement::registerExternalModules()
-     */
-    public function registerExternalModules(\exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface $controller) : UI5AbstractElement
-    {
-        $controller->addExternalModule('libs.exface.custom.htmlDiff', $this->getFacade()->buildUrlToSource('LIBS.HTMLDIFF.JS'));
-        $controller->addExternalCss('vendor/exface/UI5Facade/Facades/js/HtmlDiff/HtmlDiff.css');
-        return $this;
     }
 
     /**
