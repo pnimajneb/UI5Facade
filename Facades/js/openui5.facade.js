@@ -177,7 +177,7 @@ const exfLauncher = {};
 		                    iconFirst: false,
 		                    layoutData: new sap.m.OverflowToolbarLayoutData({priority: "NeverOverflow"}),
 		                    press: function(oEvent) {
-		                    	oBtn = oEvent.getSource();
+		                    	var oBtn = oEvent.getSource();
 		                		sap.ui.core.BusyIndicator.show(0); 
 		                		window.location.href = oBtn.getModel().getProperty('/_app/app_url');
 		                		/*
