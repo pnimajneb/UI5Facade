@@ -22,5 +22,17 @@
         ],
         "description": "JavaScript port of htmldiff.net",
         "homepage": "https://github.com/dfoverdx/htmldiff-js"
+    },
+    {
+        "name": "jquery.sparkline",
+        "version": "2.1.2",
+        "license": [
+	        "BSD-3-Clause"
+	    ],
+        "license_link": [
+        	"http://www.opensource.org/licenses/BSD-3-Clause"
+        ],
+        "description": "A plugin for the jQuery javascript library to generate small sparkline charts directly in the browser",
+        "homepage": "https://omnipotent.net/jquery.sparkline/"
     }
 ]
