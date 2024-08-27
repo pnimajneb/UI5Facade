@@ -222,7 +222,8 @@ JS;
                                         {$actionNameJs},
                                         {$objectNameJs},
                                         aEffects,
-                                        '{$this->getOfflineDataEffect($action)}'                                    
+                                        '{$this->getOfflineDataEffect($action)}',
+                                        !exfLauncher.isVirtualOffline(),                               
                                     )
                                     .then(function(key) {
                                         response = {success: '{$coreTranslator->translate('OFFLINE.ACTIONS.ACTION_QUEUED')}'};
