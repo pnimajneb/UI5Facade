@@ -7,7 +7,31 @@ window.addEventListener('online', function(){
 	}
 	exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 	if(!navigator.serviceWorker){
-		exfPWA.actionQueue.getIds('offline')
+		syncOfflineItems();
+	}
+});
+window.addEventListener('offline', function(){
+	exfLauncher.toggleOnlineIndicator();
+});
+
+window.addEventListener('load', function() {
+	exfLauncher.initPoorNetworkPoller();
+});
+
+if (navigator.serviceWorker) {
+	navigator.serviceWorker.addEventListener('message', function(event) {
+		exfLauncher.contextBar.getComponent().getPWA().updateQueueCount()
+		.then(function(){
+			exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
+			exfLauncher.showMessageToast(event.data);
+		})
+	});
+}
+
+function syncOfflineItems() {
+	if (exfLauncher._bLowSpeed || exfLauncher._forceOffline) return;
+
+	exfPWA.actionQueue.getIds('offline')
 		.then(function(ids) {
 			var count = ids.length;
 			if (count > 0){
@@ -31,25 +55,7 @@ window.addEventListener('online', function(){
 			shell.setBusy(false);
 			exfLauncher.showMessageToast("Cannot synchronize offline actions: " + error);
 		})
-	}
-});
-window.addEventListener('offline', function(){
-	exfLauncher.toggleOnlineIndicator();
-});
-
-window.addEventListener('load', function() {
-	exfLauncher.initPoorNetworkPoller();
-});
-
-if (navigator.serviceWorker) {
-	navigator.serviceWorker.addEventListener('message', function(event) {
-		exfLauncher.contextBar.getComponent().getPWA().updateQueueCount()
-		.then(function(){
-			exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
-			exfLauncher.showMessageToast(event.data);
-		})
-	});
-}
+};
 
 const exfLauncher = {};
 (function() {
@@ -124,6 +130,9 @@ const exfLauncher = {};
 	}
 
 
+	this.isVirtualOffline = function() {
+		return _bLowSpeed || _forceOffline;
+	};
 
 	this.isOnline = function() {
 		return !_bLowSpeed && !_forceOffline && navigator.onLine;
@@ -133,6 +142,9 @@ const exfLauncher = {};
 	this.revertMockNetworkError = function() {
 		NetworkUtils.disableFetchMock();
 		NetworkUtils.disableXhrMock();
+		setTimeout(() => {
+			syncOfflineItems();
+		}, 100);
 		ServiceWorkerUtils.message({ action: 'virtuallyOfflineDisabled' });
 	};
 
