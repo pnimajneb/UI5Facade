@@ -119,7 +119,7 @@ JS;
                 const oInputCombo = sap.ui.getCore().byId("{$this->getFacade()->getElement($this->getWidget()->getParent()->getParent())->getId()}");
                 const oMultiInput = sap.ui.getCore().byId("{$this->getDialogContentPanelTokenizerId()}");
                 var tokens;
-                if (oMultiInput) {
+                if (oMultiInput && oInputCombo.getTokens !== undefined) {
                     tokens = oInputCombo.getTokens();
                 }                
                 if (tokens) {
