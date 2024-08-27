@@ -201,7 +201,7 @@ JS;
 
             const newSelectedItemList = [];
 
-            oTable._selectedObjects.forEach(oldItem => {
+            (oTable._selectedObjects || []).forEach(oldItem => {
                 // Old item exist in current dynamic list
                 const bExistInAllObjects = aAllObjects.some(item => JSON.stringify(item) === JSON.stringify(oldItem));
                 if (!bExistInAllObjects) { 
