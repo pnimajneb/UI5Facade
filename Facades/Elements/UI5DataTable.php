@@ -871,7 +871,7 @@ JS;
             if($this->getWidget()->getMultiSelect() === false) {
                 $rows = "($oTableJs && $oTableJs.getSelectedIndex() !== -1 && $oTableJs.getContextByIndex($oTableJs.getSelectedIndex()) !== undefined ? [$oTableJs.getContextByIndex($oTableJs.getSelectedIndex()).getObject()] : [])";
             } else {
-                $rows = "function(){var selectedIdx = $oTableJs.getSelectedIndices(); var aRows = []; selectedIdx.forEach(index => aRows.push($oTableJs.getContextByIndex(index).getObject())); return aRows;}()";
+                $rows = "(function(){var selectedIdx = $oTableJs.getSelectedIndices(); var aRows = []; selectedIdx.forEach(index => aRows.push($oTableJs.getContextByIndex(index).getObject())); return aRows;})()";
             }
         } else {
             if($this->getWidget()->getMultiSelect() === false) {
@@ -1396,18 +1396,31 @@ JS;
                     listItem: oItem, 
                     selected: $setSelectJs
                 });
-                oItem.focus();
+                if ($bScrollToJs && oItem !== undefined) {
+                    oItem.focus();
+                }
 
 JS;
 
                 
         } else {
+            $deSelectJs = $deSelect ? 'true' : 'false';
             return <<<JS
-
-                if ($bScrollToJs) {
-                    $oTableJs.setFirstVisibleRow({$iRowIdxJs});
-                }
-                $oTableJs.setSelectedIndex({$iRowIdxJs});
+                (function(oTable, iRowIdx, bDeselect, bScrollTo) {
+                    var aSelections = oTable.getSelectedIndices();
+                    if (bScrollTo) {
+                        oTable.setFirstVisibleRow({$iRowIdxJs});
+                    }
+                    oTable.clearSelection();
+                    if (bDeselect === false) {
+                        oTable.setSelectedIndex(iRowIdx);
+                    }
+                    aSelections.forEach(function(i){
+                        if (i !== iRowIdx) {
+                            oTable.addSelectionInterval(i, i);
+                        }
+                    });
+                })($oTableJs, $iRowIdxJs, $deSelectJs, $bScrollToJs)
 
 JS;
         }
