@@ -2,7 +2,9 @@
 namespace exface\UI5Facade\Facades\Elements;
 
 use exface\Core\Interfaces\Widgets\iHaveColorScale;
+use exface\Core\Widgets\ColorIndicator;
 use exface\UI5Facade\Facades\Elements\Traits\UI5ColorClassesTrait;
+use exface\UI5FAcade\Facades\UI5PropertyBinding;
 
 /**
  * Generates sap.m.ObjectStatus for any value widget.
@@ -224,5 +226,39 @@ JS;
 JS;
         }
         return parent::buildJsValueSetter($valueJs);
+    }
+
+    protected function buildJsColorValue() : string
+    {
+        $widget = $this->getWidget();
+        if (! ($widget instanceof ColorIndicator)) {
+            return parent::buildJsColorValue();
+        }
+        
+        $widgetColorBinding = $widget->getColorBinding();
+        $ui5ColorBinding = new UI5PropertyBinding($this, 'state', $widgetColorBinding);
+        if (! $ui5ColorBinding->isBoundToModel()) {
+            $value = ''; // TODO
+        } else {
+            $semColsJs = json_encode($this->getColorSemanticMap());
+            $formatterJs = <<<JS
+                formatter: function(value){
+                    var sColor = {$this->buildJsScaleResolver('value', $widget->getColorScale(), $widget->isColorScaleRangeBased())};
+                    var sValueColor;
+                    var oCtrl = this;
+                    if (sColor.startsWith('~')) {
+                        var oColorScale = {$semColsJs};
+                        {$this->buildJsColorCssSetter('oCtrl', 'null')}
+                        return oColorScale[sColor];
+                    } else if (sColor) {
+                        {$this->buildJsColorCssSetter('oCtrl', 'sColor')}
+                    }
+                    return {$this->buildJsColorValueNoColor()};
+                }
+                
+JS;
+            $value = $ui5ColorBinding->buildJsModelBinding($formatterJs);
+        }
+        return $value;
     }
 }
