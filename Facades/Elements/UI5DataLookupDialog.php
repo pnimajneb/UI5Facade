@@ -480,7 +480,7 @@ JS;
             });
              
             // keep not existant token in new tokens list
-            const oldTokens = oMultiInput.getTokens();
+            var oldTokens = oMultiInput.getTokens();
             oldTokens.forEach(token => {
                 const bExistInCurrentPage = aAllRows.some(row => row["{$idAttributeAlias}"] === token.getKey());
                 const bExistInTokenList= aNewTokens.some(newToken => newToken.getKey() === token.getKey());
