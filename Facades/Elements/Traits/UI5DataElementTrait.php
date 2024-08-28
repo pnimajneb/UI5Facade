@@ -918,18 +918,29 @@ JS;
         $widget = $this->getWidget();
         if ($widget instanceof iSupportMultiSelect && $widget->getMultiSelect() === true ) {
 
-            
+            // Restore previous selection (however only if oTable._selectedObjects exists and, thus, the implementations supports this feature)
+            // TODO add support for selection restore to sap.ui.table.Table!
             return <<<JS
-        const selectedObjects = {$oTableJs}._selectedObjects;
-        {$oTableJs}.getItems().forEach(function (oItem) {
-            var oContext = oItem.getBindingContext();
-            var bSelected = selectedObjects.some(function (oSelectedObject) {
-                const oRow = oContext.getObject();
-                return JSON.stringify(oSelectedObject) === JSON.stringify(oRow);
-            });
-            
-            oTable.setSelectedItem(oItem, bSelected);
-        });
+                setTimeout(function() {
+                    const aPrevSelectedRows = {$oTableJs}._selectedObjects;
+                    const aNowSelectedRows = {$this->buildJsGetRowsSelected($oTableJs)};
+                    const aRows = {$this->buildJsGetRowsAll($oTableJs)};
+                    if (aPrevSelectedRows === undefined) {
+                        return;
+                    }
+                    aNowSelectedRows.forEach(function (oRow) {
+                        var bSelected = aPrevSelectedRows.some(function (oSelectedRow) {
+                            return JSON.stringify(oSelectedRow) === JSON.stringify(oRow);
+                        });
+                        var iRowIdx = aRows.indexOf(oRow);
+                        if (bSelected) {
+                            {$this->buildJsSelectRowByIndex($oTableJs, 'iRowIdx', false, 'false')}
+                        } else {
+                            {$this->buildJsSelectRowByIndex($oTableJs, 'iRowIdx', true, 'false')}
+                        }
+                    });
+                });
+
 JS;
         } else {
             return '';
