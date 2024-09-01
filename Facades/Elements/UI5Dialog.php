@@ -131,7 +131,6 @@ JS, false));
                 try {
                     var oViewModel = this.getView().getModel('view');
                     var bCheckChanges = ! (oEvent !== undefined && oEvent.getParameters().bCheckChanges === false);
-                    var aChanges = [];
                     var fnClose = function(){
                         oViewModel.setProperty('/_prefill/current_data_hash', null);
                         oViewModel.setProperty('/_prefill/refresh_needed', false);
@@ -142,19 +141,7 @@ JS, false));
 
                     // Check for unsaved changes if required.
                     if (bCheckChanges === true) {
-                        aChanges = {$this->buildJsChangesGetter()};
-                        // Ignore changes in invisible controls because the user does not see them!
-                        aChanges = aChanges.filter(function(oChange) {
-                            var oCtrl;
-                            if (! oChange.elementId) return true;
-                            oCtrl = sap.ui.getCore().byId(oChange.elementId);
-                            if (oCtrl && oCtrl.getVisible !== undefined) {
-                                return oCtrl.getVisible();
-                            }
-                            return true;
-                        });
-                        if (aChanges.length > 0) {
-                            this.showWarningAboutUnsavedChanges(fnClose);
+                        if (true === {$this->buildJsCheckForUnsavedChanges(true, 'fnClose')}) {
                             return;
                         }
                     }
