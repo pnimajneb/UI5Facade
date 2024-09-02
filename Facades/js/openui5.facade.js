@@ -177,7 +177,7 @@ const exfLauncher = {};
 		                	text: "{i18n>WEBAPP.SHELL.HOME.TITLE}",
 							icon: "sap-icon://home",
 		                	press: function(oEvent){
-		                		oBtn = oEvent.getSource();
+		                		var oBtn = oEvent.getSource();
 		                		sap.ui.core.BusyIndicator.show(0); 
 		                		window.location.href = oBtn.getModel().getProperty('/_app/home_url');
                 			}
