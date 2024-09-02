@@ -275,6 +275,7 @@ JS;
     protected function buildJsClickShowDialog(ActionInterface $action, string $jsRequestData) : string
     {
         $widget = $this->getWidget();
+        $controller = $this->getController();
         
         /* @var $prefill_link \exface\Core\CommonLogic\WidgetLink */
         $prefill = '';
@@ -294,9 +295,18 @@ JS;
         } else {
             $closeDialogJs = '';
         }
+
+        $checkChangesJs = '';
+        if ($this->isCheckForUnsavedChangesRequired()) {
+            $checkChangesJs = <<<JS
+                        if(true === {$this->getInputElement()->buildJsCheckForUnsavedChanges(true, 'fnAction')}) {
+                            return;
+                        }
+JS;
+        }
         
         // Build the AJAX request
-        $output = <<<JS
+        $js = <<<JS
                         {$this->buildJsBusyIconShow()}
                         var xhrSettings = {
 							data: {
@@ -316,8 +326,8 @@ JS;
         // Load the view and open the dialog or page
         if ($this->opensDialogPage()) {
             // If the dialog is actually a UI5 page, just navigate to the respecitve view.
-            $output .= <<<JS
-                        this.navTo('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$this->getController()->getWebapp()->getWidgetIdForViewControllerName($targetWidget)}', xhrSettings);
+            $js .= <<<JS
+                        {$controller->buildJsControllerGetter($this)}.navTo('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$this->getController()->getWebapp()->getWidgetIdForViewControllerName($targetWidget)}', xhrSettings);
 
 JS;
         } else {
@@ -338,17 +348,17 @@ JS;
             // the server. Otherwise, it will be in the module cache of UI5 after being first loaded
             
             $forceLoadFromServerJs = $targetWidget->isCacheable() ? 'false' : 'true';
-            $output .= <<<JS
+            $js .= <<<JS
 
-                        var oController = {$this->getController()->buildJsControllerGetter($this)};
+                        var oController = {$controller->buildJsControllerGetter($this)};
                         var sViewName = oController.getViewName('{$targetWidget->getPage()->getAliasWithNamespace()}', '{$targetWidget->getId()}'); 
                         var sViewId = oController.getViewId(sViewName);
                         var oComponent = oController.getOwnerComponent();
                         
                         var jqXHR = oController._loadView(sViewName, function(){ 
                             var oView = sap.ui.getCore().byId(sViewId);
-                            var oParentView = {$this->getController()->getView()->buildJsViewGetter($this)};
-                            var oApp = sap.ui.getCore().byId('{$this->getController()->getWebapp()->getName()}');
+                            var oParentView = {$controller->getView()->buildJsViewGetter($this)};
+                            var oApp = sap.ui.getCore().byId('{$controller->getWebapp()->getName()}');
                             var oNavInfoOpen = {
                 				from: oParentView || null,
                 				fromId: (oParentView !== undefined ? oParentView.getId() : null),
@@ -378,7 +388,7 @@ JS;
                                 oComponent.runAsOwner(function(){
                                     return sap.ui.core.mvc.JSView.create({
                                         id: sViewId,
-                                        viewName: "{$this->getController()->getWebapp()->getViewName($targetWidget)}"
+                                        viewName: "{$controller->getWebapp()->getViewName($targetWidget)}"
                                     }).then(function(oView){
                                         oNavInfoOpen.to = oView;
                                         oNavInfoOpen.toId = oView.getId();
@@ -435,7 +445,7 @@ JS;
                                                     "onAfterRendering": function () {
                                                         oView.fireAfterRendering();
                                                     }
-                                                }, this);
+                                                }, oController); /* Make oController be the "this" inside onBeforeRendering, etc. - but is this really correct?*/
                                                 oDialog.open();
                                             } else {
                                                 if (oDialog instanceof sap.m.Page || oDialog instanceof sap.m.MessagePage) {
@@ -461,7 +471,21 @@ JS;
 JS;
         }
         
-        return $output;
+        // Place the code for the action in a callable. Perform confirmation checks, etc. and
+        // call the code at the very end giving the checks the possibility to cancel the whole
+        // thing.
+        // TODO #confirmation move this to JqueryButtonTrait!
+        return <<<JS
+                    
+                    var fnAction = function() {
+                        $js
+                    };
+
+                    {$checkChangesJs}
+
+                    fnAction();
+
+JS;
     }
     
     protected function buildJsOpenDialogForUnexpectedView(string $oViewContent) : string

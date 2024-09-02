@@ -819,6 +819,62 @@ JS;
     {
         return '[]';
     }
+
+    /**
+     * Returns an inline JS snippet (without ending `;`) that shows a warning there are unsaved changes or returns FALSE otherwise.
+     * 
+     * This can be easily used in if-statements. To check if there are unsaved changes do:
+     * 
+     * ```javascript
+     * if ({$element->buildJsHasUnsavedChanges()} === true) {
+     *  // show error
+     * } else {
+     *  // everything is fine
+     * }
+     * 
+     * ```
+     * 
+     * Or to show a user warning, where the user can pick from "discard and continue" or "cancel"
+     * 
+     * ```javascript
+     * var fnAction = function() {
+     *  // do something here
+     * }
+     * if ({$element->buildJsHasUnsavedChanges('fnAction')} === false) {
+     *  fnAction();
+     * }
+     * 
+     * ```
+     * 
+     * 
+     * @param string $fnOnDiscardJs
+     * @return string
+     */
+    public function buildJsCheckForUnsavedChanges(bool $showWarning = true, string $fnOnDiscardJs = '') : string
+    {
+        $showWarningJs = $showWarning === false ? '' : "{$this->getController()->buildJsControllerGetter($this)}.showWarningAboutUnsavedChanges(fnDiscardAndContinue)";
+        return <<<JS
+
+                    (function(fnDiscardAndContinue){
+                        var aChanges = {$this->buildJsChangesGetter()};
+                        // Ignore changes in invisible controls because the user does not see them!
+                        aChanges = aChanges.filter(function(oChange) {
+                            var oCtrl;
+                            if (! oChange.elementId) return true;
+                            oCtrl = sap.ui.getCore().byId(oChange.elementId);
+                            if (oCtrl && oCtrl.getVisible !== undefined) {
+                                return oCtrl.getVisible();
+                            }
+                            return true;
+                        });
+                        if (aChanges.length > 0) {
+                            {$showWarningJs};
+                            return true;
+                        }
+                        return false;
+                    })({$fnOnDiscardJs})
+JS;
+    }
     
     /**
      *
