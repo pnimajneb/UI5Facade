@@ -879,7 +879,7 @@ const exfLauncher = {};
 		.then(function(dbContent){
 			oTable.removeAllItems();
 			dbContent.forEach(function(element) {
-				oRow = new sap.m.ColumnListItem();
+				var oRow = new sap.m.ColumnListItem();
 				oRow.addCell(new sap.m.Text({text: element.object_name}));
 				if (element.rows) {
 					oRow.addCell(new sap.m.Text({text: element.rows.length}));
