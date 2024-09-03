@@ -1,3 +1,5 @@
+import { NetworkUtils, ServiceWorkerUtils } from './openui5.virtual.offline.js';
+
 // Toggle online/offlie icon
 window.addEventListener('online', function(){
 	if (exfLauncher.isOnline()) {
@@ -5,7 +7,31 @@ window.addEventListener('online', function(){
 	}
 	exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
 	if(!navigator.serviceWorker){
-		exfPWA.actionQueue.getIds('offline')
+		syncOfflineItems();
+	}
+});
+window.addEventListener('offline', function(){
+	exfLauncher.toggleOnlineIndicator();
+});
+
+window.addEventListener('load', function() {
+	exfLauncher.initPoorNetworkPoller();
+});
+
+if (navigator.serviceWorker) {
+	navigator.serviceWorker.addEventListener('message', function(event) {
+		exfLauncher.contextBar.getComponent().getPWA().updateQueueCount()
+		.then(function(){
+			exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
+			exfLauncher.showMessageToast(event.data);
+		})
+	});
+}
+
+function syncOfflineItems() {
+	if (exfLauncher._bLowSpeed || exfLauncher._forceOffline) return;
+
+	exfPWA.actionQueue.getIds('offline')
 		.then(function(ids) {
 			var count = ids.length;
 			if (count > 0){
@@ -29,31 +55,16 @@ window.addEventListener('online', function(){
 			shell.setBusy(false);
 			exfLauncher.showMessageToast("Cannot synchronize offline actions: " + error);
 		})
-	}
-});
-window.addEventListener('offline', function(){
-	exfLauncher.toggleOnlineIndicator();
-});
-
-window.addEventListener('load', function() {
-	exfLauncher.initPoorNetworkPoller();
-});
-
-if (navigator.serviceWorker) {
-	navigator.serviceWorker.addEventListener('message', function(event) {
-		exfLauncher.contextBar.getComponent().getPWA().updateQueueCount()
-		.then(function(){
-			exfLauncher.contextBar.getComponent().getPWA().updateErrorCount();
-			exfLauncher.showMessageToast(event.data);
-		})
-	});
-}
+};
 
 const exfLauncher = {};
 (function() {
 	
 	exfPWA.actionQueue.setTopics(['offline', 'ui5']);
 	
+	const SPEEDTEST_DUMMY_DATA_NAME = 'speedtest.data.json';
+	const SPEED_HISTORY_ARRAY_LENGTH = 14;
+
 	var _oShell = {};
 	var _oAppMenu;
 	var _oLauncher = this;
@@ -62,14 +73,13 @@ const exfLauncher = {};
 	var _bLowSpeed = false;
 	var _forceOffline = false;
 	var _autoOffline = true;
-	var _speedHistory = [null, null, null, null, null, null, null, null, null, null, null, null, null, null];
+	const _speedHistory = new Array(SPEED_HISTORY_ARRAY_LENGTH).fill(null);
 	var _oConfig = {
 		contextBar: {
 			refreshWaitSeconds: 5
 		}
 	};
 
-	const SPEEDTEST_DUMMY_DATA_NAME = 'speedtest.data.json';
 
 	this.initFastNetworkPoller = function() {
 		clearInterval(_oNetworkSpeedPoller);
@@ -120,109 +130,30 @@ const exfLauncher = {};
 	}
 
 
+	this.isVirtualOffline = function() {
+		return _bLowSpeed || _forceOffline;
+	};
 
 	this.isOnline = function() {
 		return !_bLowSpeed && !_forceOffline && navigator.onLine;
 	};
 
-	this.sendMessageToServiceWorker = function (message) {
-		if (navigator?.serviceWorker?.controller) {
-			navigator.serviceWorker.controller.postMessage(message);
-		} else {
-			navigator.serviceWorker.ready.then((registration) => {
-				if (registration.active) {
-					registration.active.postMessage(message);
-				}
-			});
-		}
-	}	
-
 	// Revert network functions to original
 	this.revertMockNetworkError = function() {
-		window.fetch = window._originalFetch;
-		window.XMLHttpRequest = window._originalXMLHttpRequest;
-		exfLauncher.sendMessageToServiceWorker({ action: 'virtuallyOfflineDisabled' });
+		NetworkUtils.disableFetchMock();
+		NetworkUtils.disableXhrMock();
+		setTimeout(() => {
+			syncOfflineItems();
+		}, 100);
+		ServiceWorkerUtils.message({ action: 'virtuallyOfflineDisabled' });
 	};
 
 	// Simulate network error in poor network speeds, except for specific URLs
 	this.mockNetworkError = function() {
 		// Store original network functions
-		window._originalFetch = window.fetch;
-		window._originalXMLHttpRequest = window.XMLHttpRequest;
-
-		function MockFetch (input, init) {
-			// Check if the URL contains dummy data name
-			if (typeof input === "string" && input.includes(SPEEDTEST_DUMMY_DATA_NAME)) {
-				return window._originalFetch(input, init);
-			}
-			return new Promise((resolve, reject) => {
-				reject(new Error('Network error'));
-			});
-		};
-
-
-		function MockXHR() {
-			const xhr = new window._originalXMLHttpRequest();
-			const self = this;
-	
-			// Manually copy event handler properties
-			const eventHandlers = [
-				"onreadystatechange", "onload", "onerror", "onprogress", 
-				"onabort", "ontimeout", "onloadstart", "onloadend"
-			];
-			eventHandlers.forEach(handler => {
-				Object.defineProperty(self, handler, {
-					get: function() { return xhr[handler]; },
-					set: function(val) { xhr[handler] = val; }
-				});
-			});
-	
-			// Manually copy response properties
-			const responseProperties = [
-				"readyState", "responseText", "response", "status", "statusText", 
-				"responseType", "responseURL", "responseXML"
-			];
-			responseProperties.forEach(prop => {
-				Object.defineProperty(self, prop, {
-					get: function() { return xhr[prop]; }
-				});
-			});
-	
-			// Bind the methods
-			for (const attr in xhr) {
-				if (typeof xhr[attr] === 'function') {
-					this[attr] = xhr[attr].bind(xhr);
-				}
-			}
-	
-			this.open = function(method, url) {
-				if (url.includes(SPEEDTEST_DUMMY_DATA_NAME)) {
-					this._url = url;
-					xhr.open.apply(xhr, arguments);
-				}
-			};
-	
-			this.send = function(...args) {
-				// Check if the URL contains dummy data name
-				if (this._url && this._url.includes(SPEEDTEST_DUMMY_DATA_NAME)) {
-					xhr.send.apply(xhr, args);
-				} else {
-					setTimeout(() => {
-						if (self.onreadystatechange) {
-							self.readyState = 4;
-							self.status = 0;
-							self.onreadystatechange();
-						}
-					}, 0);
-				}
-			};
-		}
-	
-
-		// Replace network functions with mock functions
-		window.XMLHttpRequest = MockXHR;
-		window.fetch = MockFetch;
-		exfLauncher.sendMessageToServiceWorker({ action: 'virtuallyOfflineEnabled' });
+		NetworkUtils.enableXhrMock();
+		NetworkUtils.enableFetchMock();
+		ServiceWorkerUtils.message({ action: 'virtuallyOfflineEnabled' });
 	};
 
 	this.getShell = function() {
@@ -246,7 +177,7 @@ const exfLauncher = {};
 		                	text: "{i18n>WEBAPP.SHELL.HOME.TITLE}",
 							icon: "sap-icon://home",
 		                	press: function(oEvent){
-		                		oBtn = oEvent.getSource();
+		                		var oBtn = oEvent.getSource();
 		                		sap.ui.core.BusyIndicator.show(0); 
 		                		window.location.href = oBtn.getModel().getProperty('/_app/home_url');
                 			}
@@ -258,7 +189,7 @@ const exfLauncher = {};
 		                    iconFirst: false,
 		                    layoutData: new sap.m.OverflowToolbarLayoutData({priority: "NeverOverflow"}),
 		                    press: function(oEvent) {
-		                    	oBtn = oEvent.getSource();
+		                    	var oBtn = oEvent.getSource();
 		                		sap.ui.core.BusyIndicator.show(0); 
 		                		window.location.href = oBtn.getModel().getProperty('/_app/app_url');
 		                		/*
@@ -687,7 +618,7 @@ const exfLauncher = {};
             press: function() {dialog.close();},
         });
 		dialog.addButton(button);
-		list = new sap.m.List({});
+		let list = new sap.m.List({});
 		//check if possible to acces storage (means https connection)
 		if (navigator.storage && navigator.storage.estimate) {
 			var promise = navigator.storage.estimate()
@@ -948,7 +879,7 @@ const exfLauncher = {};
 		.then(function(dbContent){
 			oTable.removeAllItems();
 			dbContent.forEach(function(element) {
-				oRow = new sap.m.ColumnListItem();
+				var oRow = new sap.m.ColumnListItem();
 				oRow.addCell(new sap.m.Text({text: element.object_name}));
 				if (element.rows) {
 					oRow.addCell(new sap.m.Text({text: element.rows.length}));
@@ -1766,3 +1697,5 @@ const exfLauncher = {};
 		_bLowSpeed = false;
 	}
 }).apply(exfLauncher);
+
+window['exfLauncher'] = exfLauncher;

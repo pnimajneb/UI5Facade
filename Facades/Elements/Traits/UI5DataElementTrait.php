@@ -1,6 +1,7 @@
 <?php
 namespace exface\UI5Facade\Facades\Elements\Traits;
 
+use exface\Core\Interfaces\Widgets\iSupportMultiSelect;
 use exface\Core\Widgets\Data;
 use exface\Core\Widgets\DataTable;
 use exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface;
@@ -843,6 +844,7 @@ JS;
 
             {$this->buildJsBusyIconHide()};
             {$this->buildJsDataLoaderOnLoaded('oModel')}
+            {$this->buildJsMultiSelectionOnLoaded('oTable')};
 
 JS;
             
@@ -908,6 +910,43 @@ JS;
                 
 JS;
     }
+
+
+    protected function buildJsMultiSelectionOnLoaded(string $oTableJs)
+    {
+
+        $widget = $this->getWidget();
+        if ($widget instanceof iSupportMultiSelect && $widget->getMultiSelect() === true ) {
+
+            // Restore previous selection (however only if oTable._selectedObjects exists and, thus, the implementations supports this feature)
+            // TODO add support for selection restore to sap.ui.table.Table!
+            return <<<JS
+                setTimeout(function() {
+                    const aPrevSelectedRows = {$oTableJs}._selectedObjects;
+                    const aNowSelectedRows = {$this->buildJsGetRowsSelected($oTableJs)};
+                    const aRows = {$this->buildJsGetRowsAll($oTableJs)};
+                    if (aPrevSelectedRows === undefined) {
+                        return;
+                    }
+                    aNowSelectedRows.forEach(function (oRow) {
+                        var bSelected = aPrevSelectedRows.some(function (oSelectedRow) {
+                            return JSON.stringify(oSelectedRow) === JSON.stringify(oRow);
+                        });
+                        var iRowIdx = aRows.indexOf(oRow);
+                        if (bSelected) {
+                            {$this->buildJsSelectRowByIndex($oTableJs, 'iRowIdx', false, 'false')}
+                        } else {
+                            {$this->buildJsSelectRowByIndex($oTableJs, 'iRowIdx', true, 'false')}
+                        }
+                    });
+                });
+
+JS;
+        } else {
+            return '';
+        }
+    }
+
               
     /**
      * Returns a JS snippet to show a message instead of data: e.g. "Please set filters first"
@@ -1675,7 +1714,7 @@ JS;
     
     protected function buildJsEditableChangesGetter(string $oTableJs = null) : string
     {
-        return $this->buildJsEditableChangesModelGetter($oTableJs) . ".getProperty('/changes')";
+        return $this->buildJsEditableChangesModelGetter($oTableJs) . "?.getProperty('/changes')";
     }
     
     /**
@@ -2475,8 +2514,10 @@ JS;
      */
     public function buildJsResetter() : string
     {
-        $configuratorElement = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget());
-        return $this->buildJsDataResetter() . ';' . ($this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '') . ';' . $configuratorElement->buildJsResetter();
+        $resetConfiguratorJs = $this->getFacade()->getElement($this->getWidget()->getConfiguratorWidget())->buildJsResetter();
+        $resetEditableCellsJs = $this->isEditable() ? $this->buildJsEditableChangesWatcherReset() : '';
+        $resetQuickSearch = $this->hasQuickSearch() ? $this->getQuickSearchElement()->buildJsResetter() : '';
+        return $resetQuickSearch . ';' . $this->buildJsDataResetter() . ';' . $resetEditableCellsJs . ';' . $resetConfiguratorJs;
     }
     
     /**
@@ -2488,7 +2529,7 @@ JS;
         return <<<JS
 (function(oTable){
                 var oDataChanges = {$this->buildJsEditableChangesGetter('oTable')};
-                if (oDataChanges.length === 0) {
+                if (oDataChanges === undefined || oDataChanges.length === 0) {
                     return [];
                 }
                 return [

@@ -256,10 +256,10 @@ JS;
     {
         if ($this->isLabelRendered() === true || $this->getRenderCaptionAsLabel()) {
             if (! ($this->getWidget()->getHideCaption() === true || $this->getWidget()->isHidden())) {
-                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}').setRequired(" . ($required ? 'true' : 'false') . ");";
+                $requireLabelJs = "sap.ui.getCore().byId('{$this->getIdOfLabel()}')?.setRequired(" . ($required ? 'true' : 'false') . ");";
             }
         }
-        return "sap.ui.getCore().byId('{$this->getId()}').setRequired(" . ($required ? 'true' : 'false') . "); $requireLabelJs";
+        return "sap.ui.getCore().byId('{$this->getId()}')?.setRequired(" . ($required ? 'true' : 'false') . "); $requireLabelJs";
     }
     
     /**
@@ -400,7 +400,16 @@ JS;
             // The value-setter automatically performs validation. We don't need this unless the new value
             // is actually not empty.
             if ($staticDefault === null || $staticDefault === '') {
-                $js .= "\n\t(function(){var oCtrl = sap.ui.getCore().byId('{$this->getId()}'); if (oCtrl.setValueState !== undefined) {oCtrl.setValueState('None');} })();";
+                $js = str_replace("sap.ui.getCore().byId('{$this->getId()}')", 'oCtrl', $js);
+                $js = <<<JS
+
+    (function(oCtrl){
+        {$js} 
+        if (oCtrl.setValueState !== undefined) {
+            oCtrl.setValueState('None');
+        } 
+    })(sap.ui.getCore().byId('{$this->getId()}'));
+JS;
             }
         } else {
             $js = parent::buildJsResetter();
@@ -419,7 +428,7 @@ JS;
         $widget = $this->getWidget();
         
         if ($widget->getValueWidgetLink() !== null) {
-            return '';
+            return '[]';
         }
         
         if (! $this->isValueBoundToModel()) {
