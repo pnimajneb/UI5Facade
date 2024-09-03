@@ -428,7 +428,7 @@ JS;
         $widget = $this->getWidget();
         
         if ($widget->getValueWidgetLink() !== null) {
-            return '';
+            return '[]';
         }
         
         if (! $this->isValueBoundToModel()) {
