@@ -14,9 +14,9 @@ use exface\Core\Widgets\Value;
 class UI5DiffHtml extends UI5Value
 {
     // Defining constants to avoid typos.
-    const VAR_OLD = 'htmlOld';
-    const VAR_NEW = 'htmlNew';
-    const VAR_DIF = 'htmlDiff';
+    const VAR_OLD = 'sHtmlOld';
+    const VAR_NEW = 'sHtmlNew';
+    const VAR_DIF = 'sHtmlDiff';
 
     /**
      *
@@ -25,7 +25,7 @@ class UI5DiffHtml extends UI5Value
      */
     public function registerExternalModules(\exface\UI5Facade\Facades\Interfaces\UI5ControllerInterface $controller) : UI5AbstractElement
     {
-        $controller->addExternalModule('libs.exface.custom.htmlDiff', $this->getFacade()->buildUrlToSource('LIBS.HTMLDIFF.JS'));
+        $controller->addExternalModule('libs.exface.custom.htmlDiff', $this->getFacade()->buildUrlToSource('LIBS.HTMLDIFF.JS'), 'htmldiff');
         $controller->addExternalCss('vendor/exface/UI5Facade/Facades/js/HtmlDiff/HtmlDiff.css');
         return $this;
     }
@@ -103,6 +103,7 @@ JS;
         $titleLeft = $this->buildHtmlTitle($widget->getTitleColor("left"), $widget->getTitle("left"));
         $titleRight = $this->buildHtmlTitle($widget->getTitleColor("right"), $widget->getTitle("right"));
         return <<<JS
+
             var fnConstructor = function(mVal, sId, sTitle){
                 if(mVal === undefined || mVal === null) {
                     return '';

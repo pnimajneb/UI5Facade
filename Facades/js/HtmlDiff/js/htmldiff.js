@@ -979,11 +979,17 @@
     diff.calculateOperations = calculateOperations;
     diff.renderOperations = renderOperations;
 
+    /* This define branch caused a very strange error: for some reason, the `define` here seems 
+     * to interfere with the define in the ace editor. So if the htmldiff is loaded after ace
+     * (e.g. on a page with survey.js or other libs using ace), `define` is already implemented
+     * by ace.js where it is not expecting the syntax used here. This caused htmldiff being not
+     * available. 
     if (typeof define === 'function'){
         define([], function(){
           return diff;
         });
-    } else if (typeof module !== 'undefined' && module !== null){
+    } else */
+    if (typeof module !== 'undefined' && module !== null){
         module.exports = diff;
     } else {
         this.htmldiff = diff;
