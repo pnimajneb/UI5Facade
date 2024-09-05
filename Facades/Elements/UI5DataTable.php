@@ -190,16 +190,15 @@ JS;
         return <<<JS
         function (oEvent) {
             const oTable = oEvent.getSource();
-            const aAllItems = oTable.getItems();
-            const aSelectedRows = oTable.getSelectedItems();
-            const aAllObjects = aAllItems.map(oItem => {
-                return oItem.getBindingContext().getObject();
-            });
-            const aSelectedObjects = aSelectedRows.map(oItem => {
-                return oItem.getBindingContext().getObject();
-            });
-
+            const aAllObjects = {$this->buildJsGetRowsAll('oTable')};
             const newSelectedItemList = [];
+            const aSelectedObjects = oTable.getSelectedContexts().reduce(
+                function(aRows, oCtxt) {
+                    aRows.push(oCtxt.getObject()); 
+                    return aRows;
+                },
+                []
+            );
 
             (oTable._selectedObjects || []).forEach(oldItem => {
                 // Old item exist in current dynamic list
@@ -208,7 +207,7 @@ JS;
                     newSelectedItemList.push(oldItem);
                 }
             });
-
+            
             newSelectedItemList.push(...aSelectedObjects);
 
             oTable._selectedObjects = newSelectedItemList;
