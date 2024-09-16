@@ -111,21 +111,13 @@ const exfLauncher = {};
 
 
 	this.isNetworkSlow = function () {
-		// Check if the network speed is slow via browser API (Chrome, Opera, Edge)
-		if (navigator?.connection?.effectiveType) {
+		// Check if the network speed is slow via browser API (Chrome, Opera, Edge) 
+		if (navigator?.connection?.effectiveType) {  
 			return ['2g', 'slow-2g'].includes(navigator.connection.effectiveType);
 		}
 		// Check if the network speed is slow via network speed history (iOS, Android, Firefox)
-		else {
-			let customSpeed;
-			if (_speedHistory.indexOf(null) === -1) {
-				customSpeed = _speedHistory[_speedHistory.length - 1];
-			} else if (_speedHistory.indexOf(null) === 0) {
-				customSpeed = 100;
-			} else {
-				customSpeed = _speedHistory[_speedHistory.indexOf(null) - 1];
-			}
-			return customSpeed < 0.5;
+		else { 
+			return false;
 		}
 	}
 
@@ -282,26 +274,11 @@ const exfLauncher = {};
 					_oContextBar.refresh({});
 					return;
 				}
-
-				// exfLauncher.measureNetworkSpeed();
-
-				// if (window._oNetworkSpeedPoller) {
-				// 	clearInterval(window._oNetworkSpeedPoller);
-				// }
-
-				// window._oNetworkSpeedPoller = setInterval(function(){
-				// 	// IDEA: Measure network speed every 15 seconds
-				// 	exfLauncher.measureNetworkSpeed();
-				// }, 1000 * 60);
-
-				if (window._oNetworkSpeedPoller) {
-					clearInterval(window._oNetworkSpeedPoller);
-				}
-
+ 
 				window._oNetworkSpeedPoller = setInterval(function(){
-					// IDEA: Measure network speed every 15 seconds
+					// IDEA: Measure network speed every 5 seconds 
 					listNetworkStats();
-				}, 1000 * 15);
+				}, 1000 * 5);
 
 				setTimeout(function () {
 					// IDEA had to disable adding context bar extras to every request due to
@@ -537,28 +514,28 @@ const exfLauncher = {};
 		return speedClass;
 	};
 
-	this.measureNetworkSpeed = function () {
-		const startTime = new Date();
-		let endTime;
-		$.ajax({
-			type: 'GET',
-			url: `vendor/exface/UI5Facade/Facades/js/${SPEEDTEST_DUMMY_DATA_NAME}`,
-			dataType: 'json',
-			success: function (data, textStatus, jqXHR) {
-				endTime = new Date();
-				const contentLength = 50 * 1024; // 50KB
-				const durationMs = endTime - startTime; // Duration in milliseconds
-				const durationSeconds = durationMs / 1000; // Convert duration to seconds
-				const contentLengthBits = contentLength * 8; // Convert content length to bits
-				const speedMbps = (contentLengthBits / (durationSeconds * 1024 * 1024)).toFixed(1); // Calculate speed in Megabits per second (Mbit/s)
-				let speedClass;
-				exfLauncher.registerNetworkSpeed(speedMbps);
-			},
-			error: function (jqXHR, textStatus, errorThrown) {
-				console.error(errorThrown);
-			}
-		});
-	};
+	// this.measureNetworkSpeed = function () {
+	// 	const startTime = new Date();
+	// 	let endTime;
+	// 	$.ajax({
+	// 		type: 'GET',
+	// 		url: `vendor/exface/UI5Facade/Facades/js/${SPEEDTEST_DUMMY_DATA_NAME}`,
+	// 		dataType: 'json',
+	// 		success: function (data, textStatus, jqXHR) {
+	// 			endTime = new Date();
+	// 			const contentLength = 50 * 1024; // 50KB
+	// 			const durationMs = endTime - startTime; // Duration in milliseconds
+	// 			const durationSeconds = durationMs / 1000; // Convert duration to seconds
+	// 			const contentLengthBits = contentLength * 8; // Convert content length to bits
+	// 			const speedMbps = (contentLengthBits / (durationSeconds * 1024 * 1024)).toFixed(1); // Calculate speed in Megabits per second (Mbit/s)
+	// 			let speedClass;
+	// 			exfLauncher.registerNetworkSpeed(speedMbps);
+	// 		},
+	// 		error: function (jqXHR, textStatus, errorThrown) {
+	// 			console.error(errorThrown);
+	// 		}
+	// 	});
+	// };
 
 	this.toggleOnlineIndicator = function ({ lowSpeed = false } = {}) {
 		const isOnline = navigator.onLine && !lowSpeed;
@@ -1710,8 +1687,7 @@ const exfLauncher = {};
 
 var originalAjax = $.ajax;
 $.ajax = function (options) {
-	var startTime = new Date().getTime();
-	console.log('startTime : ', startTime);
+	var startTime = new Date().getTime(); 
 	// Calculate the request headers length
 	let requestHeadersLength = 0;
 	if (options.headers) {
@@ -1733,15 +1709,12 @@ $.ajax = function (options) {
 			// Record the response end time
 			let endTime = new Date().getTime();
 			console.log('endTime : ', endTime);
-
-			//********** */
+ 
 			// Check if the response is from cache; skip measurement if true
-			if (jqXHR.getResponseHeader('X-Cache') === 'HIT') {
-				console.log('Response from cache, speed measurement will not be performed.');
+			if (jqXHR.getResponseHeader('X-Cache') === 'HIT') { 
 				return; // Cancel measurement
 			}
-
-
+ 
 			// Retrieve the 'Server-Timing' header
 			let serverTimingHeader = jqXHR.getResponseHeader('Server-Timing');
 			let serverTimingValue = 0;
@@ -1750,78 +1723,41 @@ $.ajax = function (options) {
 			if (serverTimingHeader) {
 				let durMatch = serverTimingHeader.match(/dur=([\d\.]+)/);
 				if (durMatch) {
-					serverTimingValue = parseFloat(durMatch[1]);
-					console.log('serverTimingValue : ', serverTimingValue);
+					serverTimingValue = parseFloat(durMatch[1]); 
 				}
 			}
 
 			// Calculate the duration, adjusting for server processing time
 			let duration = (endTime - startTime - serverTimingValue) / 1000; // Convert to seconds
-			console.log('duration: endTime - startTime : ', (endTime - startTime) / 1000, ' seconds');
-			console.log('duration: (endTime - startTime - serverTimingValue) / 1000; // Convert to seconds : ', duration);
-
+	 
 			// Retrieve the Content-Length (size) of the response
 			let responseContentLength = parseInt(jqXHR.getResponseHeader('Content-Length')) || 0;
-			console.log('responseContentLength : ', responseContentLength);
-
+		 
 			// Calculate the length of response headers
 			let responseHeaders = jqXHR.getAllResponseHeaders(); // Retrieves all response headers as a string
 			let responseHeadersLength = new Blob([responseHeaders]).size * 8; // Calculate in bits
-			console.log('responseHeadersLength : Blob([responseHeaders]).size * 8; // Calculate in bits : ', responseHeadersLength);
-
+		 
 			// Calculate the total data size (request headers + request body + response headers + response body) in bits
 			let totalDataSize = (requestHeadersLength + requestContentLength + responseHeadersLength + responseContentLength * 8);
-			console.log('totalDataSize : (requestHeadersLength + requestContentLength + responseHeadersLength + responseContentLength * 8):', totalDataSize);
-
+		 
 			// Calculate internet speed in Mbps
 			let speedMbps = totalDataSize / (duration * 1000000);
-
-			console.log(`Internet Speed: ${speedMbps.toFixed(2)} Mbps`);
-
-
-
-			//*** Another calculation way***/
-			// var totalDuration = endTime - startTime;
-			// var serverTime = jqXHR.getResponseHeader('X-Response-Time');
-			// var contentLength = jqXHR.getResponseHeader('Content-Length');
-			// var cacheStatus = jqXHR.getResponseHeader('X-Cache');
-			// var allHeaders = jqXHR.getAllResponseHeaders();
-
-			// console.log('Total Duration:', totalDuration, 'ms');
-			// console.log('Server Time:', serverTime, 'ms');
-			// console.log('Content Length:', contentLength, 'bytes', '(' + (parseInt(contentLength) / 1024).toFixed(2) + ' KB)');
-			// console.log('Cache Status:', cacheStatus);
-
-
-			// console.log('All Headers Length:', allHeaders.length, 'bytes', '(' + (allHeaders.length / 1024).toFixed(2) + ' KB)');
-
-			// // Measuring speed
-			// var speedBps = (contentLength * 8) / (totalDuration / 1000);
-			// var speedMbpss = speedBps / 1000000;
-			// console.log('Download Speed:', speedMbpss.toFixed(2), 'Mbps');
-
-			// // Response body lenght log
-			// var responseBody = jqXHR.responseText;
-			// console.log('Response Body Length:', responseBody.length, 'bytes', '(' + (responseBody.length / 1024).toFixed(2) + ' KB)');
-
-			//**** */
-
+			speedMbps = speedMbps.toFixed(1);
+ 
 			// Retrieve the Content-Type from the headers or from the contentType property
 			let requestMimeType = options.contentType || (options.headers && options.headers['Content-Type']) || 'application/x-www-form-urlencoded; charset=UTF-8';
-			console.log('Request MIME Type (Content-Type): ', requestMimeType);
+			 
 
 			// check exfPWA library is exists
 			if (typeof exfPWA !== 'undefined') {
 				exfPWA.data.saveNetworkStat(new Date(endTime), speedMbps, requestMimeType, totalDataSize)
 					.then(function () {
-						console.log("Network stat saved successfully");
 						listNetworkStats();
 					})
 					.catch(function (error) {
 						console.error("Error saving network stat:", error);
 					});
-				console.log("Network Stat Cleanup Interval ID:", window.networkStatCleanupInterval);
-
+			  
 				// Set up periodic deletion if not already set
 				if (!window.networkStatCleanupInterval) {
 					window.networkStatCleanupInterval = setInterval(function () {
@@ -1865,12 +1801,10 @@ $.ajax = function (options) {
 
 function listNetworkStats() {
     exfPWA.data.getAllNetworkStats()
-        .then(stats => {
-            console.log("Saved network statistics:", stats);
+        .then(stats => { 
             // You can process or display the stats array here
             stats.forEach(stat => {
-				exfLauncher.registerNetworkSpeed(stat.speed);
-                //console.log(`Date: ${stat.time}, Speed: ${stat.speed} Mbps, MIME Type: ${stat.mime_type}`);
+				exfLauncher.registerNetworkSpeed(stat.speed); 
             });
         })
         .catch(error => {
