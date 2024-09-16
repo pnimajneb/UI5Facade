@@ -1707,8 +1707,7 @@ $.ajax = function (options) {
 	var newOptions = $.extend({}, options, {
 		success: function (data, textStatus, jqXHR) {
 			// Record the response end time
-			let endTime = new Date().getTime();
-			console.log('endTime : ', endTime);
+			let endTime = new Date().getTime(); 
  
 			// Check if the response is from cache; skip measurement if true
 			if (jqXHR.getResponseHeader('X-Cache') === 'HIT') { 
@@ -1788,7 +1787,7 @@ $.ajax = function (options) {
 			var tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 			exfPWA.data.deleteNetworkStatsBefore(tenMinutesAgo)
 				.then(function () {
-					console.log("Old network stats deleted successfully");
+					 
 				})
 				.catch(function (error) {
 					console.error("Error deleting old network stats:", error);
