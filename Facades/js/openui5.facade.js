@@ -62,8 +62,11 @@ const exfLauncher = {};
 
 	exfPWA.actionQueue.setTopics(['offline', 'ui5']);
 
-	const SPEEDTEST_DUMMY_DATA_NAME = 'speedtest.data.json';
 	const SPEED_HISTORY_ARRAY_LENGTH = 14;
+	const NETWORK_STATUS_ONLINE = 'online';
+	const NETWORK_STATUS_OFFLINE_FORCED = 'offline_forced';
+	const NETWORK_STATUS_OFFLINE_BAD_CONNECTION = 'offline_bad_connection';
+	const NETWORK_STATUS_OFFLINE = 'offline';
 
 	var _oShell = {};
 	var _oAppMenu;
@@ -110,15 +113,33 @@ const exfLauncher = {};
 	};
 
 
-	this.isNetworkSlow = function () {
-		// Check if the network speed is slow via browser API (Chrome, Opera, Edge) 
-		if (navigator?.connection?.effectiveType) {  
-			return ['2g', 'slow-2g'].includes(navigator.connection.effectiveType);
-		}
-		// Check if the network speed is slow via network speed history (iOS, Android, Firefox)
-		else { 
-			return false;
-		}
+	this.isNetworkSlow = function () { 
+			return exfPWA.data.getAllNetworkStats()
+				.then(stats => {
+					// If there are less than 10 data points, get all records; otherwise, get the last 10 records
+					const lastStats = stats.length >= 10 ? stats.slice(-10) : stats;
+
+					// Calculate the average speed
+					const averageSpeed = lastStats.reduce((sum, stat) => {
+						// Ensure stat.speed is a number
+						const speed = Number(stat.speed);
+						return isNaN(speed) ? sum : sum + speed;
+					}, 0) / lastStats.length;
+ 
+					if (averageSpeed > 0.5) {
+						// If the average speed is greater than 0.5
+						exfPWA.data.saveConnectionStatus(NETWORK_STATUS_ONLINE);
+						return false; // Network is fast
+					} else {
+						// If the average speed is 0.5 or less
+						exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION);
+						return true; // Network is slow
+					}
+				})
+				.catch(error => {
+					return false; // In case of error, default to fast
+				});
+		 
 	}
 
 
@@ -274,8 +295,8 @@ const exfLauncher = {};
 					_oContextBar.refresh({});
 					return;
 				}
- 
-				window._oNetworkSpeedPoller = setInterval(function(){
+
+				window._oNetworkSpeedPoller = setInterval(function () {
 					// IDEA: Measure network speed every 5 seconds 
 					listNetworkStats();
 				}, 1000 * 5);
@@ -513,30 +534,7 @@ const exfLauncher = {};
 		}
 		return speedClass;
 	};
-
-	// this.measureNetworkSpeed = function () {
-	// 	const startTime = new Date();
-	// 	let endTime;
-	// 	$.ajax({
-	// 		type: 'GET',
-	// 		url: `vendor/exface/UI5Facade/Facades/js/${SPEEDTEST_DUMMY_DATA_NAME}`,
-	// 		dataType: 'json',
-	// 		success: function (data, textStatus, jqXHR) {
-	// 			endTime = new Date();
-	// 			const contentLength = 50 * 1024; // 50KB
-	// 			const durationMs = endTime - startTime; // Duration in milliseconds
-	// 			const durationSeconds = durationMs / 1000; // Convert duration to seconds
-	// 			const contentLengthBits = contentLength * 8; // Convert content length to bits
-	// 			const speedMbps = (contentLengthBits / (durationSeconds * 1024 * 1024)).toFixed(1); // Calculate speed in Megabits per second (Mbit/s)
-	// 			let speedClass;
-	// 			exfLauncher.registerNetworkSpeed(speedMbps);
-	// 		},
-	// 		error: function (jqXHR, textStatus, errorThrown) {
-	// 			console.error(errorThrown);
-	// 		}
-	// 	});
-	// };
-
+  
 	this.toggleOnlineIndicator = function ({ lowSpeed = false } = {}) {
 		const isOnline = navigator.onLine && !lowSpeed;
 
@@ -1470,12 +1468,16 @@ const exfLauncher = {};
 	this.getTitle = function () {
 		switch (true) {
 			case !navigator.onLine:
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE);
 				return "Offline, No Internet";
 			case _forceOffline:
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_FORCED);
 				return "Offline, Forced";
 			case _autoOffline && _bLowSpeed:
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION);
 				return "Offline, Low Speed";
 			default:
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_ONLINE);
 				return "Online";
 		}
 	}
@@ -1687,7 +1689,7 @@ const exfLauncher = {};
 
 var originalAjax = $.ajax;
 $.ajax = function (options) {
-	var startTime = new Date().getTime(); 
+	var startTime = new Date().getTime();
 	// Calculate the request headers length
 	let requestHeadersLength = 0;
 	if (options.headers) {
@@ -1707,13 +1709,13 @@ $.ajax = function (options) {
 	var newOptions = $.extend({}, options, {
 		success: function (data, textStatus, jqXHR) {
 			// Record the response end time
-			let endTime = new Date().getTime(); 
- 
+			let endTime = new Date().getTime();
+
 			// Check if the response is from cache; skip measurement if true
-			if (jqXHR.getResponseHeader('X-Cache') === 'HIT') { 
+			if (jqXHR.getResponseHeader('X-Cache') === 'HIT') {
 				return; // Cancel measurement
 			}
- 
+
 			// Retrieve the 'Server-Timing' header
 			let serverTimingHeader = jqXHR.getResponseHeader('Server-Timing');
 			let serverTimingValue = 0;
@@ -1722,30 +1724,30 @@ $.ajax = function (options) {
 			if (serverTimingHeader) {
 				let durMatch = serverTimingHeader.match(/dur=([\d\.]+)/);
 				if (durMatch) {
-					serverTimingValue = parseFloat(durMatch[1]); 
+					serverTimingValue = parseFloat(durMatch[1]);
 				}
 			}
 
 			// Calculate the duration, adjusting for server processing time
 			let duration = (endTime - startTime - serverTimingValue) / 1000; // Convert to seconds
-	 
+
 			// Retrieve the Content-Length (size) of the response
 			let responseContentLength = parseInt(jqXHR.getResponseHeader('Content-Length')) || 0;
-		 
+
 			// Calculate the length of response headers
 			let responseHeaders = jqXHR.getAllResponseHeaders(); // Retrieves all response headers as a string
 			let responseHeadersLength = new Blob([responseHeaders]).size * 8; // Calculate in bits
-		 
+
 			// Calculate the total data size (request headers + request body + response headers + response body) in bits
 			let totalDataSize = (requestHeadersLength + requestContentLength + responseHeadersLength + responseContentLength * 8);
-		 
+
 			// Calculate internet speed in Mbps
 			let speedMbps = totalDataSize / (duration * 1000000);
 			speedMbps = speedMbps.toFixed(1);
- 
+
 			// Retrieve the Content-Type from the headers or from the contentType property
 			let requestMimeType = options.contentType || (options.headers && options.headers['Content-Type']) || 'application/x-www-form-urlencoded; charset=UTF-8';
-			 
+
 
 			// check exfPWA library is exists
 			if (typeof exfPWA !== 'undefined') {
@@ -1756,7 +1758,7 @@ $.ajax = function (options) {
 					.catch(function (error) {
 						console.error("Error saving network stat:", error);
 					});
-			  
+
 				// Set up periodic deletion if not already set
 				if (!window.networkStatCleanupInterval) {
 					window.networkStatCleanupInterval = setInterval(function () {
@@ -1787,7 +1789,7 @@ $.ajax = function (options) {
 			var tenMinutesAgo = new Date(Date.now() - 10 * 60 * 1000);
 			exfPWA.data.deleteNetworkStatsBefore(tenMinutesAgo)
 				.then(function () {
-					 
+
 				})
 				.catch(function (error) {
 					console.error("Error deleting old network stats:", error);
@@ -1799,17 +1801,17 @@ $.ajax = function (options) {
 };
 
 function listNetworkStats() {
-    exfPWA.data.getAllNetworkStats()
-        .then(stats => { 
-            // You can process or display the stats array here
-            stats.forEach(stat => {
-				exfLauncher.registerNetworkSpeed(stat.speed); 
-            });
-        })
-        .catch(error => {
-            console.error("An error occurred while listing network statistics:", error);
-        });
+	exfPWA.data.getAllNetworkStats()
+		.then(stats => {
+			// You can process or display the stats array here
+			stats.forEach(stat => {
+				exfLauncher.registerNetworkSpeed(stat.speed);
+			});
+		})
+		.catch(error => {
+			console.error("An error occurred while listing network statistics:", error);
+		});
 }
- 
+
 
 window['exfLauncher'] = exfLauncher;
