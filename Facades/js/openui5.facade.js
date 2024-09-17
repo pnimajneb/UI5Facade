@@ -111,8 +111,7 @@ const exfLauncher = {};
 			}
 		}, 5000);
 	};
-
-
+ 
 	this.isNetworkSlow = function () { 
 			return exfPWA.data.getAllNetworkStats()
 				.then(stats => {
