@@ -111,8 +111,24 @@ const exfLauncher = {};
 			}
 		}, 5000);
 	};
- 
-	this.isNetworkSlow = function () { 
+
+	this.isNetworkSlow = function () {
+		// Check if the network speed is slow via browser API (Chrome, Opera, Edge) 
+		if (navigator?.connection?.effectiveType) {
+			if (['2g', 'slow-2g'].includes(navigator.connection.effectiveType)) {
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION);
+				return true;
+			}  
+			else if (navigator.connection.downlink == 0) {
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE);
+			}
+			else {
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_ONLINE);
+				return false;
+			}
+		}
+		// Check if the network speed is slow via network speed history (iOS, Android, Firefox)
+		else {
 			return exfPWA.data.getAllNetworkStats()
 				.then(stats => {
 					// If there are less than 10 data points, get all records; otherwise, get the last 10 records
@@ -124,8 +140,8 @@ const exfLauncher = {};
 						const speed = Number(stat.speed);
 						return isNaN(speed) ? sum : sum + speed;
 					}, 0) / lastStats.length;
- 
-					if (averageSpeed > 0.5) {
+
+					if (averageSpeed > 0.1) {
 						// If the average speed is greater than 0.5
 						exfPWA.data.saveConnectionStatus(NETWORK_STATUS_ONLINE);
 						return false; // Network is fast
@@ -133,12 +149,12 @@ const exfLauncher = {};
 						// If the average speed is 0.5 or less
 						exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION);
 						return true; // Network is slow
-					}
+					} 
 				})
 				.catch(error => {
 					return false; // In case of error, default to fast
 				});
-		 
+		}
 	}
 
 
@@ -533,7 +549,7 @@ const exfLauncher = {};
 		}
 		return speedClass;
 	};
-  
+
 	this.toggleOnlineIndicator = function ({ lowSpeed = false } = {}) {
 		const isOnline = navigator.onLine && !lowSpeed;
 
