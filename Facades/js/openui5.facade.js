@@ -62,7 +62,7 @@ const exfLauncher = {};
 
 	exfPWA.actionQueue.setTopics(['offline', 'ui5']);
 
-	const SPEED_HISTORY_ARRAY_LENGTH = 14;
+	const SPEED_HISTORY_ARRAY_LENGTH = 120;
 	const NETWORK_STATUS_ONLINE = 'online';
 	const NETWORK_STATUS_OFFLINE_FORCED = 'offline_forced';
 	const NETWORK_STATUS_OFFLINE_BAD_CONNECTION = 'offline_bad_connection';
@@ -83,6 +83,10 @@ const exfLauncher = {};
 		}
 	};
 
+	// Reload context bar every 30 seconds
+	setInterval(function () {
+		exfLauncher.contextBar.load();
+	}, 30*1000);
 
 	this.initFastNetworkPoller = function () {
 		clearInterval(_oNetworkSpeedPoller);
@@ -95,7 +99,7 @@ const exfLauncher = {};
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initPoorNetworkPoller();
 			}
-		}, 5000);
+		}, 5*1000);
 	}
 
 	this.initPoorNetworkPoller = function () {
@@ -109,7 +113,7 @@ const exfLauncher = {};
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initFastNetworkPoller();
 			}
-		}, 5000);
+		}, 5*1000);
 	};
 
 	this.isNetworkSlow = function () {
@@ -740,6 +744,7 @@ const exfLauncher = {};
 								width: '100%',
 								height: '100px',
 								chartRangeMin: 0,
+								chartRangeMax: 10,
 								drawNormalOnTop: false,
 							});
 						}, 1000);
