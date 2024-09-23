@@ -62,7 +62,7 @@ const exfLauncher = {};
 
 	exfPWA.actionQueue.setTopics(['offline', 'ui5']);
 
-	const SPEED_HISTORY_ARRAY_LENGTH = 14;
+	const SPEED_HISTORY_ARRAY_LENGTH = 10 * 60; // seconds for 10 minutes
 	const NETWORK_STATUS_ONLINE = 'online';
 	const NETWORK_STATUS_OFFLINE_FORCED = 'offline_forced';
 	const NETWORK_STATUS_OFFLINE_BAD_CONNECTION = 'offline_bad_connection';
@@ -83,7 +83,12 @@ const exfLauncher = {};
 		}
 	};
 
+	// Reload context bar every 30 seconds
+	setInterval(function () {
+		exfLauncher.contextBar.load();
+	}, 30*1000);
 
+	// Check if network is fast again every 5 seconds
 	this.initFastNetworkPoller = function () {
 		clearInterval(_oNetworkSpeedPoller);
 		_oNetworkSpeedPoller = setInterval(function () {
@@ -95,9 +100,10 @@ const exfLauncher = {};
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initPoorNetworkPoller();
 			}
-		}, 5000);
+		}, 5*1000);
 	}
 
+	// Check if network is slow every 5 seconds
 	this.initPoorNetworkPoller = function () {
 		clearInterval(_oNetworkSpeedPoller);
 		_oNetworkSpeedPoller = setInterval(function () {
@@ -109,7 +115,7 @@ const exfLauncher = {};
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initFastNetworkPoller();
 			}
-		}, 5000);
+		}, 5*1000);
 	};
 
 	this.isNetworkSlow = function () {
@@ -740,6 +746,7 @@ const exfLauncher = {};
 								width: '100%',
 								height: '100px',
 								chartRangeMin: 0,
+								chartRangeMax: 10,
 								drawNormalOnTop: false,
 							});
 						}, 1000);
