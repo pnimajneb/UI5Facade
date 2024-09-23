@@ -1757,12 +1757,10 @@ $.ajax = function (options) {
 			let totalDataSize = (requestHeadersLength + requestContentLength + responseHeadersLength + responseContentLength * 8);
 
 			// Calculate internet speed in Mbps
-			let speedMbps = totalDataSize / (duration * 1000000);
-			speedMbps = speedMbps.toFixed(1);
+			let speedMbps = totalDataSize / (duration * 1000000); 
 
 			// Retrieve the Content-Type from the headers or from the contentType property
 			let requestMimeType = options.contentType || (options.headers && options.headers['Content-Type']) || 'application/x-www-form-urlencoded; charset=UTF-8';
-
 
 			// check exfPWA library is exists
 			if (typeof exfPWA !== 'undefined') {
