@@ -62,7 +62,7 @@ const exfLauncher = {};
 
 	exfPWA.actionQueue.setTopics(['offline', 'ui5']);
 
-	const SPEED_HISTORY_ARRAY_LENGTH = 120;
+	const SPEED_HISTORY_ARRAY_LENGTH = 14;
 	const NETWORK_STATUS_ONLINE = 'online';
 	const NETWORK_STATUS_OFFLINE_FORCED = 'offline_forced';
 	const NETWORK_STATUS_OFFLINE_BAD_CONNECTION = 'offline_bad_connection';
@@ -83,10 +83,6 @@ const exfLauncher = {};
 		}
 	};
 
-	// Reload context bar every 30 seconds
-	setInterval(function () {
-		exfLauncher.contextBar.load();
-	}, 30*1000);
 
 	this.initFastNetworkPoller = function () {
 		clearInterval(_oNetworkSpeedPoller);
@@ -99,7 +95,7 @@ const exfLauncher = {};
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initPoorNetworkPoller();
 			}
-		}, 5*1000);
+		}, 5000);
 	}
 
 	this.initPoorNetworkPoller = function () {
@@ -113,7 +109,7 @@ const exfLauncher = {};
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initFastNetworkPoller();
 			}
-		}, 5*1000);
+		}, 5000);
 	};
 
 	this.isNetworkSlow = function () {
@@ -122,7 +118,7 @@ const exfLauncher = {};
 			if (['2g', 'slow-2g'].includes(navigator.connection.effectiveType)) {
 				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION);
 				return true;
-			}  
+			}
 			else if (navigator.connection.downlink == 0) {
 				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE);
 			}
@@ -153,7 +149,7 @@ const exfLauncher = {};
 						// If the average speed is 0.5 or less
 						exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION);
 						return true; // Network is slow
-					} 
+					}
 				})
 				.catch(error => {
 					return false; // In case of error, default to fast
@@ -744,7 +740,6 @@ const exfLauncher = {};
 								width: '100%',
 								height: '100px',
 								chartRangeMin: 0,
-								chartRangeMax: 10,
 								drawNormalOnTop: false,
 							});
 						}, 1000);
@@ -1762,12 +1757,10 @@ $.ajax = function (options) {
 			let totalDataSize = (requestHeadersLength + requestContentLength + responseHeadersLength + responseContentLength * 8);
 
 			// Calculate internet speed in Mbps
-			let speedMbps = totalDataSize / (duration * 1000000);
-			speedMbps = speedMbps.toFixed(1);
+			let speedMbps = totalDataSize / (duration * 1000000); 
 
 			// Retrieve the Content-Type from the headers or from the contentType property
 			let requestMimeType = options.contentType || (options.headers && options.headers['Content-Type']) || 'application/x-www-form-urlencoded; charset=UTF-8';
-
 
 			// check exfPWA library is exists
 			if (typeof exfPWA !== 'undefined') {
@@ -1820,18 +1813,73 @@ $.ajax = function (options) {
 	return originalAjax.call(this, newOptions);
 };
 
+ 
 function listNetworkStats() {
 	exfPWA.data.getAllNetworkStats()
 		.then(stats => {
-			// You can process or display the stats array here
+			// Check if there are any statistics available
+			if (stats.length === 0) {
+				console.error("No network statistics available.");
+				return; // Exit if there are no stats
+			}
+
+			// Sort the statistics by time (oldest to newest)
+			stats.sort((a, b) => a.time - b.time);
+
+			const averageSpeeds = {};
+			const currentSecond = Math.floor(Date.now() / 1000); // Get current time in seconds
+			const earliestSecond = Math.floor(stats[0].time / 1000); // Earliest timestamp (first element)
+			const latestSecond = Math.floor(stats[stats.length - 1].time / 1000); // Latest timestamp (last element)
+
+			// Group speeds by second
 			stats.forEach(stat => {
-				exfLauncher.registerNetworkSpeed(stat.speed);
+				const requestTimeInSeconds = Math.floor(stat.time / 1000); // Convert timestamp to seconds
+				if (!averageSpeeds[requestTimeInSeconds]) {
+					averageSpeeds[requestTimeInSeconds] = []; // Initialize array if it doesn't exist
+				}
+				averageSpeeds[requestTimeInSeconds].push(stat.speed); // Collect speeds for this second
+			});
+
+			const secondsToProcess = latestSecond - earliestSecond; // Calculate the number of seconds to process
+
+			const result = {};
+			let lastKnownSpeed = 0; // Variable to store the last known speed
+
+			// Iterate over each second from earliest to latest
+			for (let i = 0; i <= secondsToProcess; i++) {
+				const second = earliestSecond + i; // Get the second to process
+
+				if (averageSpeeds[second]) {
+					// Filter out any NaN values from the speeds and convert to doubles
+					const validSpeeds = averageSpeeds[second].filter(speed => {
+						const isValid = !isNaN(speed); // Check if speed is not NaN
+						if (!isValid) {
+							console.warn(`Invalid speed detected: ${speed} at second ${second}`);
+						}
+						return isValid; // Return valid speeds
+					}).map(speed => parseFloat(speed)); // Convert to floating-point numbers
+				
+					if (validSpeeds.length > 0) {
+						// Calculate the average speed from valid speeds
+						const avgSpeed = validSpeeds.reduce((a, b) => a + b, 0) / validSpeeds.length;
+						result[second] = avgSpeed; // Store the average speed for this second
+						lastKnownSpeed = avgSpeed; // Update the last known speed
+					} else {
+						result[second] = lastKnownSpeed; // Use the last known speed if no valid speeds
+					}
+				} else {
+					result[second] = lastKnownSpeed; // If no data for this second, use last known speed
+				}
+			}
+
+			// Register each calculated speed
+			Object.keys(result).forEach(second => {
+				exfLauncher.registerNetworkSpeed(result[second]);
 			});
 		})
 		.catch(error => {
 			console.error("An error occurred while listing network statistics:", error);
 		});
 }
-
 
 window['exfLauncher'] = exfLauncher;
