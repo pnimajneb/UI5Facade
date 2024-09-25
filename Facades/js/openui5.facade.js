@@ -1587,7 +1587,7 @@ const exfLauncher = {};
 									}),
 									items: [
 										new sap.m.Switch('auto_offline_toggle', {
-											state: _autoOffline,
+											state: true,
 											disabled: !navigator.onLine,
 											change: function (oEvent) {
 												var oSwitch = oEvent.getSource();
@@ -1649,6 +1649,23 @@ const exfLauncher = {};
 			})
 				.setModel(oButton.getModel())
 				.setModel(oButton.getModel('i18n'), 'i18n');
+
+			// Fetch and set the auto offline toggle status
+			if (exfPWA && exfPWA.data && typeof exfPWA.data.getAutoOfflineToggleStatus === 'function') {
+				exfPWA.data.getAutoOfflineToggleStatus()
+					.then(function (status) {
+						var autoOfflineSwitch = sap.ui.getCore().byId('auto_offline_toggle');
+						if (autoOfflineSwitch) {
+							autoOfflineSwitch.setState(status);
+							_autoOffline = status;
+						}
+					})
+					.catch(function (error) {
+						console.error('Error fetching auto offline toggle status:', error);
+					});
+			} else {
+				console.error('getAutoOfflineToggleStatus function is not available');
+			}
 		}
 
 		jQuery.sap.delayedCall(0, this, function () {
@@ -1683,10 +1700,39 @@ const exfLauncher = {};
 		sap.ui.getCore().byId('auto_offline_toggle').setEnabled(true);
 	}
 
+
+	/**
+ * Updates the auto offline toggle status in IndexedDB
+ * @param {boolean} status - The status to set (true for enabled, false for disabled)
+ * @returns {Promise} A promise that resolves when the update is complete
+ */
+	function updateAutoOfflineToggleStatus(status) {
+		return new Promise((resolve, reject) => {
+			if (exfPWA && exfPWA.data && typeof exfPWA.data.saveAutoOfflineToggleStatus === 'function') {
+				exfPWA.data.saveAutoOfflineToggleStatus(status)
+					.then(() => {
+						console.log(`Auto offline toggle status updated to ${status}`);
+						resolve();
+					})
+					.catch((error) => {
+						console.error('Error updating auto offline toggle status:', error);
+						reject(error);
+					});
+			} else {
+				const error = new Error('exfPWA.data.saveAutoOfflineToggleStatus is not available');
+				console.error(error.message);
+				reject(error);
+			}
+		});
+	}
+
 	this.toggleAutoOfflineOn = function () {
 		exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_ON"));
 		exfLauncher.initPoorNetworkPoller()
 		_autoOffline = true;
+
+		updateAutoOfflineToggleStatus(true)
+			.catch(error => console.error('Failed to update auto offline toggle status:', error));
 	}
 
 	this.toggleAutoOfflineOff = function () {
@@ -1698,6 +1744,10 @@ const exfLauncher = {};
 			exfLauncher.toggleOnlineIndicator({ lowSpeed: false });
 		}
 		_bLowSpeed = false;
+
+		// Update autoOfflineToggle status in IndexedDB
+		updateAutoOfflineToggleStatus(false)
+			.catch(error => console.error('Failed to update auto offline toggle status:', error));
 	}
 }).apply(exfLauncher);
 
@@ -1757,7 +1807,7 @@ $.ajax = function (options) {
 			let totalDataSize = (requestHeadersLength + requestContentLength + responseHeadersLength + responseContentLength * 8);
 
 			// Calculate internet speed in Mbps
-			let speedMbps = totalDataSize / (duration * 1000000); 
+			let speedMbps = totalDataSize / (duration * 1000000);
 
 			// Retrieve the Content-Type from the headers or from the contentType property
 			let requestMimeType = options.contentType || (options.headers && options.headers['Content-Type']) || 'application/x-www-form-urlencoded; charset=UTF-8';
@@ -1813,7 +1863,7 @@ $.ajax = function (options) {
 	return originalAjax.call(this, newOptions);
 };
 
- 
+
 function listNetworkStats() {
 	exfPWA.data.getAllNetworkStats()
 		.then(stats => {
@@ -1858,7 +1908,7 @@ function listNetworkStats() {
 						}
 						return isValid; // Return valid speeds
 					}).map(speed => parseFloat(speed)); // Convert to floating-point numbers
-				
+
 					if (validSpeeds.length > 0) {
 						// Calculate the average speed from valid speeds
 						const avgSpeed = validSpeeds.reduce((a, b) => a + b, 0) / validSpeeds.length;
