@@ -1874,6 +1874,9 @@ $.ajax = function (options) {
 function listNetworkStats() {
 	exfPWA.data.getAllNetworkStats()
 		.then(stats => {
+			if (exfPWA.isAvailable() === false) {
+				return;
+			}
 			// Check if there are any statistics available
 			if (stats.length === 0) {
 				console.error("No network statistics available.");
