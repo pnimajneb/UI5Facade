@@ -83,34 +83,94 @@ const exfLauncher = {};
 		}
 	};
 
+	var _lastNetworkState = {
+		isLowSpeed: false,
+		isOnline: true,
+		isAutoOffline: false
+	};
 
-	this.initFastNetworkPoller = function () {
-		clearInterval(_oNetworkSpeedPoller);
-		_oNetworkSpeedPoller = setInterval(function () {
-			if (!exfLauncher.isNetworkSlow() && _bLowSpeed) {
-				exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_STABLE_INTERNET"));
-				exfLauncher.toggleOnlineIndicator();
-				exfLauncher.revertMockNetworkError();
-				_bLowSpeed = false;
-				clearInterval(_oNetworkSpeedPoller);
-				exfLauncher.initPoorNetworkPoller();
+	// Ağ durumunu başlat
+    initNetworkState();
+
+	function updateNetworkState(isLowSpeed, isAutoOffline) {
+		var isOnline = navigator.onLine;
+		var currentState = {
+			isLowSpeed: isLowSpeed,
+			isOnline: isOnline,
+			isAutoOffline: isAutoOffline
+		};
+
+		var shouldUpdateUI = JSON.stringify(currentState) !== JSON.stringify(_lastNetworkState);
+
+		if (shouldUpdateUI) {
+			if (currentState.isOnline) {
+				if (currentState.isLowSpeed && currentState.isAutoOffline) {
+					exfLauncher.toggleOnlineIndicator({ lowSpeed: true });
+					exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_SLOW_INTERNET"));
+				} else {
+					exfLauncher.toggleOnlineIndicator({ lowSpeed: false });
+					if (_lastNetworkState.isLowSpeed || !_lastNetworkState.isOnline) {
+						exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_STABLE_INTERNET"));
+					}
+				}
+			} else {
+				exfLauncher.toggleOnlineIndicator({ lowSpeed: false });
+				exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.NETWORK.OFFLINE"));
 			}
-		}, 5000);
+
+			if (currentState.isLowSpeed && currentState.isAutoOffline) {
+				exfLauncher.mockNetworkError();
+			} else {
+				exfLauncher.revertMockNetworkError();
+			}
+
+			_lastNetworkState = currentState;
+		}
 	}
+
 
 	this.initPoorNetworkPoller = function () {
 		clearInterval(_oNetworkSpeedPoller);
 		_oNetworkSpeedPoller = setInterval(function () {
-			if (exfLauncher.isNetworkSlow()) {
-				exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_SLOW_INTERNET"));
-				exfLauncher.toggleOnlineIndicator({ lowSpeed: true });
-				exfLauncher.mockNetworkError();
+			var isNetworkSlow = exfLauncher.isNetworkSlow();
+			
+
+			if (isNetworkSlow && _autoOffline) {
+				updateNetworkState(isNetworkSlow, _autoOffline);
 				_bLowSpeed = true;
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initFastNetworkPoller();
 			}
 		}, 5000);
 	};
+
+	this.initFastNetworkPoller = function () {
+		clearInterval(_oNetworkSpeedPoller);
+		_oNetworkSpeedPoller = setInterval(function () {
+			var isNetworkSlow = exfLauncher.isNetworkSlow();
+			updateNetworkState(isNetworkSlow, _autoOffline);
+
+			if (!isNetworkSlow || !_autoOffline) {
+				_bLowSpeed = false;
+				clearInterval(_oNetworkSpeedPoller);
+				exfLauncher.initPoorNetworkPoller();
+			}
+		}, 5000);
+	};
+
+	// Function to initialize the network state
+	function initNetworkState() {
+		exfPWA.data.getAutoOfflineToggleStatus()
+			.then(function (autoOfflineStatus) {
+				_autoOffline = autoOfflineStatus;
+				updateNetworkState(exfLauncher.isNetworkSlow(), _autoOffline);
+				exfLauncher.initPoorNetworkPoller();
+			})
+			.catch(function (error) {
+				console.error("Error initializing network state:", error);
+				exfLauncher.initPoorNetworkPoller();
+			});
+	}
 
 	this.isNetworkSlow = function () {
 		// Check if the network speed is slow via browser API (Chrome, Opera, Edge) 
@@ -156,17 +216,22 @@ const exfLauncher = {};
 				});
 		}
 	}
-
-
+ 
 	this.isVirtualOffline = function () {
-		return _bLowSpeed || _forceOffline;
+		return _bLowSpeed || _forceOffline || exfPWA.isVirtuallyOffline;
 	};
 
-	this.isOnline = function () {
-		return !_bLowSpeed && !_forceOffline && navigator.onLine;
+	 
+	this.isSemiOffline = async function () {
+		return await exfPWA.isSemiOffline();
 	};
 
-	// Revert network functions to original
+ 
+	this.isOnline = async function () {
+		return !await this.isVirtualOffline() && navigator.onLine;
+	};
+
+ 
 	this.revertMockNetworkError = function () {
 		NetworkUtils.disableFetchMock();
 		NetworkUtils.disableXhrMock();
@@ -174,14 +239,15 @@ const exfLauncher = {};
 			syncOfflineItems();
 		}, 100);
 		ServiceWorkerUtils.message({ action: 'virtuallyOfflineDisabled' });
+		exfPWA.setVirtuallyOffline(false);
 	};
 
-	// Simulate network error in poor network speeds, except for specific URLs
+	// Simulate network error in poor network speeds, except for specific URLs 
 	this.mockNetworkError = function () {
-		// Store original network functions
 		NetworkUtils.enableXhrMock();
 		NetworkUtils.enableFetchMock();
 		ServiceWorkerUtils.message({ action: 'virtuallyOfflineEnabled' });
+		exfPWA.setVirtuallyOffline(true);
 	};
 
 	this.getShell = function () {
@@ -1672,33 +1738,34 @@ const exfLauncher = {};
 			oPopover.openBy(oButton);
 		});
 	};
+
+	//modified
 	this.toggleForceOfflineOn = function () {
 		exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.FORCE_OFFLINE_ON"));
-		// mock api with error function, if it is not already mocked via low speed
 		if (!_bLowSpeed) {
 			exfLauncher.mockNetworkError();
 		} else {
 			_bLowSpeed = false;
 		}
-		// clear auto low speed poller
 		clearInterval(_oNetworkSpeedPoller);
 		_forceOffline = true;
 		exfLauncher.toggleOnlineIndicator({ lowSpeed: true });
 		sap.ui.getCore().byId('auto_offline_toggle').setEnabled(false);
-	}
-
+		exfPWA.setVirtuallyOffline(true);
+	};
+	//modified
 	this.toggleForceOfflineOff = function () {
 		exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.FORCE_OFFLINE_OFF"));
 		exfLauncher.revertMockNetworkError()
 		_bLowSpeed = false;
 		_forceOffline = false;
-		// restart auto low speed poller
 		if (_autoOffline) {
 			exfLauncher.initPoorNetworkPoller()
 		}
 		exfLauncher.toggleOnlineIndicator();
 		sap.ui.getCore().byId('auto_offline_toggle').setEnabled(true);
-	}
+		exfPWA.setVirtuallyOffline(false);
+	};
 
 
 	/**
@@ -1727,28 +1794,38 @@ const exfLauncher = {};
 	}
 
 	this.toggleAutoOfflineOn = function () {
-		exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_ON"));
-		exfLauncher.initPoorNetworkPoller()
-		_autoOffline = true;
-
-		updateAutoOfflineToggleStatus(true)
-			.catch(error => console.error('Failed to update auto offline toggle status:', error));
-	}
+		exfPWA.data.saveAutoOfflineToggleStatus(true)
+			.then(function () {
+				_autoOffline = true;
+				updateNetworkState(exfLauncher.isNetworkSlow(), _autoOffline);
+				exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_ON"));
+				exfLauncher.initPoorNetworkPoller();
+			})
+			.catch(function (error) {
+				console.error("Error saving auto offline toggle status:", error);
+				exfLauncher.showMessageToast("Error turning on auto offline mode");
+			});
+	};
 
 	this.toggleAutoOfflineOff = function () {
-		exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_OFF"));
-		_autoOffline = false;
-		clearInterval(_oNetworkSpeedPoller);
-		if (_bLowSpeed) {
-			exfLauncher.revertMockNetworkError();
-			exfLauncher.toggleOnlineIndicator({ lowSpeed: false });
-		}
-		_bLowSpeed = false;
-
-		// Update autoOfflineToggle status in IndexedDB
-		updateAutoOfflineToggleStatus(false)
-			.catch(error => console.error('Failed to update auto offline toggle status:', error));
-	}
+		exfPWA.data.saveAutoOfflineToggleStatus(false)
+			.then(function () {
+				_autoOffline = false;
+				updateNetworkState(exfLauncher.isNetworkSlow(), _autoOffline);
+				exfLauncher.showMessageToast(exfLauncher.contextBar.getComponent().getModel('i18n').getProperty("WEBAPP.SHELL.PWA.AUTOMATIC_OFFLINE_OFF"));
+				clearInterval(_oNetworkSpeedPoller);
+				if (_bLowSpeed) {
+					exfLauncher.revertMockNetworkError();
+					exfLauncher.toggleOnlineIndicator({ lowSpeed: false });
+				}
+				_bLowSpeed = false;
+				exfLauncher.initPoorNetworkPoller();
+			})
+			.catch(function (error) {
+				console.error("Error saving auto offline toggle status:", error);
+				exfLauncher.showMessageToast("Error turning off auto offline mode");
+			});
+	};
 }).apply(exfLauncher);
 
 
@@ -1868,8 +1945,7 @@ function listNetworkStats() {
 	exfPWA.data.getAllNetworkStats()
 		.then(stats => {
 			// Check if there are any statistics available
-			if (stats.length === 0) {
-				console.error("No network statistics available.");
+			if (stats.length === 0) { 
 				return; // Exit if there are no stats
 			}
 
