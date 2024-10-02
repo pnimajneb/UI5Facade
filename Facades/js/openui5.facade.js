@@ -89,7 +89,7 @@ const exfLauncher = {};
 		isAutoOffline: false
 	};
 
-	// Ağ durumunu başlat
+	// Start Network State
     initNetworkState();
 
 	function updateNetworkState(isLowSpeed, isAutoOffline) {
