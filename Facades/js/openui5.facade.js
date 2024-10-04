@@ -1556,7 +1556,7 @@ const exfLauncher = {};
 				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION);
 				return "Offline, Low Speed";
 			case _autoOffline && !_bLowSpeed:
-				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION); //
+				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_OFFLINE_BAD_CONNECTION); ///
 				return "Offline, Low Speed";
 			default:
 				exfPWA.data.saveConnectionStatus(NETWORK_STATUS_ONLINE);
