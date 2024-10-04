@@ -171,7 +171,7 @@ const exfLauncher = {};
 				console.error("Error initializing network state:", error);
 				exfLauncher.initPoorNetworkPoller();
 			});
-	}
+	};
 
 	this.isNetworkSlow = function () {
 		// Check if the network speed is slow via browser API (Chrome, Opera, Edge) 
@@ -216,7 +216,7 @@ const exfLauncher = {};
 					return false; // In case of error, default to fast
 				});
 		}
-	}
+	};
 
 	this.isVirtualOffline = function () {
 		return _bLowSpeed || _forceOffline || exfPWA.isVirtuallyOffline;
