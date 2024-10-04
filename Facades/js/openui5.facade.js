@@ -62,7 +62,7 @@ const exfLauncher = {};
 
 	exfPWA.actionQueue.setTopics(['offline', 'ui5']);
 
-	const SPEED_HISTORY_ARRAY_LENGTH = 14;
+	const SPEED_HISTORY_ARRAY_LENGTH = 10 * 60; // seconds for 10 minutes
 	const NETWORK_STATUS_ONLINE = 'online';
 	const NETWORK_STATUS_OFFLINE_FORCED = 'offline_forced';
 	const NETWORK_STATUS_OFFLINE_BAD_CONNECTION = 'offline_bad_connection';
@@ -82,6 +82,11 @@ const exfLauncher = {};
 			refreshWaitSeconds: 5
 		}
 	};
+  
+	// Reload context bar every 30 seconds
+	setInterval(function () {
+		exfLauncher.contextBar.load();
+	}, 30*1000);
 
 	var _lastNetworkState = {
 		isLowSpeed: false,
@@ -123,11 +128,9 @@ const exfLauncher = {};
 			} else {
 				exfLauncher.revertMockNetworkError();
 			}
-
 			_lastNetworkState = currentState;
 		}
-	}
-
+	};
 
 	this.initPoorNetworkPoller = function () {
 		clearInterval(_oNetworkSpeedPoller);
@@ -141,7 +144,7 @@ const exfLauncher = {};
 				clearInterval(_oNetworkSpeedPoller);
 				exfLauncher.initFastNetworkPoller();
 			}
-		}, 5000);
+		}, 5*1000);
 	};
 
 	this.initFastNetworkPoller = function () {
@@ -806,6 +809,7 @@ const exfLauncher = {};
 								width: '100%',
 								height: '100px',
 								chartRangeMin: 0,
+								chartRangeMax: 10,
 								drawNormalOnTop: false,
 							});
 						}, 1000);
@@ -1944,6 +1948,9 @@ $.ajax = function (options) {
 function listNetworkStats() {
 	exfPWA.data.getAllNetworkStats()
 		.then(stats => {
+			if (exfPWA.isAvailable() === false) {
+				return;
+			}
 			// Check if there are any statistics available
 			if (stats.length === 0) { 
 				return; // Exit if there are no stats
