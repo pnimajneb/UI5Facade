@@ -308,12 +308,14 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .sapMTileCntContent > .sapMImageContent > img {filter: invert(47%) sepia(36%) saturate(427%) hue-rotate(169deg) brightness(92%) contrast(94%);}
 .sapUiIcon.exf-svg-icon::before {padding-top: 1px; width: 16px; display: block; margin-left: auto; margin-right: auto;}
 .sapUiTableCellInner > .sapUiIcon::before {padding-top: 2px}
+#xf8310d4bba2c11e7895fe4b318306b9a__NavTiles_Tiles02-header {margin-top:60px}
 
 /* NavTiles IconTabBar */
-.tileHeaderMarginTop {margin-top: 50px;}
 .customHeader {box-shadow: none;}
-.responsiveFlexbox {position: sticky; z-index: 1000; width: auto;}
-@media (max-width: 966px) {
-    .responsiveFlexbox {flex-direction: column;}
-    .customSearchField {padding-left: 16px;padding-right: 16px;}
+.responsiveFlexbox {position: fixed; z-index: 1; width: 100%;}
+@media (max-width: 1030px) {
+    .responsiveFlexbox {flex-direction: column;min-height: 6rem;}
+    .sapUiSizeCompact .sapMSF {padding-top: 4px;}
+    .sapMPanel.sapUiNoContentPadding > .sapMPanelContent {scroll-padding-top: 100px}
+    #xf8310d4bba2c11e7895fe4b318306b9a__NavTiles_Tiles02-header {margin-top:110px}
 }
