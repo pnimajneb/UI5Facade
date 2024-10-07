@@ -308,14 +308,22 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .sapMTileCntContent > .sapMImageContent > img {filter: invert(47%) sepia(36%) saturate(427%) hue-rotate(169deg) brightness(92%) contrast(94%);}
 .sapUiIcon.exf-svg-icon::before {padding-top: 1px; width: 16px; display: block; margin-left: auto; margin-right: auto;}
 .sapUiTableCellInner > .sapUiIcon::before {padding-top: 2px}
-#xf8310d4bba2c11e7895fe4b318306b9a__NavTiles_Tiles02-header {margin-top:60px}
 
-/* NavTiles IconTabBar */
+/* NavTiles IconTabBar & SearchFilter */
+#xf8310d4bba2c11e7895fe4b318306b9a__NavTiles-content {scroll-padding-top: 50px;}
 .customHeader {box-shadow: none;}
-.responsiveFlexbox {position: fixed; z-index: 1; width: 100%;}
+.responsiveFlexbox {position: fixed; z-index: 1; width: 100%; justify-content: space-between; padding-right:1rem;}
 @media (max-width: 1030px) {
-    .responsiveFlexbox {flex-direction: column;min-height: 6rem;}
-    .sapUiSizeCompact .sapMSF {padding-top: 4px;}
-    .sapMPanel.sapUiNoContentPadding > .sapMPanelContent {scroll-padding-top: 100px}
-    #xf8310d4bba2c11e7895fe4b318306b9a__NavTiles_Tiles02-header {margin-top:110px}
+    .responsiveFlexbox {flex-direction: column;padding-bottom: 12px;}
+    #xf8310d4bba2c11e7895fe4b318306b9a__NavTiles-content {scroll-padding-top: 90px;}
+    #__field0 {padding-left: 1rem;}
 }
+
+/* NavTiles SearchFilter */
+#__field0-reset::after {vertical-align: text-top;}
+#__field0-search::after {vertical-align: text-top;}
+#__field0-I {vertical-align: text-top;}
+#__field0-F {height: 2rem;}
+#__field0 {padding-top: 6px;}
+
+
