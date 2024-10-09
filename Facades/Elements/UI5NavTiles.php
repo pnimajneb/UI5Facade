@@ -69,7 +69,7 @@ JS;
     {
         $this->getController()->addOnEventScript($this, 'TabSelect', <<<JS
 
-            // get the selected key
+            // Get the selected key
             var sKey = oEvent.getParameter("key");
 
              // Find the corresponding panel that matches the key dynamically
@@ -82,7 +82,7 @@ JS);
 
         $this->getController()->addOnEventScript($this, 'FilterTiles', <<<JS
             
-            // get search query
+            // Get search query
             const sQuery = oEvent.getParameter("newValue");
         
             // Retrieve all panel IDs and slice to remove the first two IDs
@@ -92,54 +92,37 @@ JS);
             return oPanel.getId();
             }).slice(2);
         
-            // looping through each panel and filter based on tiles header names
+            // Looping through each panel and filter based on tiles header names and content text
             aPanelIds.forEach(function(sPanelId) {
-            // retrieving the panel control based on the ID
-            var oPanel = sap.ui.getCore().byId(sPanelId);
-            // aTiles is an array of GenericTile controls 
-            var aTiles = oPanel.getContent();
-            var bAnyTileVisible = false;
+                // Retrieving the panel control based on the ID
+                var oPanel = sap.ui.getCore().byId(sPanelId)
+                var aTiles = oPanel.getContent();
+                var bAnyTileVisible = false;
         
-            aTiles.forEach(function(oTile) {
-                // Retrieve the header text of the current GenericTile (oTile)
-                var sTileHeader = oTile.getHeader();
-                // Retrieve the TileContent aggregation (it's an array)
-                var aTileContent = oTile.getTileContent();
-                var sContentText = ''; // To hold the content text
-                        
-                // Loop through the TileContent array
-                aTileContent.forEach(function(oTileContent) {
-                    var oContent = oTileContent.getContent(); // Get the content (could be FeedContent, Text, etc.)
-                            console.log(oContent);
-                    if (oContent) {
-                        if (oContent.isA("sap.m.FeedContent")) {
-                            sContentText = oContent.getContentText(); // Get content text from FeedContent
-                        } else if (oContent.isA("sap.m.Text")) {
-                            sContentText = oContent.getText(); // Get text if it's a sap.m.Text control
-                        } else {
-                            console.log("Different content type found:", oContent);
-                        }
-                    } else {
-                        console.log("No content found for this tile content.");
-                    }
-                });
-            
-                // Log the retrieved header and content text
-                console.log("Tile Header: ", sTileHeader);
-                console.log("Tile Content: ", sContentText);
-            
-                // if the header text or content text contains the search query, set the tile to visible
-                var bVisible = !!(sTileHeader.toLowerCase().indexOf(sQuery.toLowerCase()) !== -1 || (sContentText && sContentText.toLowerCase().indexOf(sQuery.toLowerCase()) !== -1));
-                
-                // If at least one tile is visible, set the panel to visible
-                if (bVisible) {
-                    bAnyTileVisible = true;
-                }
-                // Set visibility of the tile
-                oTile.setVisible(bVisible);
-            });
+                aTiles.forEach(function(oTile) {
+                    var sTileHeader = oTile.getHeader();
+                    var aTileContent = oTile.getTileContent();
+                    var sContentText = "";
 
-            oPanel.setVisible(bAnyTileVisible);
+                    // Loop through the TileContent array to retrieve text
+                    aTileContent.forEach(function(oTileContent) {
+                           var oContent = oTileContent.getContent();
+                           if (oContent && oContent.isA("sap.m.FeedContent")) {
+                               sContentText = oContent._oContentText.mProperties.text;
+                           }
+                       });
+                    
+                       // If the header text or content text contains the search query, set the tile to visible
+                       var bVisible = !!(sTileHeader.toLowerCase().indexOf(sQuery.toLowerCase()) !== -1 || (sContentText && sContentText.toLowerCase().indexOf(sQuery.toLowerCase()) !== -1));
+                       
+                       // If at least one tile is visible, set the panel to visible
+                       if (bVisible) {
+                           bAnyTileVisible = true;
+                       }
+                       // Set visibility of the tile
+                       oTile.setVisible(bVisible);
+                });
+                oPanel.setVisible(bAnyTileVisible);
             }.bind(this));
             
     JS);
