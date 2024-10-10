@@ -310,12 +310,12 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 .sapUiTableCellInner > .sapUiIcon::before {padding-top: 2px}
 
 /* NavTiles IconTabBar & SearchFilter */
-#xf8310d4bba2c11e7895fe4b318306b9a__NavTiles-content {scroll-padding-top: 50px;}
+[id*="-content"] {scroll-padding-top: 50px;}
 .customHeader {box-shadow: none;}
 .responsiveFlexbox {position: fixed; z-index: 1; width: 100%; justify-content: space-between; padding-right:1rem;}
 @media (max-width: 1510px) {
     .responsiveFlexbox {flex-direction: column;padding-bottom: 12px;}
-    #xf8310d4bba2c11e7895fe4b318306b9a__NavTiles-content {scroll-padding-top: 90px;}
+    [id*="-content"] {scroll-padding-top: 90px;}
     #__field0 {padding-left: 1rem;}
 }
 
