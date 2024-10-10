@@ -130,7 +130,6 @@ JS);
         return <<<JS
 
         new sap.m.FlexBox("{$this->getId()}_navbox", {
-            justifyContent: "Center",    
             backgroundDesign: "Solid",
             items: [
                 new sap.m.IconTabHeader("{$this->getId()}_iconTabHeader", {
@@ -144,7 +143,7 @@ JS);
                     placeholder: "Search...",
                     liveChange: {$this->getController()->buildJsEventHandler($this, 'FilterTiles', true)},
                     width: "100%"
-                }).addStyleClass('')
+                })
             ]
         }).addStyleClass('responsiveFlexbox')
 JS;
