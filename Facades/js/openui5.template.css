@@ -313,7 +313,7 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 [id*="-content"] {scroll-padding-top: 50px;}
 .customHeader {box-shadow: none;}
 .responsiveFlexbox {position: fixed; z-index: 1; width: 100%; justify-content: space-between; padding-right:1rem;}
-@media (max-width: 1510px) {
+@media (max-width: 1024px) {
     .responsiveFlexbox {flex-direction: column;padding-bottom: 12px;}
     [id*="-content"] {scroll-padding-top: 90px;}
     #__field0 {padding-left: 1rem;}

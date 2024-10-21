@@ -138,12 +138,16 @@ JS);
                     items: [
                         {$this->buildJsIconTabBarItems()}
                     ]
-                }).addStyleClass('customHeader'),
+                }).addStyleClass('customHeader').setLayoutData(new sap.m.FlexItemData({
+            growFactor: 1,
+            shrinkFactor: 1
+        })),
                 new sap.m.SearchField({
                     placeholder: "Search...",
                     liveChange: {$this->getController()->buildJsEventHandler($this, 'FilterTiles', true)},
-                    width: "100%"
-                })
+                }).setLayoutData(new sap.m.FlexItemData({
+            growFactor: 0
+        }))
             ]
         }).addStyleClass('responsiveFlexbox')
 JS;
