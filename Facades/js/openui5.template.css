@@ -327,3 +327,6 @@ html.sap-phone .sapMWizard .sapMWizardNextButtonVisible {position: relative !imp
 #__field0 {padding-top: 6px;}
 
 
+/* Hide Progress Box in Image Upload Section */
+[id*="-progressBox"] {display: none;}
+.sapMUCButtonContainer {align-self: center;}
