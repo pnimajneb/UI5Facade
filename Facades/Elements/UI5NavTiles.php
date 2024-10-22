@@ -150,6 +150,8 @@ JS);
         }))
             ]
         }).addStyleClass('responsiveFlexbox')
+
+        //TODO: Add navbar.js for proper SearchFilter shrinking here
 JS;
     }
 
